@@ -175,7 +175,7 @@ def load_dimensions(mapping):
             log_etl(ficheiro, 'load', 'error', "DataFrame vazio")
             continue
 
-        # INDICATORS (Exemplo otimizado)
+        # Inserção de Indicadores
         if file_type == 'indicator':
             query = """
                 INSERT INTO dim_indicator (indicator_code, indicator_name)
