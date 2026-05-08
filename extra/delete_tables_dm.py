@@ -5,7 +5,7 @@ def drop_tables(table_list):
         conn = psycopg2.connect(
             host="localhost",
             port="5433",          # ajusta se necessário
-            database="projeto_db",
+            database="warehouse_db",
             user="projeto_utilizador",
             password="projeto"
         )
@@ -32,8 +32,7 @@ tables_to_delete = [
     "dim_location",
     "dim_location_hierarchy",
     "fact_values",
-    "dim_report",    
-    "dim_source"
+    "dim_report"
 ]
 
 drop_tables(tables_to_delete)

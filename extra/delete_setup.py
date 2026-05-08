@@ -5,44 +5,47 @@ import boto3
 # =========================
 # 🗄️ POSTGRES RESET
 # =========================
+DATABASES = [
+    {"host": "localhost", "port": 5433, "dbname": "warehouse_db",  "user": "projeto_utilizador", "password": "projeto"},
+    {"host": "localhost", "port": 5433, "dbname": "operational_db","user": "projeto_utilizador", "password": "projeto"},
+    {"host": "localhost", "port": 5433, "dbname": "pipeline_db",   "user": "projeto_utilizador", "password": "projeto"},
+    {"host": "localhost", "port": 5433, "dbname": "vector_db",     "user": "projeto_utilizador", "password": "projeto"},
+]
+
+
 def drop_postgres_objects():
-    conn = psycopg2.connect(
-        host="localhost",
-        port=5433,
-        dbname="projeto_db",
-        user="projeto_utilizador",
-        password="projeto"
-    )
-
-    cur = conn.cursor()
-
     print("🧨 A apagar tabelas e views no PostgreSQL...")
 
-    # 🔥 DROP VIEWS (se existirem)
-    cur.execute("""
-        DO $$ 
-        DECLARE r RECORD;
-        BEGIN
-            FOR r IN (SELECT viewname FROM pg_views WHERE schemaname = 'public') LOOP
-                EXECUTE 'DROP VIEW IF EXISTS ' || quote_ident(r.viewname) || ' CASCADE';
-            END LOOP;
-        END $$;
-    """)
-
-    # 🔥 DROP TABLES
-    cur.execute("""
-        DO $$
-        DECLARE r RECORD;
-        BEGIN
-            FOR r IN (SELECT tablename FROM pg_tables WHERE schemaname = 'public') LOOP
-                EXECUTE 'DROP TABLE IF EXISTS ' || quote_ident(r.tablename) || ' CASCADE';
-            END LOOP;
-        END $$;
-    """)
-
-    conn.commit()
-    cur.close()
-    conn.close()
+    for cfg in DATABASES:
+        conn = psycopg2.connect(**cfg)
+        cur = conn.cursor()
+        try:
+            print(f"  {cfg['dbname']}...")
+            cur.execute("""
+                DO $$
+                DECLARE r RECORD;
+                BEGIN
+                    FOR r IN (SELECT viewname FROM pg_views WHERE schemaname = 'public') LOOP
+                        EXECUTE 'DROP VIEW IF EXISTS ' || quote_ident(r.viewname) || ' CASCADE';
+                    END LOOP;
+                END $$;
+            """)
+            cur.execute("""
+                DO $$
+                DECLARE r RECORD;
+                BEGIN
+                    FOR r IN (SELECT tablename FROM pg_tables WHERE schemaname = 'public') LOOP
+                        EXECUTE 'DROP TABLE IF EXISTS ' || quote_ident(r.tablename) || ' CASCADE';
+                    END LOOP;
+                END $$;
+            """)
+            conn.commit()
+        except Exception as e:
+            conn.rollback()
+            print(f"  Erro em {cfg['dbname']}: {e}")
+        finally:
+            cur.close()
+            conn.close()
 
     print("✅ PostgreSQL limpo")
 
@@ -53,12 +56,12 @@ def drop_postgres_objects():
 def clear_minio():
     s3 = boto3.client(
         's3',
-        endpoint_url='http://localhost:9000',
+        endpoint_url='http://localhost:9002',
         aws_access_key_id='admin',
         aws_secret_access_key='admin123'
     )
 
-    buckets = ['raw', 'unstructured', 'transformed']
+    buckets = ['bronze', 'silver', 'bronze-unstructured']
 
     print("🧨 A apagar buckets MinIO...")
 

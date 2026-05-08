@@ -27,12 +27,12 @@ def clear_bucket(bucket_name, s3_client):
 def clear_buckets():
     s3 = boto3.client(
         's3',
-        endpoint_url='http://localhost:9000',  # MinIO
+        endpoint_url='http://localhost:9002',  # MinIO
         aws_access_key_id='admin',
         aws_secret_access_key='admin123'
     )
 
-    buckets = ['raw', 'transformed']
+    buckets = ['bronze', 'silver']
 
     for bucket in buckets:
         clear_bucket(bucket, s3)
