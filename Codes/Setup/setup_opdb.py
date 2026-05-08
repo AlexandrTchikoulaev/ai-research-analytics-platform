@@ -51,7 +51,6 @@ def main():
     CREATE TABLE op_data (
         file_id SERIAL PRIMARY KEY,
         report_id INTEGER NOT NULL,
-        file_name VARCHAR(100),
         file_url TEXT,
         extract_function TEXT,
         file_type VARCHAR(50),

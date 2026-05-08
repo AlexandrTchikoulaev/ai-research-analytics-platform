@@ -61,7 +61,6 @@ def validate():
                 continue
 
             file_type = metadata.get("file_type", "")
-            fname = metadata.get("file_name", key)
 
             try:
                 file_id = int(metadata.get("file_id", ""))
@@ -97,9 +96,9 @@ def validate():
                     print(f"  Erro ao apagar {key}: {del_e}")
 
                 cur.execute("""
-                    INSERT INTO etl_logs_dados (file_id, file_name, step, status, error_message)
-                    VALUES (%s, %s, %s, %s, %s)
-                """, (file_id, fname, "validate_silver", "error", msg))
+                    INSERT INTO etl_logs_dados (file_id, step, status, error_message)
+                    VALUES (%s, %s, %s, %s)
+                """, (file_id, "validate_silver", "error", msg))
                 err_count += 1
             else:
                 ok_count += 1

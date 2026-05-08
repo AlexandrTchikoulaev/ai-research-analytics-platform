@@ -109,11 +109,10 @@ def validate():
                 except Exception as del_e:
                     print(f"  Erro ao apagar {key}: {del_e}")
 
-                fname = metadata.get("file_name", key)
                 cur_pipe.execute("""
-                    INSERT INTO etl_logs_dados (file_id, file_name, step, status, error_message)
-                    VALUES (%s, %s, %s, %s, %s)
-                """, (file_id, fname, "validate_bronze", "error", msg))
+                    INSERT INTO etl_logs_dados (file_id, step, status, error_message)
+                    VALUES (%s, %s, %s, %s)
+                """, (file_id, "validate_bronze", "error", msg))
                 err_count += 1
             else:
                 ok_count += 1

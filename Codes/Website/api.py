@@ -123,7 +123,6 @@ class ChatIn(BaseModel):
 
 class OpDataIn(BaseModel):
     report_id: int
-    file_name: str = ""
     file_url: str = ""
     extract_function: str = ""
     file_type: str = ""
@@ -292,10 +291,10 @@ def add_op_data(data: OpDataIn):
             raise HTTPException(status_code=404, detail=f"report_id {data.report_id} não existe.")
 
         cur.execute("""
-            INSERT INTO op_data (report_id, file_name, file_url, extract_function, file_type)
-            VALUES (%s, %s, %s, %s, %s)
+            INSERT INTO op_data (report_id, file_url, extract_function, file_type)
+            VALUES (%s, %s, %s, %s)
             RETURNING file_id;
-        """, (data.report_id, data.file_name or None, data.file_url or None,
+        """, (data.report_id, data.file_url or None,
               data.extract_function or None, data.file_type or None))
         file_id = cur.fetchone()[0]
         conn.commit()
@@ -319,7 +318,7 @@ async def upload_op_data(
 ):
     """Carrega um ficheiro de dados diretamente para Bronze (MinIO raw)."""
     content = await file.read()
-    file_name = file.filename or "upload"
+    fmt = (file.filename or "").rsplit(".", 1)[-1].lower() if "." in (file.filename or "") else "json"
 
     conn = get_operational_connection()
     cur = conn.cursor()
@@ -332,10 +331,10 @@ async def upload_op_data(
     # Criar registo primeiro para obter o file_id
     try:
         cur.execute("""
-            INSERT INTO op_data (report_id, file_name, file_url, extract_function, file_type)
-            VALUES (%s, %s, NULL, %s, %s)
+            INSERT INTO op_data (report_id, file_url, extract_function, file_type)
+            VALUES (%s, NULL, %s, %s)
             RETURNING file_id, created_at;
-        """, (report_id, file_name, extract_function or None, file_type or None))
+        """, (report_id, extract_function or None, file_type or None))
         file_id, created_at = cur.fetchone()
         conn.commit()
     except Exception as e:
@@ -361,8 +360,7 @@ async def upload_op_data(
                 "report_id": str(report_id),
                 "extract_function": extract_function or "",
                 "file_type": file_type or "",
-                "file_name": file_name,
-                "file_format": file_name.rsplit(".", 1)[-1].lower() if "." in file_name else "json",
+                "file_format": fmt,
                 "created_at": created_str,
                 "source_url": "",
             },
@@ -382,7 +380,7 @@ async def upload_op_data_pairs(
 ):
     """Carrega um ficheiro e associa-o a múltiplas funções de extração (modo pares)."""
     content = await file.read()
-    file_name = file.filename or "upload"
+    fmt = (file.filename or "").rsplit(".", 1)[-1].lower() if "." in (file.filename or "") else "json"
     functions = [f.strip() for f in extract_functions.split(",") if f.strip()]
 
     if not functions:
@@ -403,10 +401,10 @@ async def upload_op_data_pairs(
     try:
         for fn in functions:
             cur.execute("""
-                INSERT INTO op_data (report_id, file_name, file_url, extract_function, file_type)
-                VALUES (%s, %s, NULL, %s, %s)
+                INSERT INTO op_data (report_id, file_url, extract_function, file_type)
+                VALUES (%s, NULL, %s, %s)
                 RETURNING file_id, created_at;
-            """, (report_id, file_name, fn, file_type or None))
+            """, (report_id, fn, file_type or None))
             file_id, created_at = cur.fetchone()
             created_str = created_at.isoformat() if hasattr(created_at, "isoformat") else str(created_at)
 
@@ -419,8 +417,7 @@ async def upload_op_data_pairs(
                     "report_id": str(report_id),
                     "extract_function": fn,
                     "file_type": file_type or "",
-                    "file_name": file_name,
-                    "file_format": file_name.rsplit(".", 1)[-1].lower() if "." in file_name else "json",
+                    "file_format": fmt,
                     "created_at": created_str,
                     "source_url": "",
                 },
@@ -453,23 +450,20 @@ async def batch_op_data(payload: list[dict]):
             cur.execute(f"SAVEPOINT {sp}")
             report_id = item.get("report_id")
             file_url = item.get("file_url") or None
-            file_name = item.get("file_name") or None
             extract_function = item.get("extract_function") or None
             file_type = item.get("file_type") or None
 
             if not report_id:
                 raise ValueError("report_id é obrigatório")
-            if not file_url and not file_name:
-                raise ValueError("file_url ou file_name são obrigatórios")
 
             cur.execute("SELECT 1 FROM op_report WHERE report_id = %s", (report_id,))
             if not cur.fetchone():
                 raise ValueError(f"report_id {report_id} não existe")
 
             cur.execute("""
-                INSERT INTO op_data (report_id, file_name, file_url, extract_function, file_type)
-                VALUES (%s, %s, %s, %s, %s)
-            """, (report_id, file_name, file_url, extract_function, file_type))
+                INSERT INTO op_data (report_id, file_url, extract_function, file_type)
+                VALUES (%s, %s, %s, %s)
+            """, (report_id, file_url, extract_function, file_type))
             cur.execute(f"RELEASE SAVEPOINT {sp}")
             inserted += 1
         except Exception as e:
@@ -534,7 +528,7 @@ def get_op_data():
         conn = get_operational_connection()
         cur = conn.cursor(cursor_factory=psycopg2.extras.RealDictCursor)
         cur.execute("""
-            SELECT d.file_id, d.report_id, d.file_name, d.file_url,
+            SELECT d.file_id, d.report_id, d.file_url,
                    d.extract_function, d.file_type, r.source_code
             FROM op_data d
             LEFT JOIN op_report r ON r.report_id = d.report_id

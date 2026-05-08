@@ -707,6 +707,7 @@
       color: var(--bg);
     }
     .section-toggle button:not(.active):hover { color: var(--text-secondary); }
+    .section-toggle.sm button { padding: 0.28rem 0.85rem; font-size: 0.65rem; }
 
     /* TABS */
     .tab-btn {
@@ -801,10 +802,12 @@
         <input type="text" id="f-source_code" placeholder="ex: IMF"/>
       </div>
       <div class="form-group full">
-        <div style="display:flex;gap:0;margin-bottom:0.5rem;border-bottom:1px solid var(--border);">
-          <button class="tab-btn active" id="rtab-url" onclick="setReportSourceMode('url')">URL</button>
-          <button class="tab-btn" id="rtab-upload" onclick="setReportSourceMode('upload')">Upload</button>
-          <button class="tab-btn" id="rtab-batch" onclick="setReportSourceMode('batch')">Lote (JSON)</button>
+        <div style="display:flex;justify-content:flex-end;margin-bottom:0.8rem;">
+          <div class="section-toggle sm">
+            <button class="active" id="rtab-url" onclick="setReportSourceMode('url')">URL</button>
+            <button id="rtab-upload" onclick="setReportSourceMode('upload')">Upload</button>
+            <button id="rtab-batch" onclick="setReportSourceMode('batch')">Lote</button>
+          </div>
         </div>
         <div id="rsrc-url">
           <label>report_url</label>
@@ -870,10 +873,12 @@
   <div id="isec-dados" style="display:none;">
 
   <!-- Tabs modo dados -->
-  <div style="display:flex;gap:0;margin-bottom:1.2rem;border-bottom:1px solid var(--border);">
-    <button class="tab-btn active" id="dtab-url" onclick="setDataMode('url')">URL</button>
-    <button class="tab-btn" id="dtab-upload" onclick="setDataMode('upload')">Ficheiro</button>
-    <button class="tab-btn" id="dtab-batch" onclick="setDataMode('batch')">JSON</button>
+  <div style="display:flex;justify-content:flex-end;margin-bottom:1.2rem;">
+    <div class="section-toggle sm">
+      <button class="active" id="dtab-url" onclick="setDataMode('url')">URL</button>
+      <button id="dtab-upload" onclick="setDataMode('upload')">Ficheiro</button>
+      <button id="dtab-batch" onclick="setDataMode('batch')">JSON</button>
+    </div>
   </div>
 
   <!-- Modo URL dados -->

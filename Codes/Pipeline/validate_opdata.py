@@ -46,13 +46,13 @@ def validate(last_run=None):
 
     if last_run:
         cur_op.execute("""
-            SELECT file_id, report_id, file_name, file_url, extract_function, file_type, created_at
+            SELECT file_id, report_id, file_url, extract_function, file_type, created_at
             FROM op_data
             WHERE created_at > %s
         """, (last_run,))
     else:
         cur_op.execute("""
-            SELECT file_id, report_id, file_name, file_url, extract_function, file_type, created_at
+            SELECT file_id, report_id, file_url, extract_function, file_type, created_at
             FROM op_data
         """)
 
@@ -66,7 +66,7 @@ def validate(last_run=None):
     valid_ids = []
     invalid_ids = []
 
-    for file_id, report_id, file_name, file_url, extract_function, file_type, created_at in rows:
+    for file_id, report_id, file_url, extract_function, file_type, created_at in rows:
         errors = []
 
         if not created_at:
@@ -88,9 +88,9 @@ def validate(last_run=None):
         if errors:
             msg = "; ".join(errors)
             cur_pipe.execute("""
-                INSERT INTO etl_logs_dados (file_id, file_name, step, status, error_message)
-                VALUES (%s, %s, %s, %s, %s)
-            """, (file_id, file_name or str(file_id), "validate_opdata", "error", msg))
+                INSERT INTO etl_logs_dados (file_id, step, status, error_message)
+                VALUES (%s, %s, %s, %s)
+            """, (file_id, "validate_opdata", "error", msg))
             print(f"[INVÁLIDO] file_id={file_id}: {msg}")
             invalid_ids.append(file_id)
         else:

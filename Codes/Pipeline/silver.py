@@ -267,7 +267,6 @@ def transformar():
 
             extract_function = metadata.get("extract_function", "")
             file_type = metadata.get("file_type", "")
-            file_name = metadata.get("file_name", key)
             created_at_str = metadata.get("created_at", "")
             fmt = metadata.get("file_format", "json")
 
@@ -294,9 +293,9 @@ def transformar():
             if extract_function not in EXTRACT_FUNCTIONS:
                 print(f"[SKIP] Função desconhecida '{extract_function}': {key}")
                 cur.execute("""
-                    INSERT INTO etl_logs_dados (file_name, step, status, error_message)
+                    INSERT INTO etl_logs_dados (file_id, step, status, error_message)
                     VALUES (%s, %s, %s, %s)
-                """, (file_name, "transform", "error", f"Função desconhecida: {extract_function}"))
+                """, (metadata.get("file_id"), "transform", "error", f"Função desconhecida: {extract_function}"))
                 err_count += 1
                 continue
 
@@ -335,9 +334,9 @@ def transformar():
 
             except Exception as e:
                 cur.execute("""
-                    INSERT INTO etl_logs_dados (file_name, step, status, error_message)
+                    INSERT INTO etl_logs_dados (file_id, step, status, error_message)
                     VALUES (%s, %s, %s, %s)
-                """, (file_name, "transform", "error", str(e)))
+                """, (metadata.get("file_id"), "transform", "error", str(e)))
                 print(f"[ERRO] {key}: {e}")
                 err_count += 1
 
