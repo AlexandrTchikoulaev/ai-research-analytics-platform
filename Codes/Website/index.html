@@ -1,0 +1,2426 @@
+<!DOCTYPE html>
+<html lang="pt">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>OP Report Manager</title>
+  <link href="https://fonts.googleapis.com/css2?family=DM+Mono:ital,wght@0,300;0,400;0,500;1,300&family=DM+Sans:wght@300;400;500&display=swap" rel="stylesheet"/>
+  <script src="https://cdn.plot.ly/plotly-2.35.2.min.js"></script>
+  <style>
+    :root {
+      --bg: #f7f6f3;
+      --surface: #ffffff;
+      --surface2: #f0efe9;
+      --surface3: #e8e7e0;
+      --border: #d6d4cb;
+      --border2: #c2c0b6;
+      --accent: #1a1a18;
+      --accent-hover: #3a3a36;
+      --blue: #2851a3;
+      --blue-light: #eef1f9;
+      --green: #1a6b45;
+      --green-light: #ebf5f0;
+      --amber: #8a5e00;
+      --amber-light: #fdf5e0;
+      --red: #8a1a1a;
+      --red-light: #fdf0f0;
+      --text: #1a1a18;
+      --text-secondary: #5a5950;
+      --text-muted: #9b9989;
+      --mono: 'DM Mono', monospace;
+      --sans: 'DM Sans', sans-serif;
+      --radius: 3px;
+      --transition: 150ms ease;
+    }
+
+    [data-theme="dark"] {
+      --bg: #111110;
+      --surface: #1a1a18;
+      --surface2: #232320;
+      --surface3: #2c2c28;
+      --border: #2e2e2a;
+      --border2: #3e3e38;
+      --accent: #e8e6de;
+      --accent-hover: #c8c6be;
+      --blue: #7a9fd4;
+      --blue-light: #161b26;
+      --green: #5ab888;
+      --green-light: #111b16;
+      --amber: #d4a94a;
+      --amber-light: #1e1a0e;
+      --red: #d47a7a;
+      --red-light: #1e1111;
+      --text: #e8e6de;
+      --text-secondary: #a8a698;
+      --text-muted: #5e5e54;
+    }
+
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+
+    body {
+      background: var(--bg);
+      color: var(--text);
+      font-family: var(--sans);
+      font-weight: 300;
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+      font-size: 14px;
+      transition: background var(--transition), color var(--transition);
+    }
+
+    nav {
+      background: var(--surface);
+      border-bottom: 1px solid var(--border);
+      padding: 0 2.5rem;
+      display: flex;
+      align-items: center;
+      gap: 0;
+      height: 52px;
+      position: sticky;
+      top: 0;
+      z-index: 100;
+    }
+
+    .nav-logo {
+      font-family: var(--mono);
+      font-weight: 400;
+      font-size: 0.78rem;
+      color: var(--text);
+      letter-spacing: 0.12em;
+      text-transform: uppercase;
+      margin-right: 3rem;
+      display: flex;
+      align-items: center;
+      gap: 0.8rem;
+    }
+
+    .nav-btn {
+      background: none;
+      border: none;
+      border-bottom: 2px solid transparent;
+      cursor: pointer;
+      font-family: var(--mono);
+      font-size: 0.72rem;
+      font-weight: 400;
+      color: var(--text-muted);
+      padding: 0 1.1rem;
+      height: 52px;
+      transition: color var(--transition), border-color var(--transition);
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+    }
+
+    .nav-btn:hover { color: var(--text-secondary); }
+    .nav-btn.active { color: var(--text); border-bottom-color: var(--text); }
+
+    .nav-spacer { flex: 1; }
+
+    .theme-toggle {
+      background: none;
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      cursor: pointer;
+      padding: 0.3rem 0.6rem;
+      margin-left: 1.5rem;
+      font-family: var(--mono);
+      font-size: 0.68rem;
+      color: var(--text-muted);
+      letter-spacing: 0.06em;
+      transition: all var(--transition);
+    }
+
+    .theme-toggle:hover { color: var(--text); border-color: var(--border2); }
+
+    .page { display: none; flex: 1; padding: 3rem 2.5rem; max-width: 1100px; margin: 0 auto; width: 100%; }
+    .page.active { display: flex; flex-direction: column; }
+
+    .page-header {
+      margin-bottom: 2.5rem;
+      padding-bottom: 2rem;
+      border-bottom: 1px solid var(--border);
+      display: flex;
+      align-items: flex-end;
+      justify-content: space-between;
+    }
+
+    .page-header h1 {
+      font-family: var(--mono);
+      font-size: 1.1rem;
+      font-weight: 400;
+      letter-spacing: 0.04em;
+    }
+
+    .page-header .sub {
+      font-family: var(--mono);
+      font-size: 0.7rem;
+      color: var(--text-muted);
+      margin-top: 0.35rem;
+      letter-spacing: 0.06em;
+    }
+
+    .method-tag {
+      font-family: var(--mono);
+      font-size: 0.65rem;
+      font-weight: 500;
+      letter-spacing: 0.1em;
+      text-transform: uppercase;
+      padding: 0.2rem 0.55rem;
+      border-radius: var(--radius);
+    }
+
+    .tag-post { background: var(--blue-light); color: var(--blue); border: 1px solid color-mix(in srgb, var(--blue) 20%, transparent); }
+    .tag-get  { background: var(--green-light); color: var(--green); border: 1px solid color-mix(in srgb, var(--green) 20%, transparent); }
+    .tag-ai   { background: var(--amber-light); color: var(--amber); border: 1px solid color-mix(in srgb, var(--amber) 20%, transparent); }
+
+    .form-card {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      padding: 1.8rem 2rem;
+    }
+
+    .form-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 1.2rem 2rem; }
+    .form-group { display: flex; flex-direction: column; gap: 0.45rem; }
+    .form-group.full { grid-column: 1 / -1; }
+
+    label {
+      font-family: var(--mono);
+      font-size: 0.68rem;
+      font-weight: 400;
+      color: var(--text-muted);
+      letter-spacing: 0.1em;
+      text-transform: uppercase;
+    }
+
+    input:not([type="checkbox"]), textarea, select {
+      background: var(--bg);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      color: var(--text);
+      font-family: var(--mono);
+      font-size: 0.82rem;
+      font-weight: 300;
+      padding: 0.6rem 0.8rem;
+      transition: border-color var(--transition), background var(--transition);
+      outline: none;
+      width: 100%;
+      appearance: none;
+    }
+
+    input:not([type="checkbox"]):focus, textarea:focus, select:focus {
+      border-color: var(--border2);
+      background: var(--surface);
+    }
+
+    input:not([type="checkbox"])::placeholder, textarea::placeholder { color: var(--text-muted); font-weight: 300; }
+    textarea { resize: vertical; min-height: 80px; }
+
+    select {
+      background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='10' height='10' viewBox='0 0 24 24' fill='none' stroke='%239b9989' stroke-width='2'%3E%3Cpolyline points='6 9 12 15 18 9'/%3E%3C/svg%3E");
+      background-repeat: no-repeat;
+      background-position: right 0.8rem center;
+      padding-right: 2rem;
+      cursor: pointer;
+    }
+
+    .form-actions {
+      margin-top: 1.5rem;
+      padding-top: 1.5rem;
+      border-top: 1px solid var(--border);
+      display: flex;
+      align-items: center;
+      gap: 0.8rem;
+    }
+
+    .btn-primary {
+      background: var(--accent);
+      color: var(--surface);
+      border: 1px solid var(--accent);
+      border-radius: var(--radius);
+      padding: 0.6rem 1.4rem;
+      font-family: var(--mono);
+      font-size: 0.75rem;
+      font-weight: 400;
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+      cursor: pointer;
+      transition: background var(--transition), color var(--transition);
+    }
+
+    .btn-primary:hover { background: var(--accent-hover); border-color: var(--accent-hover); }
+    .btn-primary:disabled { opacity: 0.4; cursor: not-allowed; }
+
+    .btn-ghost {
+      background: none;
+      border: 1px solid var(--border);
+      color: var(--text-muted);
+      border-radius: var(--radius);
+      padding: 0.6rem 1rem;
+      font-family: var(--mono);
+      font-size: 0.75rem;
+      font-weight: 400;
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+      cursor: pointer;
+      transition: all var(--transition);
+    }
+
+    .btn-ghost:hover { border-color: var(--border2); color: var(--text-secondary); }
+
+    /* TABLE */
+    .table-controls {
+      display: flex;
+      align-items: center;
+      gap: 0.8rem;
+      padding: 1rem 1.2rem;
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: var(--radius) var(--radius) 0 0;
+      border-bottom: none;
+    }
+
+    .table-search { flex: 1; min-width: 180px; max-width: 300px; }
+    .table-search input { margin: 0; }
+
+    .record-count {
+      font-family: var(--mono);
+      font-size: 0.7rem;
+      color: var(--text-muted);
+      margin-left: auto;
+      letter-spacing: 0.06em;
+    }
+
+    .record-count span { color: var(--text-secondary); }
+
+    .btn-refresh {
+      background: none;
+      border: 1px solid var(--border);
+      color: var(--text-muted);
+      border-radius: var(--radius);
+      padding: 0.5rem 0.85rem;
+      font-family: var(--mono);
+      font-size: 0.7rem;
+      font-weight: 400;
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+      cursor: pointer;
+      transition: all var(--transition);
+    }
+
+    .btn-refresh:hover { border-color: var(--border2); color: var(--text-secondary); }
+
+    .table-wrapper {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 0 0 var(--radius) var(--radius);
+      overflow-x: auto;
+    }
+
+    table { width: 100%; border-collapse: collapse; font-family: var(--mono); font-size: 0.78rem; }
+    thead { border-bottom: 1px solid var(--border); }
+
+    th {
+      padding: 0.7rem 1.2rem;
+      text-align: left;
+      font-weight: 400;
+      letter-spacing: 0.1em;
+      text-transform: uppercase;
+      color: var(--text-muted);
+      font-size: 0.65rem;
+      white-space: nowrap;
+      background: var(--surface2);
+    }
+
+    td {
+      padding: 0.75rem 1.2rem;
+      border-bottom: 1px solid var(--border);
+      color: var(--text-secondary);
+      max-width: 220px;
+      min-width: 80px;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+      font-weight: 300;
+    }
+    td.td-wide { min-width: 160px; max-width: 260px; }
+    td.td-narrow { min-width: 60px; }
+
+    tr:last-child td { border-bottom: none; }
+    tbody tr { transition: background var(--transition); }
+    tbody tr:hover td { background: var(--surface2); color: var(--text); }
+    tbody tr.selected td { background: var(--blue-light); color: var(--text); }
+    #table-body-report tr { cursor: pointer; }
+
+    td.id-cell { color: var(--text-muted); font-size: 0.72rem; }
+    td.url-cell a { color: var(--blue); text-decoration: none; }
+    td.url-cell a:hover { text-decoration: underline; }
+
+    .badge {
+      display: inline-block;
+      padding: 0.12rem 0.5rem;
+      border-radius: var(--radius);
+      font-size: 0.65rem;
+      font-weight: 400;
+      letter-spacing: 0.08em;
+      background: var(--surface3);
+      color: var(--text-secondary);
+      border: 1px solid var(--border);
+    }
+
+    .state-box { padding: 3.5rem 2rem; text-align: center; color: var(--text-muted); }
+    .state-box p { font-family: var(--mono); font-size: 0.75rem; letter-spacing: 0.04em; }
+    .spinner { width: 20px; height: 20px; border: 1px solid var(--border); border-top-color: var(--text-muted); border-radius: 50%; animation: spin 0.8s linear infinite; margin: 0 auto 1rem; }
+    @keyframes spin { to { transform: rotate(360deg); } }
+
+    /* TOAST */
+    #toast {
+      position: fixed;
+      bottom: 2rem;
+      right: 2rem;
+      padding: 0.7rem 1.2rem;
+      border-radius: var(--radius);
+      font-family: var(--mono);
+      font-size: 0.75rem;
+      z-index: 999;
+      transform: translateY(8px);
+      opacity: 0;
+      transition: all 250ms ease;
+      pointer-events: none;
+      letter-spacing: 0.04em;
+    }
+
+    #toast.show { transform: translateY(0); opacity: 1; }
+    #toast.success { background: var(--green-light); border: 1px solid color-mix(in srgb, var(--green) 25%, transparent); color: var(--green); }
+    #toast.error { background: var(--red-light); border: 1px solid color-mix(in srgb, var(--red) 25%, transparent); color: var(--red); }
+
+    /* CHAT */
+    #page-chat { height: calc(100vh - 52px); padding-bottom: 0; }
+
+    .chat-layout { display: flex; flex-direction: column; flex: 1; min-height: 0; height: 100%; }
+
+    .chat-messages {
+      flex: 1;
+      overflow-y: auto;
+      display: flex;
+      flex-direction: column;
+      gap: 0;
+      padding: 2rem 0 1rem;
+      min-height: 0;
+    }
+
+    .chat-welcome {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      height: 100%;
+      gap: 0.8rem;
+    }
+
+    .chat-welcome p {
+      font-family: var(--mono);
+      font-size: 0.75rem;
+      color: var(--text-muted);
+      text-align: center;
+      line-height: 1.7;
+      letter-spacing: 0.04em;
+    }
+
+    .chat-welcome-line { width: 1px; height: 32px; background: var(--border); }
+
+    .msg { display: flex; flex-direction: column; gap: 0; animation: fadeIn 0.2s ease; padding: 0.4rem 0; }
+    @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
+
+    .msg.user { align-self: flex-end; align-items: flex-end; max-width: 72%; }
+    .msg.assistant { align-self: flex-start; align-items: flex-start; max-width: 80%; }
+
+    .msg-label {
+      font-family: var(--mono);
+      font-size: 0.63rem;
+      font-weight: 400;
+      letter-spacing: 0.1em;
+      text-transform: uppercase;
+      color: var(--text-muted);
+      padding: 0 0.2rem;
+      margin-bottom: 0.3rem;
+    }
+
+    .msg-bubble {
+      padding: 0.8rem 1rem;
+      border-radius: var(--radius);
+      font-family: var(--mono);
+      font-size: 0.8rem;
+      font-weight: 300;
+      line-height: 1.7;
+      white-space: pre-wrap;
+      word-break: break-word;
+    }
+
+    .msg.user .msg-bubble { background: var(--surface3); border: 1px solid var(--border2); color: var(--text); }
+    .msg.assistant .msg-bubble { background: var(--surface); border: 1px solid var(--border); color: var(--text-secondary); }
+
+    .typing-bubble {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      padding: 0.8rem 1rem;
+      display: flex;
+      gap: 4px;
+      align-items: center;
+    }
+
+    .typing-bubble span { width: 4px; height: 4px; background: var(--text-muted); border-radius: 50%; animation: blink 1.2s infinite; }
+    .typing-bubble span:nth-child(2) { animation-delay: 0.2s; }
+    .typing-bubble span:nth-child(3) { animation-delay: 0.4s; }
+    @keyframes blink { 0%,80%,100%{opacity:0.2} 40%{opacity:1} }
+
+    .chat-input-bar {
+      display: flex;
+      gap: 0.6rem;
+      align-items: flex-end;
+      padding: 1rem 0 1.5rem;
+      border-top: 1px solid var(--border);
+      background: var(--bg);
+    }
+
+    #chat-input {
+      flex: 1;
+      resize: none;
+      min-height: 40px;
+      max-height: 120px;
+      overflow-y: auto;
+      border-radius: var(--radius);
+      padding: 0.6rem 0.8rem;
+      font-size: 0.82rem;
+    }
+
+    .btn-send {
+      background: var(--accent);
+      color: var(--surface);
+      border: none;
+      border-radius: var(--radius);
+      width: 40px;
+      height: 40px;
+      cursor: pointer;
+      flex-shrink: 0;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      transition: opacity var(--transition);
+    }
+
+    .btn-send:hover { opacity: 0.8; }
+    .btn-send:disabled { opacity: 0.4; cursor: not-allowed; }
+
+    .btn-clear-chat {
+      background: none;
+      border: 1px solid var(--border);
+      color: var(--text-muted);
+      border-radius: var(--radius);
+      padding: 0 0.8rem;
+      height: 40px;
+      font-family: var(--mono);
+      font-size: 0.68rem;
+      font-weight: 400;
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+      cursor: pointer;
+      transition: all var(--transition);
+    }
+
+    .btn-clear-chat:hover { border-color: var(--border2); color: var(--text-secondary); }
+
+    /* DASHBOARD */
+    .dash-layout {
+      display: grid;
+      grid-template-columns: 260px 1fr;
+      gap: 1.5rem;
+      flex: 1;
+    }
+    .dash-sidebar {
+      display: flex;
+      flex-direction: column;
+      gap: 1.2rem;
+    }
+    .dash-control {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      padding: 1.2rem 1.2rem 1.4rem;
+      display: flex;
+      flex-direction: column;
+      gap: 0.5rem;
+    }
+    .dash-control label {
+      font-family: var(--mono);
+      font-size: 0.65rem;
+      color: var(--text-muted);
+      letter-spacing: 0.1em;
+      text-transform: uppercase;
+    }
+    .dash-control select { width: 100%; }
+    .btn-apply {
+      background: var(--accent);
+      color: var(--surface);
+      border: none;
+      border-radius: var(--radius);
+      padding: 0.6rem 1rem;
+      font-family: var(--mono);
+      font-size: 0.75rem;
+      font-weight: 400;
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+      cursor: pointer;
+      transition: opacity var(--transition);
+      width: 100%;
+      margin-top: 0.4rem;
+    }
+    .btn-apply:hover { opacity: 0.8; }
+    .btn-apply:disabled { opacity: 0.4; cursor: not-allowed; }
+    .dash-map-wrap {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      overflow: hidden;
+      min-height: 500px;
+      display: flex;
+      flex-direction: column;
+    }
+    .dash-map-header {
+      background: var(--surface2);
+      border-bottom: 1px solid var(--border);
+      padding: 0.75rem 1.2rem;
+      font-family: var(--mono);
+      font-size: 0.68rem;
+      color: var(--text-muted);
+      letter-spacing: 0.08em;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+    }
+    .dash-map-header span { color: var(--text-secondary); }
+    #dash-plotly { flex: 1; min-height: 460px; }
+    .dash-empty {
+      flex: 1;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-family: var(--mono);
+      font-size: 0.75rem;
+      color: var(--text-muted);
+      letter-spacing: 0.04em;
+      min-height: 460px;
+    }
+    @media (max-width: 768px) { .dash-layout { grid-template-columns: 1fr; } }
+
+    .dash-section-divider {
+      margin: 2.5rem 0 2rem;
+      border: none;
+      border-top: 1px solid var(--border);
+    }
+    .dash-section-title {
+      font-family: var(--mono);
+      font-size: 0.72rem;
+      font-weight: 400;
+      color: var(--text-muted);
+      letter-spacing: 0.1em;
+      text-transform: uppercase;
+      margin-bottom: 1.2rem;
+    }
+    .country-select-wrap {
+      background: var(--bg);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      max-height: 140px;
+      overflow-y: auto;
+      padding: 0.3rem 0;
+    }
+    .country-select-wrap label {
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+      padding: 0.3rem 0.8rem;
+      cursor: pointer;
+      font-family: var(--mono);
+      font-size: 0.78rem;
+      font-weight: 300;
+      color: var(--text-secondary);
+      text-transform: none;
+      letter-spacing: 0.03em;
+      transition: background var(--transition);
+    }
+    .country-select-wrap label:hover { background: var(--surface2); }
+    .country-select-wrap input[type="checkbox"] {
+      width: 12px;
+      height: 12px;
+      min-width: 12px;
+      padding: 0;
+      margin: 0;
+      cursor: pointer;
+      accent-color: var(--accent);
+    }
+    .country-search {
+      margin-bottom: 0.4rem;
+    }
+    .ts-layout {
+      display: grid;
+      grid-template-columns: 220px 1fr;
+      gap: 1.5rem;
+      align-items: start;
+    }
+    .ts-sidebar {
+      display: flex;
+      flex-direction: column;
+      gap: 1rem;
+    }
+    @media (max-width: 768px) { .ts-layout { grid-template-columns: 1fr; } }
+
+    ::-webkit-scrollbar { width: 4px; height: 4px; }
+    ::-webkit-scrollbar-track { background: transparent; }
+    ::-webkit-scrollbar-thumb { background: var(--border); border-radius: 2px; }
+    ::-webkit-scrollbar-thumb:hover { background: var(--border2); }
+
+    /* SECTION TOGGLE */
+    .section-toggle {
+      display: inline-flex;
+      border: 1px solid var(--border);
+      border-radius: 6px;
+      overflow: hidden;
+      flex-shrink: 0;
+    }
+    .section-toggle button {
+      background: none;
+      border: none;
+      padding: 0.45rem 1.4rem;
+      font-family: var(--mono);
+      font-size: 0.72rem;
+      font-weight: 400;
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+      cursor: pointer;
+      color: var(--text-muted);
+      transition: background var(--transition), color var(--transition);
+    }
+    .section-toggle button.active {
+      background: var(--text);
+      color: var(--bg);
+    }
+    .section-toggle button:not(.active):hover { color: var(--text-secondary); }
+    .section-toggle.sm button { padding: 0.28rem 0.85rem; font-size: 0.65rem; }
+
+    /* TABS */
+    .tab-btn {
+      background: none;
+      border: none;
+      border-bottom: 2px solid transparent;
+      cursor: pointer;
+      font-family: var(--mono);
+      font-size: 0.72rem;
+      font-weight: 400;
+      color: var(--text-muted);
+      padding: 0.5rem 1.1rem;
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+      transition: color var(--transition), border-color var(--transition);
+      margin-bottom: -1px;
+    }
+    .tab-btn:hover { color: var(--text-secondary); }
+    .tab-btn.active { color: var(--text); border-bottom-color: var(--text); }
+
+    /* DUPLICATE WARNING */
+    .dup-warn {
+      font-family: var(--mono);
+      font-size: 0.68rem;
+      min-height: 1.1rem;
+      display: block;
+      margin-top: 0.25rem;
+    }
+    .dup-warn.exists { color: var(--red); }
+    .dup-warn.ok { color: var(--green); }
+
+    input[type="file"] {
+      background: var(--bg);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      color: var(--text);
+      font-family: var(--mono);
+      font-size: 0.78rem;
+      padding: 0.5rem 0.8rem;
+      width: 100%;
+      cursor: pointer;
+    }
+
+    @media (max-width: 768px) {
+      .form-grid { grid-template-columns: 1fr; }
+      nav { padding: 0 1rem; }
+      .page { padding: 1.5rem 1rem; }
+      .msg.user, .msg.assistant { max-width: 95%; }
+    }
+  </style>
+</head>
+<body>
+
+<nav>
+  <div class="nav-logo">WebSite</div>
+  <button class="nav-btn active" id="nav-insert" onclick="showPage('insert')">Inserir</button>
+  <button class="nav-btn" id="nav-table" onclick="showPage('table')">Tabelas</button>
+  <button class="nav-btn" id="nav-chat" onclick="showPage('chat')">Chat</button>
+  <button class="nav-btn" id="nav-dash" onclick="showPage('dash')">Dashboards</button>
+  <button class="nav-btn" id="nav-etl" onclick="showPage('etl')">ETL</button>
+  <div class="nav-spacer"></div>
+  <button class="theme-toggle" onclick="toggleTheme()">tema</button>
+</nav>
+
+<!-- ══════════════ PAGE: INSERT ══════════════ -->
+<div class="page active" id="page-insert">
+
+  <div class="page-header">
+    <div>
+      <h1 id="insert-h1">Inserir Relatório</h1>
+      <div class="sub" id="insert-sub">registo na tabela op_report</div>
+    </div>
+    <div class="section-toggle">
+      <button class="active" id="itog-relatorios" onclick="switchInsert('relatorios')">Relatórios</button>
+      <button id="itog-dados" onclick="switchInsert('dados')">Dados</button>
+    </div>
+  </div>
+
+  <!-- ── Relatórios ── -->
+  <div id="isec-relatorios">
+
+  <div class="form-card">
+    <div class="form-grid">
+      <div class="form-group">
+        <label>file_name *</label>
+        <input type="text" id="f-file_name" placeholder="ex: relatorio_2024_q1.pdf"
+          oninput="scheduleDuplicateCheck('file_name', this.value, 'f-dup-fname')"/>
+        <span class="dup-warn" id="f-dup-fname"></span>
+      </div>
+      <div class="form-group">
+        <label>source_code *</label>
+        <input type="text" id="f-source_code" placeholder="ex: IMF"/>
+      </div>
+      <div class="form-group full">
+        <div style="display:flex;justify-content:flex-end;margin-bottom:0.8rem;">
+          <div class="section-toggle sm">
+            <button class="active" id="rtab-url" onclick="setReportSourceMode('url')">URL</button>
+            <button id="rtab-upload" onclick="setReportSourceMode('upload')">Upload</button>
+            <button id="rtab-batch" onclick="setReportSourceMode('batch')">Lote</button>
+          </div>
+        </div>
+        <div id="rsrc-url">
+          <label>report_url</label>
+          <input type="url" id="f-report_url" placeholder="https://exemplo.com/relatorio.pdf"
+            oninput="scheduleDuplicateCheck('report_url', this.value, 'f-dup-url')"/>
+          <span class="dup-warn" id="f-dup-url"></span>
+        </div>
+        <div id="rsrc-upload" style="display:none;">
+          <label>Ficheiro PDF *</label>
+          <input type="file" id="f-up-file" accept=".pdf"
+            onchange="document.getElementById('f-file_name').value = this.files[0]?.name || ''"/>
+        </div>
+        <div id="rsrc-batch" style="display:none;">
+          <label>JSON (array de relatórios)</label>
+          <textarea id="f-batch-json" style="min-height:180px;font-size:0.78rem;" placeholder='[
+  {
+    "source_code": "IMF",
+    "file_name": "weo_2024.pdf",
+    "report_url": "https://...",
+    "publication_date": "2024-01-01",
+    "area_tematica": "Economia"
+  }
+]'></textarea>
+          <div id="batch-result" style="display:none;font-family:var(--mono);font-size:0.75rem;padding:0.8rem 1rem;border-radius:var(--radius);margin-top:0.5rem;"></div>
+        </div>
+      </div>
+      <div class="form-group">
+        <label>publication_date *</label>
+        <input type="date" id="f-publication_date"/>
+      </div>
+      <div class="form-group">
+        <label>area_tematica</label>
+        <select id="f-area_tematica">
+          <option value="">— Seleciona —</option>
+          <option>Tecnologia</option><option>Economia</option><option>Educação</option>
+          <option>Saúde</option><option>Ambiente</option><option>Outros</option>
+        </select>
+      </div>
+      <div class="form-group">
+        <label>estado</label>
+        <select id="f-estado">
+          <option value="">— Seleciona —</option>
+          <option>Anual</option><option>Bienal</option><option>Pontual</option><option>Descontinuado</option>
+        </select>
+      </div>
+      <div class="form-group full">
+        <label>palavras_chave</label>
+        <input type="text" id="f-palavras_chave" placeholder="ex: inflação, PIB, crescimento"/>
+      </div>
+      <div class="form-group full">
+        <label>resumo</label>
+        <textarea id="f-resumo" placeholder="Breve descrição do relatório..."></textarea>
+      </div>
+    </div>
+    <div class="form-actions">
+      <button class="btn-primary" id="btn-report-submit" onclick="submitReportAuto()">Adicionar Relatório</button>
+      <button class="btn-ghost" onclick="clearReportForm()">Limpar</button>
+    </div>
+  </div>
+  </div><!-- end isec-relatorios -->
+
+  <!-- ── Dados ── -->
+  <div id="isec-dados" style="display:none;">
+
+  <!-- Tabs modo dados -->
+  <div style="display:flex;justify-content:flex-end;margin-bottom:1.2rem;">
+    <div class="section-toggle sm">
+      <button class="active" id="dtab-url" onclick="setDataMode('url')">URL</button>
+      <button id="dtab-upload" onclick="setDataMode('upload')">Ficheiro</button>
+      <button id="dtab-batch" onclick="setDataMode('batch')">JSON</button>
+    </div>
+  </div>
+
+  <!-- Modo URL dados -->
+  <div id="dmode-url" class="form-card">
+    <div class="form-grid">
+      <div class="form-group">
+        <label>report_id *</label>
+        <select id="d-report_id" onclick="loadReportDropdown()">
+          <option value="">— Clica para ver IDs —</option>
+        </select>
+      </div>
+      <div class="form-group">
+        <label>file_name</label>
+        <input type="text" id="d-file_name" placeholder="ex: imf_indicators.json"/>
+      </div>
+      <div class="form-group">
+        <label>extract_function</label>
+        <input type="text" id="d-extract_function" placeholder="ex: funcao_imf_values"/>
+      </div>
+      <div class="form-group">
+        <label>file_type</label>
+        <select id="d-file_type">
+          <option value="">— Seleciona —</option>
+          <option value="indicator">indicator</option>
+          <option value="countries">countries</option>
+          <option value="regions">regions</option>
+          <option value="groups">groups</option>
+          <option value="value">value</option>
+        </select>
+      </div>
+      <div class="form-group full">
+        <label>file_url *</label>
+        <input type="url" id="d-file_url" placeholder="https://api.imf.org/dados"/>
+      </div>
+    </div>
+    <div class="form-actions">
+      <button class="btn-primary" id="btn-add-data" onclick="submitOpData()">Adicionar Ficheiro</button>
+      <button class="btn-ghost" onclick="clearDataForm()">Limpar</button>
+    </div>
+  </div>
+
+  <!-- Modo Upload dados -->
+  <div id="dmode-upload" class="form-card" style="display:none;">
+    <div class="form-grid">
+      <div class="form-group">
+        <label>report_id *</label>
+        <select id="d-up-rid" onclick="loadReportDropdown2()">
+          <option value="">— Clica para ver IDs —</option>
+        </select>
+      </div>
+      <div class="form-group">
+        <label>extract_function</label>
+        <input type="text" id="d-up-fn" placeholder="ex: funcao_imf_values"/>
+      </div>
+      <div class="form-group">
+        <label>file_type</label>
+        <select id="d-up-type">
+          <option value="">— Seleciona —</option>
+          <option value="indicator">indicator</option>
+          <option value="countries">countries</option>
+          <option value="regions">regions</option>
+          <option value="groups">groups</option>
+          <option value="value">value</option>
+        </select>
+      </div>
+      <div class="form-group full">
+        <label>Ficheiro * (.json, .csv, .xlsx, .xls, .xml, .zip)</label>
+        <input type="file" id="d-up-file" accept=".json,.csv,.xlsx,.xls,.xml,.zip"/>
+      </div>
+    </div>
+    <div class="form-actions">
+      <button class="btn-primary" id="btn-add-upload-data" onclick="submitDataUpload()">Carregar Ficheiro</button>
+    </div>
+  </div>
+
+  <!-- Modo Lote dados -->
+  <div id="dmode-batch" class="form-card" style="display:none;">
+    <div class="form-group full" style="margin-bottom:1rem;">
+      <label>JSON / JSONC (array de ficheiros)</label>
+      <textarea id="d-batch-json" style="min-height:180px;font-size:0.78rem;" placeholder='[
+  // Ficheiros do relatório IMF 2024
+  { "report_id": 1, "file_url": "https://api.imf.org/indicadores", "extract_function": "funcao_imf_indicadores", "file_type": "indicator" },
+  { "report_id": 1, "file_url": "https://api.imf.org/valores", "extract_function": "funcao_imf_values", "file_type": "value" }
+]'></textarea>
+    </div>
+    <div id="dbatch-result" style="display:none;font-family:var(--mono);font-size:0.75rem;padding:0.8rem 1rem;border-radius:var(--radius);margin-bottom:1rem;"></div>
+    <div class="form-actions">
+      <button class="btn-primary" id="btn-dbatch" onclick="submitBatchData()">Importar Lote</button>
+    </div>
+  </div>
+  </div><!-- end isec-dados -->
+
+</div>
+
+<!-- ══════════════ PAGE: TABLE ══════════════ -->
+<div class="page" id="page-table">
+
+  <div class="page-header">
+    <div>
+      <h1 id="table-h1">Tabela op_report</h1>
+      <div class="sub" id="table-sub">/op_report — todos os registos da base de dados</div>
+    </div>
+    <div class="section-toggle">
+      <button class="active" id="ttog-relatorios" onclick="switchTable('relatorios')">Relatórios</button>
+      <button id="ttog-dados" onclick="switchTable('dados')">Dados</button>
+    </div>
+  </div>
+
+  <!-- Tabela op_report -->
+  <div id="tsec-relatorios">
+
+  <div class="table-controls">
+    <div class="table-search">
+      <input type="text" id="search-input-report" placeholder="Filtrar registos..." oninput="filterTable('report')"/>
+    </div>
+    <button class="btn-refresh" onclick="loadTable('report')">Atualizar</button>
+    <div class="record-count" id="record-count-report"></div>
+  </div>
+
+  <div class="table-wrapper">
+    <table>
+      <thead>
+        <tr>
+          <th>report_id</th>
+          <th>file_name</th>
+          <th>source_code</th>
+          <th>report_url</th>
+          <th>publication_date</th>
+          <th>area_tematica</th>
+          <th>estado</th>
+          <th>palavras_chave</th>
+          <th>resumo</th>
+        </tr>
+      </thead>
+      <tbody id="table-body-report">
+        <tr><td colspan="9"><div class="state-box"><p>A carregar dados...</p></div></td></tr>
+      </tbody>
+    </table>
+  </div>
+
+  </div><!-- end tsec-relatorios -->
+
+  <!-- Tabela op_data -->
+  <div id="tsec-dados" style="display:none;">
+
+  <div class="table-controls">
+    <div class="table-search">
+      <select id="search-input-data" onchange="filterTable('data')" style="max-width:260px;">
+        <option value="">— Todos os report_id —</option>
+      </select>
+    </div>
+    <button class="btn-refresh" onclick="loadTable('data')">Atualizar</button>
+    <div class="record-count" id="record-count-data"></div>
+  </div>
+
+  <div class="table-wrapper">
+    <table>
+      <thead>
+        <tr>
+          <th>file_id</th>
+          <th>report_id</th>
+          <th>source_code</th>
+          <th>file_name</th>
+          <th>file_url</th>
+          <th>extract_function</th>
+          <th>file_type</th>
+        </tr>
+      </thead>
+      <tbody id="table-body-data">
+        <tr><td colspan="7"><div class="state-box"><p>A carregar dados...</p></div></td></tr>
+      </tbody>
+    </table>
+  </div>
+  </div><!-- end tsec-dados -->
+</div>
+
+<!-- ══════════════ PAGE: CHAT ══════════════ -->
+<div class="page" id="page-chat">
+  <div class="page-header">
+    <div>
+      <h1>Chat Bot</h1>
+      <div class="sub">/chat — pesquisa semântica via PGVector + Mistral (Ollama)</div>
+    </div>
+    <div style="display:flex;align-items:center;gap:1rem;">
+      <button class="btn-ghost" id="btn-update-pdfs" onclick="runPipeline('pdfs', 'btn-update-pdfs')">Atualizar dados</button>
+      <span class="method-tag tag-ai">RAG</span>
+    </div>
+  </div>
+
+  <div class="chat-layout">
+    <div class="chat-messages" id="chat-messages">
+      <div class="chat-welcome" id="chat-welcome">
+        <div class="chat-welcome-line"></div>
+        <p>Faz uma pergunta sobre os documentos indexados.<br/>O modelo irá pesquisar nos embeddings e responder.</p>
+        <div class="chat-welcome-line"></div>
+      </div>
+    </div>
+
+    <div class="chat-input-bar">
+      <textarea id="chat-input" placeholder="Escreve a tua pergunta..." rows="1"
+        onkeydown="handleChatKey(event)" oninput="autoResize(this)"></textarea>
+      <button class="btn-clear-chat" onclick="clearChat()">Limpar</button>
+      <button class="btn-send" id="btn-send" onclick="sendMessage()">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <line x1="22" y1="2" x2="11" y2="13"/>
+          <polygon points="22 2 15 22 11 13 2 9 22 2"/>
+        </svg>
+      </button>
+    </div>
+  </div>
+</div>
+
+<!-- ══════════════ PAGE: DASHBOARDS ══════════════ -->
+<div class="page" id="page-dash">
+  <div class="page-header">
+    <div>
+      <h1>Dashboards</h1>
+      <div class="sub">visualizações do data warehouse</div>
+    </div>
+    <div style="display:flex;align-items:center;gap:1rem;">
+      <button class="btn-ghost" id="btn-update-dash" onclick="runPipeline('dados', 'btn-update-dash')">Atualizar dados</button>
+      <span class="method-tag tag-get">GET</span>
+    </div>
+  </div>
+
+  <div class="dash-layout">
+    <!-- Sidebar de controlos -->
+    <div class="dash-sidebar">
+      <div class="dash-control">
+        <label>Indicador</label>
+        <select id="dash-indicator">
+          <option value="">— A carregar... —</option>
+        </select>
+      </div>
+      <div class="dash-control">
+        <label>Ano</label>
+        <select id="dash-year">
+          <option value="">— A carregar... —</option>
+        </select>
+      </div>
+      <div class="dash-control">
+        <button class="btn-apply" id="btn-apply-dash" onclick="applyDashboard()">Aplicar</button>
+      </div>
+      <div class="dash-control" id="dash-stats" style="display:none;">
+        <label>Estatísticas</label>
+        <div style="font-family:var(--mono);font-size:0.75rem;color:var(--text-secondary);display:flex;flex-direction:column;gap:0.4rem;margin-top:0.2rem;">
+          <div style="display:flex;justify-content:space-between;"><span style="color:var(--text-muted);">Países</span><span id="stat-count">—</span></div>
+          <div style="display:flex;justify-content:space-between;"><span style="color:var(--text-muted);">Mínimo</span><span id="stat-min">—</span></div>
+          <div style="display:flex;justify-content:space-between;"><span style="color:var(--text-muted);">Máximo</span><span id="stat-max">—</span></div>
+          <div style="display:flex;justify-content:space-between;"><span style="color:var(--text-muted);">Média</span><span id="stat-avg">—</span></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Mapa -->
+    <div class="dash-map-wrap">
+      <div class="dash-map-header">
+        <span id="dash-map-title">Seleciona um indicador e um ano</span>
+        <span id="dash-record-count"></span>
+      </div>
+      <div id="dash-plotly">
+        <div class="dash-empty">Seleciona um indicador e um ano e clica em Aplicar.</div>
+      </div>
+    </div>
+  </div><!-- end dash-layout -->
+
+  <!-- ── Gráfico Temporal ── -->
+  <hr class="dash-section-divider"/>
+  <div class="dash-section-title">Evolução Temporal por País</div>
+
+  <div class="ts-layout">
+    <!-- Sidebar de controlos -->
+    <div class="ts-sidebar">
+      <div class="dash-control">
+        <label>Indicador</label>
+        <select id="ts-indicator">
+          <option value="">— A carregar... —</option>
+        </select>
+      </div>
+      <div class="dash-control">
+        <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:0.45rem;">
+          <label style="margin-bottom:0;">Países</label>
+          <button class="btn-ghost" style="padding:0.2rem 0.5rem;font-size:0.65rem;" onclick="deselectAllCountries()">Limpar seleção</button>
+        </div>
+        <input type="text" class="country-search" id="ts-country-search" placeholder="Filtrar países..." oninput="filterCountryList()"/>
+        <div class="country-select-wrap" id="ts-country-list">
+          <label style="color:var(--text-muted);cursor:default;">A carregar...</label>
+        </div>
+      </div>
+      <div class="dash-control">
+        <button class="btn-apply" id="btn-apply-ts" onclick="applyTimeseries()">Aplicar</button>
+      </div>
+    </div>
+
+    <!-- Gráfico -->
+    <div class="dash-map-wrap">
+      <div class="dash-map-header">
+        <span id="ts-chart-title">Seleciona um indicador e países</span>
+        <span id="ts-record-count"></span>
+      </div>
+      <div id="ts-plotly">
+        <div class="dash-empty">Seleciona um indicador e pelo menos um país e clica em Aplicar.</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ── Ranking por País ── -->
+  <hr class="dash-section-divider"/>
+  <div class="dash-section-title">Ranking de Países</div>
+
+  <div class="ts-layout">
+    <div class="ts-sidebar">
+      <div class="dash-control">
+        <label>Indicador</label>
+        <select id="rank-indicator">
+          <option value="">— A carregar... —</option>
+        </select>
+      </div>
+      <div class="dash-control">
+        <label>Ano</label>
+        <select id="rank-year" disabled>
+          <option value="">— Primeiro seleciona um indicador —</option>
+        </select>
+      </div>
+      <div class="dash-control">
+        <button class="btn-apply" id="btn-apply-rank" onclick="applyRanking()">Aplicar</button>
+      </div>
+    </div>
+
+    <div class="dash-map-wrap">
+      <div class="dash-map-header">
+        <span id="rank-chart-title">Seleciona um indicador e um ano</span>
+        <span id="rank-record-count"></span>
+      </div>
+      <div id="rank-plotly" style="min-height:460px;">
+        <div class="dash-empty">Seleciona um indicador e um ano e clica em Aplicar.</div>
+      </div>
+    </div>
+  </div>
+
+</div><!-- end page-dash -->
+<div class="page" id="page-etl">
+  <div class="page-header">
+    <div>
+      <h1>ETL</h1>
+      <div class="sub">ingestão de dados e histórico de execuções</div>
+    </div>
+    <span class="method-tag tag-post">ETL</span>
+  </div>
+
+  <div style="margin-bottom: 2rem; display: flex; align-items: center; gap: 1rem; flex-wrap:wrap;">
+    <button class="btn-primary" id="btn-ingest" onclick="ingestData('dados')">Pipeline Dados</button>
+    <button class="btn-ghost" id="btn-ingest-pdfs" onclick="ingestData('pdfs')">Pipeline PDFs</button>
+    <span id="etl-status" style="font-family:var(--mono);font-size:0.72rem;color:var(--text-muted);letter-spacing:0.06em;"></span>
+  </div>
+
+  <!-- Log output panel (hidden until run) -->
+  <div id="etl-log-wrap" style="display:none; margin-bottom: 2rem;">
+    <div style="background:var(--surface2); border:1px solid var(--border); border-radius:var(--radius) var(--radius) 0 0; padding:0.6rem 1.2rem; display:flex; justify-content:space-between; align-items:center;">
+      <span style="font-family:var(--mono);font-size:0.65rem;color:var(--text-muted);letter-spacing:0.1em;text-transform:uppercase;">Output</span>
+      <button class="btn-refresh" onclick="document.getElementById('etl-log-wrap').style.display='none'">Fechar</button>
+    </div>
+    <pre id="etl-log" style="background:var(--surface);border:1px solid var(--border);border-top:none;border-radius:0 0 var(--radius) var(--radius);padding:1.2rem 1.4rem;font-family:var(--mono);font-size:0.75rem;font-weight:300;color:var(--text-secondary);line-height:1.7;max-height:320px;overflow-y:auto;margin:0;white-space:pre-wrap;word-break:break-word;"></pre>
+  </div>
+
+  <!-- Tabela etl_logs -->
+  <div class="page-header" style="margin-top: 0; margin-bottom: 0;">
+    <div>
+      <h1>Tabela etl_logs</h1>
+      <div class="sub">/etl_logs — histórico de execuções ETL</div>
+    </div>
+    <span class="method-tag tag-get">GET</span>
+  </div>
+
+  <div class="table-controls">
+    <div class="table-search">
+      <input type="text" id="search-input-etl" placeholder="Filtrar registos..." oninput="filterEtlTable()"/>
+    </div>
+    <button class="btn-refresh" onclick="loadEtlLogs()">Atualizar</button>
+    <div class="record-count" id="record-count-etl"></div>
+  </div>
+
+  <div class="table-wrapper">
+    <table>
+      <thead>
+        <tr id="etl-thead-row">
+          <th>A carregar colunas...</th>
+        </tr>
+      </thead>
+      <tbody id="table-body-etl">
+        <tr><td colspan="10"><div class="state-box"><p>A carregar dados...</p></div></td></tr>
+      </tbody>
+    </table>
+  </div>
+</div>
+
+<div id="toast"></div>
+
+<script>
+  const API_BASE              = 'http://localhost:8000';
+  const ENDPOINT_REPORT       = `${API_BASE}/op_report`;
+  const ENDPOINT_OP_DATA      = `${API_BASE}/op_data`;
+  const ENDPOINT_CHAT         = `${API_BASE}/chat`;
+  const ENDPOINT_DASHBOARD    = `${API_BASE}/dashboard`;
+  const ENDPOINT_DASH_FILTERS = `${API_BASE}/dashboard/filters`;
+  const ENDPOINT_TIMESERIES   = `${API_BASE}/dashboard/timeseries`;
+  const ENDPOINT_ETL_LOGS     = `${API_BASE}/etl_logs`;
+
+  const allRows = { report: [], data: [], etl: [] };
+  let selectedReportId = null;
+
+  // ── NAVEGAÇÃO ──
+  function switchInsert(tab) {
+    document.getElementById('isec-relatorios').style.display = tab === 'relatorios' ? '' : 'none';
+    document.getElementById('isec-dados').style.display = tab === 'dados' ? '' : 'none';
+    document.getElementById('itog-relatorios').classList.toggle('active', tab === 'relatorios');
+    document.getElementById('itog-dados').classList.toggle('active', tab === 'dados');
+    document.getElementById('insert-h1').textContent = tab === 'relatorios' ? 'Inserir Relatório' : 'Inserir Dados';
+    document.getElementById('insert-sub').textContent = tab === 'relatorios' ? 'registo na tabela op_report' : 'registo na tabela op_data';
+  }
+
+  function switchTable(tab) {
+    document.getElementById('tsec-relatorios').style.display = tab === 'relatorios' ? '' : 'none';
+    document.getElementById('tsec-dados').style.display = tab === 'dados' ? '' : 'none';
+    document.getElementById('ttog-relatorios').classList.toggle('active', tab === 'relatorios');
+    document.getElementById('ttog-dados').classList.toggle('active', tab === 'dados');
+    document.getElementById('table-h1').textContent = tab === 'relatorios' ? 'Tabela op_report' : 'Tabela op_data';
+    document.getElementById('table-sub').textContent = tab === 'relatorios' ? '/op_report — todos os registos da base de dados' : '/op_data — todos os registos da base de dados';
+    loadTable(tab === 'relatorios' ? 'report' : 'data');
+  }
+
+  function showPage(name) {
+    document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
+    document.querySelectorAll('.nav-btn').forEach(b => b.classList.remove('active'));
+    document.getElementById('page-' + name).classList.add('active');
+    document.getElementById('nav-' + name).classList.add('active');
+    if (name === 'table') {
+      const activeTab = document.getElementById('tsec-dados').style.display === 'none' ? 'report' : 'data';
+      loadTable(activeTab);
+    }
+    if (name === 'dash') initDashboard();
+    if (name === 'etl') loadEtlLogs();
+  }
+
+  function toggleTheme() {
+    const html = document.documentElement;
+    html.setAttribute('data-theme', html.getAttribute('data-theme') === 'dark' ? '' : 'dark');
+  }
+
+  let toastTimer;
+  function showToast(msg, type = 'success') {
+    const t = document.getElementById('toast');
+    t.textContent = msg;
+    t.className = `show ${type}`;
+    clearTimeout(toastTimer);
+    toastTimer = setTimeout(() => t.classList.remove('show'), 3500);
+  }
+
+  // ── FORM: OP_REPORT ──
+  function clearReportForm() {
+    ['f-file_name','f-source_code','f-report_url','f-publication_date','f-area_tematica','f-estado','f-palavras_chave','f-resumo','f-batch-json']
+      .forEach(id => { const el = document.getElementById(id); if (el) el.value = ''; });
+    const fi = document.getElementById('f-up-file');
+    if (fi) fi.value = '';
+  }
+
+  async function submitReport() {
+    const file_name        = document.getElementById('f-file_name').value.trim();
+    const source_code      = document.getElementById('f-source_code').value.trim();
+    const report_url       = document.getElementById('f-report_url').value.trim();
+    const publication_date = document.getElementById('f-publication_date').value;
+    const area_tematica    = document.getElementById('f-area_tematica').value.trim();
+    const estado           = document.getElementById('f-estado').value.trim();
+    const palavras_chave   = document.getElementById('f-palavras_chave').value.trim();
+    const resumo           = document.getElementById('f-resumo').value.trim();
+
+    if (!file_name || !source_code || !report_url || !publication_date) {
+      showToast('Preenche todos os campos obrigatórios.', 'error'); return;
+    }
+    const btn = document.getElementById('btn-report-submit');
+    btn.disabled = true; btn.textContent = 'A inserir...';
+    try {
+      const res = await fetch(ENDPOINT_REPORT, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ file_name, source_code, report_url, publication_date, area_tematica, estado, palavras_chave, resumo })
+      });
+      if (!res.ok) throw new Error((await res.text()) || `HTTP ${res.status}`);
+      showToast('Relatório inserido com sucesso.');
+      clearReportForm();
+      document.getElementById('d-report_id').innerHTML = '<option value="">— Clica para ver IDs disponíveis —</option>';
+    } catch (e) { showToast(`Erro: ${e.message}`, 'error'); }
+    finally { btn.disabled = false; btn.textContent = 'Adicionar Relatório'; }
+  }
+
+  // ── FORM: OP_DATA ──
+  async function loadReportDropdown() {
+    const sel = document.getElementById('d-report_id');
+    if (sel.options.length > 1) return;
+    try {
+      const res = await fetch(ENDPOINT_REPORT);
+      if (!res.ok) return;
+      const reports = await res.json();
+      sel.innerHTML = '<option value="">— Escolhe um report_id —</option>';
+      reports.forEach(r => {
+        sel.innerHTML += `<option value="${r.report_id}">ID ${r.report_id} — ${r.source_code} (${r.file_name})</option>`;
+      });
+    } catch (e) { console.error('Erro a carregar IDs:', e); }
+  }
+
+  function clearDataForm() {
+    ['d-report_id','d-file_name','d-file_url','d-extract_function','d-file_type']
+      .forEach(id => document.getElementById(id).value = '');
+  }
+
+  async function submitOpData() {
+    const report_id        = document.getElementById('d-report_id').value;
+    const file_name        = document.getElementById('d-file_name').value.trim();
+    const file_url         = document.getElementById('d-file_url').value.trim();
+    const extract_function = document.getElementById('d-extract_function').value.trim();
+    const file_type        = document.getElementById('d-file_type').value.trim();
+
+    if (!report_id || !file_name || !file_url) {
+      showToast('Os campos report_id, file_name e file_url são obrigatórios.', 'error'); return;
+    }
+
+    const btn = document.getElementById('btn-add-data');
+    btn.disabled = true; btn.textContent = 'A inserir...';
+    try {
+      const res = await fetch(ENDPOINT_OP_DATA, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ report_id: parseInt(report_id), file_name, file_url, extract_function, file_type })
+      });
+      if (!res.ok) {
+        const err = await res.json().catch(() => ({ detail: `HTTP ${res.status}` }));
+        throw new Error(err.detail || `HTTP ${res.status}`);
+      }
+      showToast('Dados inseridos com sucesso.');
+      clearDataForm();
+    } catch (e) { showToast(e.message, 'error'); }
+    finally { btn.disabled = false; btn.textContent = 'Adicionar Ficheiro'; }
+  }
+
+  // ── TABELAS ──
+  async function loadTable(type) {
+    const endpoint = type === 'report' ? ENDPOINT_REPORT : ENDPOINT_OP_DATA;
+    const colSpan  = type === 'report' ? 5 : 7;
+    const tbody    = document.getElementById(`table-body-${type}`);
+
+    tbody.innerHTML = `<tr><td colspan="${colSpan}"><div class="state-box"><div class="spinner"></div><p>A carregar...</p></div></td></tr>`;
+
+    try {
+      const res = await fetch(endpoint);
+      if (!res.ok) throw new Error(`HTTP ${res.status}`);
+      allRows[type] = await res.json();
+      if (type === 'data') populateReportIdDropdown();
+      renderTable(type);
+    } catch (e) {
+      tbody.innerHTML = `<tr><td colspan="${colSpan}"><div class="state-box"><p>Erro ao carregar: ${escHtml(e.message)}</p></div></td></tr>`;
+    }
+  }
+
+  function populateReportIdDropdown() {
+    const sel = document.getElementById('search-input-data');
+    const current = sel.value;
+    const ids = [...new Set(allRows['data'].map(r => r.report_id))].sort((a, b) => a - b);
+    sel.innerHTML = '<option value="">\u2014 Todos os report_id \u2014</option>';
+    ids.forEach(id => {
+      const row = allRows['data'].find(r => r.report_id === id);
+      const label = row && row.source_code ? `ID ${id} \u2014 ${row.source_code}` : `ID ${id}`;
+      sel.innerHTML += `<option value="${id}" ${String(current) === String(id) ? 'selected' : ''}>${label}</option>`;
+    });
+  }
+
+  function renderTable(type) {
+    const rows  = allRows[type];
+    const tbody = document.getElementById(`table-body-${type}`);
+    const count = document.getElementById(`record-count-${type}`);
+    const q     = document.getElementById(`search-input-${type}`).value;
+
+    let filtered;
+    if (type === 'data') {
+      const activeId = selectedReportId !== null ? selectedReportId : (q ? parseInt(q) : null);
+      filtered = activeId !== null ? rows.filter(r => r.report_id === activeId) : rows;
+    } else {
+      filtered = q
+        ? rows.filter(r => Object.values(r).some(v => String(v ?? '').toLowerCase().includes(q.toLowerCase())))
+        : rows;
+    }
+
+    count.innerHTML = `<span>${filtered.length}</span> registos`;
+
+    if (!filtered.length) {
+      const colSpan = type === 'report' ? 9 : 7;
+      tbody.innerHTML = `<tr><td colspan="${colSpan}"><div class="state-box"><p>Nenhum registo encontrado.</p></div></td></tr>`;
+      return;
+    }
+
+    if (type === 'report') {
+      tbody.innerHTML = filtered.map(r => {
+        const date = r.publication_date ? new Date(r.publication_date).toLocaleString('pt-PT') : '—';
+        const url  = r.report_url
+          ? `<a href="${escHtml(r.report_url)}" target="_blank">${escHtml(truncate(r.report_url, 45))}</a>`
+          : '—';
+        return `<tr onclick="selectReportRow(${r.report_id}, this)">
+          <td class="id-cell td-narrow">${escHtml(String(r.report_id))}</td>
+          <td class="td-wide">${escHtml(r.file_name)}</td>
+          <td><span class="badge">${escHtml(r.source_code)}</span></td>
+          <td class="url-cell td-wide">${url}</td>
+          <td>${date}</td>
+          <td>${escHtml(r.area_tematica || '—')}</td>
+          <td>${escHtml(r.estado || '—')}</td>
+          <td class="td-wide" title="${escHtml(r.palavras_chave || '')}">${escHtml(truncate(r.palavras_chave, 40) || '—')}</td>
+          <td class="td-wide" title="${escHtml(r.resumo || '')}">${escHtml(truncate(r.resumo, 60) || '—')}</td>
+        </tr>`;
+      }).join('');
+    } else {
+      tbody.innerHTML = filtered.map(r => {
+        const url = r.file_url
+          ? `<a href="${escHtml(r.file_url)}" target="_blank">${escHtml(truncate(r.file_url, 40))}</a>`
+          : '—';
+        return `<tr>
+          <td class="id-cell">${escHtml(String(r.file_id))}</td>
+          <td class="id-cell">${escHtml(String(r.report_id))}</td>
+          <td><span class="badge">${escHtml(r.source_code || '—')}</span></td>
+          <td>${escHtml(r.file_name)}</td>
+          <td class="url-cell">${url}</td>
+          <td>${escHtml(r.extract_function || '—')}</td>
+          <td>${escHtml(r.file_type || '—')}</td>
+        </tr>`;
+      }).join('');
+    }
+  }
+
+  function filterTable(type) {
+    if (type === 'data') {
+      document.querySelectorAll('#table-body-report tr.selected').forEach(tr => tr.classList.remove('selected'));
+      selectedReportId = null;
+    }
+    renderTable(type);
+  }
+
+  function selectReportRow(reportId, trEl) {
+    const isSelected = trEl.classList.contains('selected');
+    document.querySelectorAll('#table-body-report tr.selected').forEach(tr => tr.classList.remove('selected'));
+
+    if (isSelected) {
+      selectedReportId = null;
+      document.getElementById('search-input-data').value = '';
+    } else {
+      trEl.classList.add('selected');
+      selectedReportId = reportId;
+      const sel = document.getElementById('search-input-data');
+      sel.value = String(reportId);
+      document.getElementById('table-body-data').closest('.table-wrapper').scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+    }
+    renderTable('data');
+  }
+
+  // ── CHAT ──
+  function autoResize(el) {
+    el.style.height = 'auto';
+    el.style.height = Math.min(el.scrollHeight, 120) + 'px';
+  }
+
+  function handleChatKey(e) {
+    if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); sendMessage(); }
+  }
+
+  function clearChat() {
+    document.getElementById('chat-messages').innerHTML = `
+      <div class="chat-welcome" id="chat-welcome">
+        <div class="chat-welcome-line"></div>
+        <p>Faz uma pergunta sobre os documentos indexados.<br/>O modelo irá pesquisar nos embeddings e responder.</p>
+        <div class="chat-welcome-line"></div>
+      </div>`;
+  }
+
+  function appendMessage(role, content) {
+    const welcome = document.getElementById('chat-welcome');
+    if (welcome) welcome.remove();
+    const box = document.getElementById('chat-messages');
+    const div = document.createElement('div');
+    div.className = `msg ${role}`;
+    const label = document.createElement('div');
+    label.className = 'msg-label';
+    label.textContent = role === 'user' ? 'Eu' : 'Assistente';
+    const bubble = document.createElement('div');
+    bubble.className = 'msg-bubble';
+    bubble.textContent = content;
+    div.appendChild(label);
+    div.appendChild(bubble);
+    box.appendChild(div);
+    box.scrollTop = box.scrollHeight;
+  }
+
+  function showTyping() {
+    const welcome = document.getElementById('chat-welcome');
+    if (welcome) welcome.remove();
+    const box = document.getElementById('chat-messages');
+    const div = document.createElement('div');
+    div.className = 'msg assistant';
+    div.id = 'typing-indicator';
+    const label = document.createElement('div');
+    label.className = 'msg-label';
+    label.textContent = 'Assistente';
+    const bubble = document.createElement('div');
+    bubble.className = 'typing-bubble';
+    bubble.innerHTML = '<span></span><span></span><span></span>';
+    div.appendChild(label);
+    div.appendChild(bubble);
+    box.appendChild(div);
+    box.scrollTop = box.scrollHeight;
+  }
+
+  function removeTyping() {
+    const el = document.getElementById('typing-indicator');
+    if (el) el.remove();
+  }
+
+  async function sendMessage() {
+    const input = document.getElementById('chat-input');
+    const question = input.value.trim();
+    if (!question) return;
+
+    const sendBtn = document.getElementById('btn-send');
+    sendBtn.disabled = true;
+    input.value = '';
+    input.style.height = 'auto';
+
+    appendMessage('user', question);
+    showTyping();
+
+    try {
+      const res = await fetch(ENDPOINT_CHAT, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ question })
+      });
+      removeTyping();
+      if (!res.ok) {
+        const err = await res.json().catch(() => ({ detail: `HTTP ${res.status}` }));
+        throw new Error(err.detail || `HTTP ${res.status}`);
+      }
+      const data = await res.json();
+      appendMessage('assistant', data.answer ?? 'Sem resposta.');
+    } catch (e) {
+      removeTyping();
+      appendMessage('assistant', `Erro: ${e.message}`);
+    } finally {
+      sendBtn.disabled = false;
+      input.focus();
+    }
+  }
+
+  // ── DASHBOARD ──
+  let allCountries = []; // cache para o filtro de países
+
+  async function initDashboard() {
+    const selIndicator = document.getElementById('dash-indicator');
+    const selYear      = document.getElementById('dash-year');
+
+    if (selIndicator.options.length > 1) return;
+
+    try {
+      const res = await fetch(ENDPOINT_DASH_FILTERS);
+      if (!res.ok) throw new Error(`HTTP ${res.status}`);
+      const { indicators } = await res.json();
+
+      selIndicator.innerHTML = '<option value="">— Seleciona um indicador —</option>';
+      indicators.forEach(ind => {
+        // sanitize: remove newlines from display and value
+        const clean = ind.replace(/[\r\n]+/g, ' ').trim();
+        const opt = document.createElement('option');
+        opt.value = clean;
+        opt.textContent = clean;
+        selIndicator.appendChild(opt);
+      });
+
+      selYear.innerHTML = '<option value="">— Primeiro seleciona um indicador —</option>';
+      selYear.disabled = true;
+
+      // Preencher o selector de indicador do gráfico temporal
+      const tsInd = document.getElementById('ts-indicator');
+      tsInd.innerHTML = '<option value="">— Seleciona um indicador —</option>';
+      indicators.forEach(ind => {
+        const clean = ind.replace(/[\r\n]+/g, ' ').trim();
+        const opt = document.createElement('option');
+        opt.value = clean;
+        opt.textContent = clean;
+        tsInd.appendChild(opt);
+      });
+
+      // Preencher o selector de indicador do ranking
+      const rankInd = document.getElementById('rank-indicator');
+      rankInd.innerHTML = '<option value="">— Seleciona um indicador —</option>';
+      indicators.forEach(ind => {
+        const clean = ind.replace(/[\r\n]+/g, ' ').trim();
+        const opt = document.createElement('option');
+        opt.value = clean;
+        opt.textContent = clean;
+        rankInd.appendChild(opt);
+      });
+
+    } catch (e) {
+      selIndicator.innerHTML = '<option value="">Erro ao carregar</option>';
+      document.getElementById('ts-indicator').innerHTML = '<option value="">Erro ao carregar</option>';
+      document.getElementById('rank-indicator').innerHTML = '<option value="">Erro ao carregar</option>';
+      showToast(`Erro ao carregar filtros: ${e.message}`, 'error');
+    }
+
+    // Atualizar anos quando o indicador muda (mapa)
+    selIndicator.addEventListener('change', async function () {
+      const indicator = this.value;
+      selYear.innerHTML = '<option value="">A carregar anos...</option>';
+      selYear.disabled = true;
+
+      if (!indicator) {
+        selYear.innerHTML = '<option value="">— Primeiro seleciona um indicador —</option>';
+        return;
+      }
+
+      try {
+        const res = await fetch(`${ENDPOINT_DASH_FILTERS}?indicator_name=${encodeURIComponent(indicator)}`);
+        if (!res.ok) throw new Error(`HTTP ${res.status}`);
+        const { years } = await res.json();
+
+        selYear.innerHTML = '<option value="">— Seleciona um ano —</option>';
+        years.forEach(y => {
+          selYear.innerHTML += `<option value="${y}">${y}</option>`;
+        });
+        if (years.length === 1) selYear.value = years[0];
+
+      } catch (e) {
+        selYear.innerHTML = '<option value="">Erro ao carregar</option>';
+        showToast(`Erro ao carregar anos: ${e.message}`, 'error');
+      } finally {
+        selYear.disabled = false;
+      }
+    });
+
+    // Carregar países quando o indicador do timeseries muda
+    document.getElementById('ts-indicator').addEventListener('change', async function () {
+      const indicator = this.value;
+      const listEl = document.getElementById('ts-country-list');
+      listEl.innerHTML = '<label style="color:var(--text-muted);cursor:default;">A carregar países...</label>';
+      allCountries = [];
+      document.getElementById('ts-country-search').value = '';
+
+      if (!indicator) {
+        listEl.innerHTML = '<label style="color:var(--text-muted);cursor:default;">Seleciona primeiro um indicador.</label>';
+        return;
+      }
+
+      try {
+        // Buscar o ano mais recente para obter lista de países
+        const resF = await fetch(`${ENDPOINT_DASH_FILTERS}?indicator_name=${encodeURIComponent(indicator)}`);
+        if (!resF.ok) throw new Error(`HTTP ${resF.status}`);
+        const { years } = await resF.json();
+        if (!years.length) { listEl.innerHTML = '<label style="color:var(--text-muted);cursor:default;">Sem dados.</label>'; return; }
+
+        const resDash = await fetch(`${ENDPOINT_DASHBOARD}?indicator_name=${encodeURIComponent(indicator)}&year=${years[0]}`);
+        if (!resDash.ok) throw new Error(`HTTP ${resDash.status}`);
+        const data = await resDash.json();
+        allCountries = data.map(d => d.location_name).sort();
+        renderCountryList(allCountries);
+      } catch (e) {
+        listEl.innerHTML = '<label style="color:var(--text-muted);cursor:default;">Erro ao carregar países.</label>';
+        showToast(`Erro ao carregar países: ${e.message}`, 'error');
+      }
+    });
+
+    // Carregar anos quando o indicador do ranking muda
+    document.getElementById('rank-indicator').addEventListener('change', async function () {
+      const indicator = this.value;
+      const selRankYear = document.getElementById('rank-year');
+      selRankYear.innerHTML = '<option value="">A carregar anos...</option>';
+      selRankYear.disabled = true;
+
+      if (!indicator) {
+        selRankYear.innerHTML = '<option value="">— Primeiro seleciona um indicador —</option>';
+        return;
+      }
+
+      try {
+        const res = await fetch(`${ENDPOINT_DASH_FILTERS}?indicator_name=${encodeURIComponent(indicator)}`);
+        if (!res.ok) throw new Error(`HTTP ${res.status}`);
+        const { years } = await res.json();
+        selRankYear.innerHTML = '<option value="">— Seleciona um ano —</option>';
+        years.forEach(y => { selRankYear.innerHTML += `<option value="${y}">${y}</option>`; });
+        if (years.length === 1) selRankYear.value = years[0];
+      } catch (e) {
+        selRankYear.innerHTML = '<option value="">Erro ao carregar</option>';
+        showToast(`Erro ao carregar anos: ${e.message}`, 'error');
+      } finally {
+        selRankYear.disabled = false;
+      }
+    });
+  }
+
+  async function applyRanking() {
+    const indicator = document.getElementById('rank-indicator').value;
+    const year      = document.getElementById('rank-year').value;
+
+    if (!indicator || !year) { showToast('Seleciona um indicador e um ano.', 'error'); return; }
+
+    const btn = document.getElementById('btn-apply-rank');
+    btn.disabled = true; btn.textContent = 'A carregar...';
+
+    try {
+      const res = await fetch(`${ENDPOINT_DASHBOARD}?indicator_name=${encodeURIComponent(indicator)}&year=${year}`);
+      if (!res.ok) throw new Error(`HTTP ${res.status}`);
+      const data = await res.json();
+
+      document.getElementById('rank-chart-title').textContent = `${indicator} — ${year}`;
+      document.getElementById('rank-record-count').textContent = `${data.length} países`;
+
+      if (!data.length) {
+        document.getElementById('rank-plotly').innerHTML = '<div class="dash-empty">Sem dados para esta combinação.</div>';
+        return;
+      }
+
+      // Ordenar descendentemente
+      const sorted = [...data].filter(d => d.value != null).sort((a, b) => b.value - a.value);
+
+      const isDark = document.documentElement.getAttribute('data-theme') === 'dark';
+      const gridColor = isDark ? 'rgba(255,255,255,0.07)' : 'rgba(0,0,0,0.07)';
+      const textColor = isDark ? '#a8a698' : '#5a5950';
+      const barColor  = isDark ? '#7a9fd4' : '#2851a3';
+
+      const trace = {
+        type: 'bar',
+        orientation: 'h',
+        x: sorted.map(d => d.value),
+        y: sorted.map(d => d.location_name),
+        marker: { color: barColor, opacity: 0.85 },
+        hovertemplate: '<b>%{y}</b><br>%{x:.2f}<extra></extra>',
+      };
+
+      // Altura dinâmica: 26px por barra, mínimo 460px
+      const chartHeight = Math.max(460, sorted.length * 26);
+
+      const layout = {
+        height: chartHeight,
+        margin: { t: 20, b: 50, l: 160, r: 30 },
+        paper_bgcolor: 'rgba(0,0,0,0)',
+        plot_bgcolor: 'rgba(0,0,0,0)',
+        font: { family: "'DM Mono', monospace", size: 11, color: textColor },
+        xaxis: {
+          title: { text: indicator.length > 40 ? indicator.slice(0, 40) + '…' : indicator, font: { size: 10 } },
+          gridcolor: gridColor,
+          linecolor: gridColor,
+        },
+        yaxis: {
+          autorange: 'reversed',
+          tickfont: { size: 10 },
+          gridcolor: gridColor,
+          linecolor: gridColor,
+        },
+        bargap: 0.25,
+      };
+
+      document.getElementById('rank-plotly').style.minHeight = chartHeight + 'px';
+      Plotly.newPlot('rank-plotly', [trace], layout, { responsive: true, displayModeBar: false });
+
+    } catch (e) {
+      showToast(`Erro: ${e.message}`, 'error');
+    } finally {
+      btn.disabled = false; btn.textContent = 'Aplicar';
+    }
+  }
+
+  function renderCountryList(countries) {
+    const listEl = document.getElementById('ts-country-list');
+    if (!countries.length) {
+      listEl.innerHTML = '<label style="color:var(--text-muted);cursor:default;">Sem países disponíveis.</label>';
+      return;
+    }
+    listEl.innerHTML = countries.map(c =>
+      `<label><input type="checkbox" value="${escHtml(c)}"/> ${escHtml(c)}</label>`
+    ).join('');
+  }
+
+  function deselectAllCountries() {
+    document.querySelectorAll('#ts-country-list input[type="checkbox"]').forEach(cb => cb.checked = false);
+  }
+
+  function filterCountryList() {
+    const q = document.getElementById('ts-country-search').value.toLowerCase();
+    const filtered = q ? allCountries.filter(c => c.toLowerCase().includes(q)) : allCountries;
+    renderCountryList(filtered);
+  }
+
+  async function applyTimeseries() {
+    const indicator = document.getElementById('ts-indicator').value;
+    const checked = [...document.querySelectorAll('#ts-country-list input[type="checkbox"]:checked')].map(c => c.value);
+
+    if (!indicator) { showToast('Seleciona um indicador.', 'error'); return; }
+    if (!checked.length) { showToast('Seleciona pelo menos um país.', 'error'); return; }
+
+    const btn = document.getElementById('btn-apply-ts');
+    btn.disabled = true; btn.textContent = 'A carregar...';
+
+    try {
+      const params = new URLSearchParams({ indicator_name: indicator, countries: checked.join(',') });
+      const res = await fetch(`${ENDPOINT_TIMESERIES}?${params}`);
+      if (!res.ok) throw new Error(`HTTP ${res.status}`);
+      const data = await res.json();
+
+      document.getElementById('ts-chart-title').textContent = indicator;
+      document.getElementById('ts-record-count').textContent = `${checked.length} país(es)`;
+
+      if (!data.length) {
+        document.getElementById('ts-plotly').innerHTML = '<div class="dash-empty">Sem dados para esta seleção.</div>';
+        return;
+      }
+
+      // Agrupar por país
+      const byCountry = {};
+      data.forEach(row => {
+        if (!byCountry[row.location_name]) byCountry[row.location_name] = { x: [], y: [] };
+        byCountry[row.location_name].x.push(row.year);
+        byCountry[row.location_name].y.push(row.value);
+      });
+
+      const isDark = document.documentElement.getAttribute('data-theme') === 'dark';
+      const gridColor  = isDark ? 'rgba(255,255,255,0.07)' : 'rgba(0,0,0,0.07)';
+      const textColor  = isDark ? '#a8a698' : '#5a5950';
+      const paperBg    = 'rgba(0,0,0,0)';
+
+      const traces = Object.entries(byCountry).map(([country, vals]) => ({
+        type: 'scatter',
+        mode: 'lines+markers',
+        name: country,
+        x: vals.x,
+        y: vals.y,
+        line: { width: 2 },
+        marker: { size: 5 }
+      }));
+
+      const layout = {
+        margin: { t: 20, b: 50, l: 55, r: 20 },
+        paper_bgcolor: paperBg,
+        plot_bgcolor: paperBg,
+        font: { family: "'DM Mono', monospace", size: 11, color: textColor },
+        xaxis: {
+          title: { text: 'Ano', font: { size: 10 } },
+          gridcolor: gridColor,
+          linecolor: gridColor,
+          tickformat: 'd',
+        },
+        yaxis: {
+          title: { text: indicator.length > 40 ? indicator.slice(0, 40) + '…' : indicator, font: { size: 10 } },
+          gridcolor: gridColor,
+          linecolor: gridColor,
+        },
+        legend: {
+          orientation: 'h',
+          y: -0.18,
+          font: { size: 10 }
+        },
+        hovermode: 'x unified',
+      };
+
+      Plotly.newPlot('ts-plotly', traces, layout, { responsive: true, displayModeBar: false });
+
+    } catch (e) {
+      showToast(`Erro: ${e.message}`, 'error');
+    } finally {
+      btn.disabled = false; btn.textContent = 'Aplicar';
+    }
+  }
+
+  async function applyDashboard() {
+    const indicator = document.getElementById('dash-indicator').value;
+    const year      = document.getElementById('dash-year').value;
+
+    if (!indicator || !year) {
+      showToast('Seleciona um indicador e um ano.', 'error'); return;
+    }
+
+    const btn = document.getElementById('btn-apply-dash');
+    btn.disabled = true; btn.textContent = 'A carregar...';
+
+    try {
+      const res = await fetch(`${ENDPOINT_DASHBOARD}?indicator_name=${encodeURIComponent(indicator)}&year=${year}`);
+      if (!res.ok) throw new Error(`HTTP ${res.status}`);
+      const data = await res.json();
+
+      document.getElementById('dash-map-title').textContent = `${indicator} — ${year}`;
+      document.getElementById('dash-record-count').textContent = `${data.length} países`;
+
+      if (!data.length) {
+        document.getElementById('dash-plotly').innerHTML = '<div class="dash-empty">Sem dados para esta combinação.</div>';
+        document.getElementById('dash-stats').style.display = 'none';
+        return;
+      }
+
+      // Estatísticas
+      const values = data.map(d => d.value).filter(v => v != null);
+      document.getElementById('stat-count').textContent = data.length;
+      document.getElementById('stat-min').textContent   = Math.min(...values).toFixed(2);
+      document.getElementById('stat-max').textContent   = Math.max(...values).toFixed(2);
+      document.getElementById('stat-avg').textContent   = (values.reduce((a, b) => a + b, 0) / values.length).toFixed(2);
+      document.getElementById('dash-stats').style.display = 'block';
+
+      // Mapa Plotly
+      const trace = {
+        type: 'choropleth',
+        locationmode: 'country names',
+        locations: data.map(d => d.location_name),
+        z: data.map(d => d.value),
+        colorscale: 'Blues',
+        colorbar: { thickness: 12, len: 0.6 }
+      };
+
+      const layout = {
+        geo: {
+          showframe: false,
+          showcoastlines: true,
+          projection: { type: 'natural earth' }
+        },
+        margin: { t: 0, b: 0, l: 0, r: 0 },
+        paper_bgcolor: 'rgba(0,0,0,0)',
+        plot_bgcolor:  'rgba(0,0,0,0)',
+      };
+
+      Plotly.newPlot('dash-plotly', [trace], layout, { responsive: true, displayModeBar: false });
+
+    } catch (e) {
+      showToast(`Erro: ${e.message}`, 'error');
+    } finally {
+      btn.disabled = false; btn.textContent = 'Aplicar';
+    }
+  }
+
+  // ── ETL ──
+  async function loadEtlLogs() {
+    const tbody = document.getElementById('table-body-etl');
+    const theadRow = document.getElementById('etl-thead-row');
+    const countEl = document.getElementById('record-count-etl');
+    tbody.innerHTML = `<tr><td colspan="10"><div class="state-box"><div class="spinner"></div><p>A carregar dados...</p></div></td></tr>`;
+
+    try {
+      const res = await fetch(ENDPOINT_ETL_LOGS);
+      if (!res.ok) throw new Error(`HTTP ${res.status}`);
+      const rows = await res.json();
+      allRows.etl = rows;
+
+      if (!rows.length) {
+        theadRow.innerHTML = '<th>—</th>';
+        tbody.innerHTML = `<tr><td colspan="1"><div class="state-box"><p>Sem registos em etl_logs.</p></div></td></tr>`;
+        countEl.innerHTML = '';
+        return;
+      }
+
+      // Build headers dynamically from first row keys
+      const cols = Object.keys(rows[0]);
+      theadRow.innerHTML = cols.map(c => `<th>${escHtml(c)}</th>`).join('');
+
+      renderEtlTable(rows, cols);
+      countEl.innerHTML = `<span>${rows.length}</span> registos`;
+    } catch (e) {
+      tbody.innerHTML = `<tr><td colspan="10"><div class="state-box"><p>Erro: ${escHtml(e.message)}</p></div></td></tr>`;
+      showToast(`Erro ao carregar etl_logs: ${e.message}`, 'error');
+    }
+  }
+
+  function renderEtlTable(rows, cols) {
+    const tbody = document.getElementById('table-body-etl');
+    if (!cols) {
+      cols = allRows.etl.length ? Object.keys(allRows.etl[0]) : [];
+    }
+    if (!rows.length) {
+      tbody.innerHTML = `<tr><td colspan="${cols.length || 1}"><div class="state-box"><p>Sem resultados.</p></div></td></tr>`;
+      return;
+    }
+    tbody.innerHTML = rows.map(row =>
+      `<tr>${cols.map(c => {
+        const val = row[c];
+        const display = val === null || val === undefined ? '<span style="color:var(--text-muted)">null</span>' : escHtml(truncate(String(val), 60));
+        return `<td class="td-wide">${display}</td>`;
+      }).join('')}</tr>`
+    ).join('');
+  }
+
+  function filterEtlTable() {
+    const q = document.getElementById('search-input-etl').value.toLowerCase();
+    const cols = allRows.etl.length ? Object.keys(allRows.etl[0]) : [];
+    const filtered = q
+      ? allRows.etl.filter(row => cols.some(c => String(row[c] ?? '').toLowerCase().includes(q)))
+      : allRows.etl;
+    document.getElementById('record-count-etl').innerHTML = `<span>${filtered.length}</span> registos`;
+    renderEtlTable(filtered, cols);
+  }
+
+  async function ingestData(tipo = 'dados') {
+    const btnId  = tipo === 'pdfs' ? 'btn-ingest-pdfs' : 'btn-ingest';
+    const btn    = document.getElementById(btnId);
+    const status = document.getElementById('etl-status');
+    const logWrap = document.getElementById('etl-log-wrap');
+    const log    = document.getElementById('etl-log');
+
+    document.getElementById('btn-ingest').disabled = true;
+    document.getElementById('btn-ingest-pdfs').disabled = true;
+    btn.textContent = 'A correr...';
+    status.textContent = `Pipeline ${tipo} em execução...`;
+    status.style.color = '';
+    log.textContent = '';
+    logWrap.style.display = 'block';
+    log.scrollTop = 0;
+
+    try {
+      const endpoint = tipo === 'pdfs' ? `${API_BASE}/etl/run/pdfs` : `${API_BASE}/etl/run/dados`;
+      const res = await fetch(endpoint, { method: 'POST' });
+
+      if (!res.ok) {
+        const err = await res.json().catch(() => ({ detail: `HTTP ${res.status}` }));
+        throw new Error(err.detail || `HTTP ${res.status}`);
+      }
+
+      const reader = res.body.getReader();
+      const decoder = new TextDecoder();
+
+      while (true) {
+        const { done, value } = await reader.read();
+        if (done) break;
+        log.textContent += decoder.decode(value, { stream: true });
+        log.scrollTop = log.scrollHeight;
+      }
+
+      const success = log.textContent.includes('✓');
+      status.textContent = success ? '✓ Concluído' : '✗ Erro';
+      status.style.color = success ? 'var(--green)' : 'var(--red)';
+      showToast(success ? 'Pipeline concluído.' : 'Pipeline terminou com erros.', success ? 'success' : 'error');
+
+      if (success) loadEtlLogs();
+
+    } catch (e) {
+      log.textContent += `\n✗ Erro: ${e.message}`;
+      status.textContent = '✗ Erro';
+      status.style.color = 'var(--red)';
+      showToast(`Erro: ${e.message}`, 'error');
+    } finally {
+      document.getElementById('btn-ingest').disabled = false;
+      document.getElementById('btn-ingest-pdfs').disabled = false;
+      btn.textContent = tipo === 'pdfs' ? 'Pipeline PDFs' : 'Pipeline Dados';
+    }
+  }
+
+  // ── PIPELINE RÁPIDO (dashboard / chat) ──
+  async function runPipeline(tipo, btnId) {
+    const btn = document.getElementById(btnId);
+    const originalText = btn.textContent;
+    btn.disabled = true;
+    btn.textContent = 'A correr...';
+
+    try {
+      const endpoint = tipo === 'pdfs' ? `${API_BASE}/etl/run/pdfs` : `${API_BASE}/etl/run/dados`;
+      const res = await fetch(endpoint, { method: 'POST' });
+
+      if (!res.ok) {
+        const err = await res.json().catch(() => ({ detail: `HTTP ${res.status}` }));
+        throw new Error(err.detail || `HTTP ${res.status}`);
+      }
+
+      const reader = res.body.getReader();
+      const decoder = new TextDecoder();
+      let output = '';
+      while (true) {
+        const { done, value } = await reader.read();
+        if (done) break;
+        output += decoder.decode(value, { stream: true });
+      }
+
+      const success = output.includes('✓');
+      btn.textContent = success ? '✓ Atualizado' : '✗ Erro';
+      btn.style.color = success ? 'var(--green)' : 'var(--red)';
+      showToast(success ? 'Pipeline concluído.' : 'Pipeline terminou com erros.', success ? 'success' : 'error');
+      setTimeout(() => { btn.textContent = originalText; btn.style.color = ''; btn.disabled = false; }, 3000);
+
+    } catch (e) {
+      btn.textContent = '✗ Erro';
+      btn.style.color = 'var(--red)';
+      showToast(`Erro: ${e.message}`, 'error');
+      setTimeout(() => { btn.textContent = originalText; btn.style.color = ''; btn.disabled = false; }, 3000);
+    }
+  }
+
+  // ── UTILS ──
+  function escHtml(str) {
+    return String(str ?? '').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+  }
+  function truncate(str, n) { return str && str.length > n ? str.slice(0, n) + '…' : str; }
+
+  // Data inicial no campo de publicação
+  const now = new Date();
+  now.setMinutes(now.getMinutes() - now.getTimezoneOffset());
+  document.getElementById('f-publication_date').value = now.toISOString().slice(0,10);
+
+  // ── TABS FONTE DO RELATÓRIO ──
+  function setReportSourceMode(mode) {
+    ['url','upload','batch'].forEach(m => {
+      document.getElementById(`rsrc-${m}`).style.display = m === mode ? '' : 'none';
+      document.getElementById(`rtab-${m}`).classList.toggle('active', m === mode);
+    });
+    const btn = document.getElementById('btn-report-submit');
+    btn.textContent = mode === 'batch' ? 'Importar Lote' : mode === 'upload' ? 'Carregar PDF' : 'Adicionar Relatório';
+  }
+
+  function submitReportAuto() {
+    const mode = document.getElementById('rsrc-upload').style.display !== 'none' ? 'upload'
+               : document.getElementById('rsrc-batch').style.display !== 'none' ? 'batch' : 'url';
+    if (mode === 'url') submitReport();
+    else if (mode === 'upload') submitReportUpload();
+    else submitBatchReports();
+  }
+
+  // ── TABS MODO DADOS ──
+  function setDataMode(mode) {
+    ['url','upload','batch'].forEach(m => {
+      document.getElementById(`dmode-${m}`).style.display = m === mode ? '' : 'none';
+      document.getElementById(`dtab-${m}`).classList.toggle('active', m === mode);
+    });
+  }
+
+  // ── DUPLICATE CHECK ──
+  const _dupTimers = {};
+  function scheduleDuplicateCheck(field, value, spanId) {
+    clearTimeout(_dupTimers[spanId]);
+    const span = document.getElementById(spanId);
+    span.textContent = '';
+    span.className = 'dup-warn';
+    if (!value || value.length < 3) return;
+    _dupTimers[spanId] = setTimeout(async () => {
+      try {
+        const res = await fetch(`${API_BASE}/check_duplicate?field=${field}&value=${encodeURIComponent(value)}`);
+        if (!res.ok) return;
+        const data = await res.json();
+        if (data.exists) {
+          span.textContent = `⚠ Já existe (report_id ${data.report_id})`;
+          span.className = 'dup-warn exists';
+        } else {
+          span.textContent = '✓ Disponível';
+          span.className = 'dup-warn ok';
+        }
+      } catch (e) { /* silencioso */ }
+    }, 500);
+  }
+
+  // ── SUBMIT: RELATÓRIO UPLOAD ──
+  async function submitReportUpload() {
+    const fileInput = document.getElementById('f-up-file');
+    const fname = document.getElementById('f-file_name').value.trim();
+    const source = document.getElementById('f-source_code').value.trim();
+    const pubDate = document.getElementById('f-publication_date').value;
+
+    if (!fileInput.files.length || !fname || !source || !pubDate) {
+      showToast('Preenche ficheiro, file_name, source_code e data.', 'error'); return;
+    }
+
+    const fd = new FormData();
+    fd.append('file', fileInput.files[0]);
+    fd.append('file_name', fname);
+    fd.append('source_code', source);
+    fd.append('publication_date', pubDate);
+    fd.append('area_tematica', document.getElementById('f-area_tematica').value);
+    fd.append('estado', document.getElementById('f-estado').value);
+    fd.append('palavras_chave', document.getElementById('f-palavras_chave').value);
+    fd.append('resumo', document.getElementById('f-resumo').value);
+
+    const btn = document.getElementById('btn-report-submit');
+    btn.disabled = true; btn.textContent = 'A carregar...';
+    try {
+      const res = await fetch(`${API_BASE}/op_report/upload`, { method: 'POST', body: fd });
+      if (!res.ok) throw new Error((await res.json()).detail || `HTTP ${res.status}`);
+      showToast('PDF carregado e relatório registado.');
+      clearReportForm();
+    } catch (e) { showToast(e.message, 'error'); }
+    finally { btn.disabled = false; btn.textContent = 'Carregar PDF'; }
+  }
+
+  // ── SUBMIT: BATCH RELATÓRIOS ──
+  function stripJsoncComments(text) {
+    return text.replace(/\/\/[^\n]*/g, '').replace(/\/\*[\s\S]*?\*\//g, '');
+  }
+
+  async function submitBatchReports() {
+    const raw = document.getElementById('f-batch-json').value.trim();
+    let payload;
+    try {
+      payload = JSON.parse(stripJsoncComments(raw));
+      if (!Array.isArray(payload)) throw new Error('O JSON deve ser um array.');
+    } catch (e) { showToast(`JSON inválido: ${e.message}`, 'error'); return; }
+
+    const btn = document.getElementById('btn-report-submit');
+    btn.disabled = true; btn.textContent = 'A importar...';
+    try {
+      const res = await fetch(`${API_BASE}/op_report/batch`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(payload),
+      });
+      if (!res.ok) throw new Error(`HTTP ${res.status}`);
+      const data = await res.json();
+      const div = document.getElementById('batch-result');
+      div.style.display = '';
+      if (data.errors.length === 0) {
+        div.style.background = 'var(--green-light)';
+        div.style.color = 'var(--green)';
+        div.style.border = '1px solid color-mix(in srgb, var(--green) 20%, transparent)';
+        div.textContent = `✓ ${data.inserted} relatórios inseridos com sucesso.`;
+        showToast(`${data.inserted} relatórios importados.`);
+      } else {
+        div.style.background = 'var(--amber-light)';
+        div.style.color = 'var(--amber)';
+        div.style.border = '1px solid color-mix(in srgb, var(--amber) 20%, transparent)';
+        div.textContent = `${data.inserted} inseridos, ${data.errors.length} erros:\n` +
+          data.errors.map(e => `  [${e.index}] ${e.file_name}: ${e.error}`).join('\n');
+        div.style.whiteSpace = 'pre';
+        showToast(`${data.inserted} inseridos, ${data.errors.length} erros.`, 'error');
+      }
+    } catch (e) { showToast(e.message, 'error'); }
+    finally { btn.disabled = false; btn.textContent = 'Importar Lote'; }
+  }
+
+  // ── DROPDOWNS ADICIONAIS ──
+  async function loadReportDropdown2() {
+    const sel = document.getElementById('d-up-rid');
+    if (sel.options.length > 1) return;
+    await _fillReportDropdown(sel);
+  }
+  async function loadReportDropdown3() {
+    const sel = document.getElementById('d-pairs-rid');
+    if (sel.options.length > 1) return;
+    await _fillReportDropdown(sel);
+  }
+  async function _fillReportDropdown(sel) {
+    try {
+      const res = await fetch(ENDPOINT_REPORT);
+      if (!res.ok) return;
+      const reports = await res.json();
+      sel.innerHTML = '<option value="">— Escolhe um report_id —</option>';
+      reports.forEach(r => {
+        sel.innerHTML += `<option value="${r.report_id}">ID ${r.report_id} — ${r.source_code} (${r.file_name})</option>`;
+      });
+    } catch (e) { console.error(e); }
+  }
+
+  // ── SUBMIT: DADOS UPLOAD ──
+  async function submitDataUpload() {
+    const fileInput = document.getElementById('d-up-file');
+    const reportId  = document.getElementById('d-up-rid').value;
+    if (!fileInput.files.length || !reportId) {
+      showToast('Seleciona um ficheiro e um report_id.', 'error'); return;
+    }
+    const fd = new FormData();
+    fd.append('file', fileInput.files[0]);
+    fd.append('report_id', reportId);
+    fd.append('extract_function', document.getElementById('d-up-fn').value.trim());
+    fd.append('file_type', document.getElementById('d-up-type').value);
+
+    const btn = document.getElementById('btn-add-upload-data');
+    btn.disabled = true; btn.textContent = 'A carregar...';
+    try {
+      const res = await fetch(`${API_BASE}/op_data/upload`, { method: 'POST', body: fd });
+      if (!res.ok) throw new Error((await res.json()).detail || `HTTP ${res.status}`);
+      showToast('Ficheiro carregado e registado.');
+      fileInput.value = '';
+      document.getElementById('d-up-fn').value = '';
+    } catch (e) { showToast(e.message, 'error'); }
+    finally { btn.disabled = false; btn.textContent = 'Carregar Ficheiro'; }
+  }
+
+  // ── SUBMIT: DADOS PARES ──
+  async function submitDataPairs() {
+    const fileInput = document.getElementById('d-pairs-file');
+    const reportId  = document.getElementById('d-pairs-rid').value;
+    const fns       = document.getElementById('d-pairs-fns').value.trim();
+    if (!fileInput.files.length || !reportId || !fns) {
+      showToast('Ficheiro, report_id e funções são obrigatórios.', 'error'); return;
+    }
+    const fd = new FormData();
+    fd.append('file', fileInput.files[0]);
+    fd.append('report_id', reportId);
+    fd.append('extract_functions', fns);
+    fd.append('file_type', document.getElementById('d-pairs-type').value);
+
+    const btn = document.getElementById('btn-add-pairs');
+    btn.disabled = true; btn.textContent = 'A criar...';
+    try {
+      const res = await fetch(`${API_BASE}/op_data/pairs`, { method: 'POST', body: fd });
+      if (!res.ok) throw new Error((await res.json()).detail || `HTTP ${res.status}`);
+      const data = await res.json();
+      showToast(data.message);
+      fileInput.value = '';
+      document.getElementById('d-pairs-fns').value = '';
+    } catch (e) { showToast(e.message, 'error'); }
+    finally { btn.disabled = false; btn.textContent = 'Criar Pares'; }
+  }
+
+  // ── SUBMIT: BATCH DADOS ──
+  async function submitBatchData() {
+    const raw = document.getElementById('d-batch-json').value.trim();
+    let payload;
+    try {
+      payload = JSON.parse(stripJsoncComments(raw));
+      if (!Array.isArray(payload)) throw new Error('O JSON deve ser um array.');
+    } catch (e) { showToast(`JSON inválido: ${e.message}`, 'error'); return; }
+
+    const btn = document.getElementById('btn-dbatch');
+    btn.disabled = true; btn.textContent = 'A importar...';
+    try {
+      const res = await fetch(`${API_BASE}/op_data/batch`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(payload),
+      });
+      if (!res.ok) throw new Error(`HTTP ${res.status}`);
+      const data = await res.json();
+      const div = document.getElementById('dbatch-result');
+      div.style.display = '';
+      if (data.errors.length === 0) {
+        div.style.background = 'var(--green-light)';
+        div.style.color = 'var(--green)';
+        div.style.border = '1px solid color-mix(in srgb, var(--green) 20%, transparent)';
+        div.textContent = `✓ ${data.inserted} ficheiros inseridos com sucesso.`;
+        showToast(`${data.inserted} ficheiros importados.`);
+      } else {
+        div.style.background = 'var(--amber-light)';
+        div.style.color = 'var(--amber)';
+        div.style.border = '1px solid color-mix(in srgb, var(--amber) 20%, transparent)';
+        div.textContent = `${data.inserted} inseridos, ${data.errors.length} erros:\n` +
+          data.errors.map(e => `  [${e.index}]: ${e.error}`).join('\n');
+        div.style.whiteSpace = 'pre';
+        showToast(`${data.inserted} inseridos, ${data.errors.length} erros.`, 'error');
+      }
+    } catch (e) { showToast(e.message, 'error'); }
+    finally { btn.disabled = false; btn.textContent = 'Importar Lote'; }
+  }
+
+</script>
+</body>
+</html>

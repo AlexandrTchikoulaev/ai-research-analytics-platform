@@ -1,0 +1,9 @@
+fastapi
+uvicorn[standard]
+psycopg2-binary
+langchain
+langchain-core
+langchain-community
+langchain-text-splitters
+pgvector
+pypdf

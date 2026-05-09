@@ -1,0 +1,70 @@
+version: "3.8"
+
+services:
+
+  # PostgreSQL com pgvector
+  projeto_uc:
+    image: ankane/pgvector:latest
+    container_name: projeto_uc
+    restart: unless-stopped
+    environment:
+      POSTGRES_DB: warehouse_db
+      POSTGRES_USER: projeto_utilizador
+      POSTGRES_PASSWORD: projeto
+    ports:
+      - "5433:5432"
+    volumes:
+      - projeto_data:/var/lib/postgresql/data
+      - ./init.sh:/docker-entrypoint-initdb.d/init.sh
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U projeto_utilizador -d warehouse_db"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    networks:
+      - projeto_network
+
+  # pgAdmin
+  projeto_pgadmin:
+    image: dpage/pgadmin4:8
+    container_name: projeto_pgadmin
+    restart: unless-stopped
+    environment:
+      PGADMIN_DEFAULT_EMAIL: admin_projeto@teste.com
+      PGADMIN_DEFAULT_PASSWORD: admin123
+    ports:
+      - "5051:80"
+    volumes:
+      - pgadmin_projeto_data:/var/lib/pgadmin
+    depends_on:
+      projeto_uc:
+        condition: service_healthy
+    networks:
+      - projeto_network
+
+  # MinIO (S3 local)
+  minio:
+    image: quay.io/minio/minio:latest
+    container_name: minio
+    restart: unless-stopped
+    ports:
+      - "9002:9000"
+      - "9003:9001"
+    environment:
+      MINIO_ROOT_USER: admin
+      MINIO_ROOT_PASSWORD: admin123
+    volumes:
+      - ./minio-data:/data
+    command: server /data --console-address ":9001"
+    networks:
+      - projeto_network
+
+# volumes persistentes
+volumes:
+  projeto_data:
+  pgadmin_projeto_data:
+
+# network única
+networks:
+  projeto_network:
+    driver: bridge

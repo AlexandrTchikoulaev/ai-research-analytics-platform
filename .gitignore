@@ -1,0 +1,19 @@
+__pycache__/
+*.pyc
+.env
+*.parquet
+*.pdf
+
+# Docker / MinIO
+docker/minio-data/
+
+# VS Code
+.vscode/
+
+# Logs / runtime
+*.log
+*.pid
+
+# Virtual environments
+venv/
+.venv/
