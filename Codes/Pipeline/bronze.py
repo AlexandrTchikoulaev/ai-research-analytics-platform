@@ -6,7 +6,7 @@ from datetime import datetime, timezone
 DB_PIPELINE = {
     "host": "localhost",
     "port": 5433,
-    "dbname": "pipeline_db",
+    "dbname": "gestao_db",
     "user": "projeto_utilizador",
     "password": "projeto",
 }
@@ -14,7 +14,7 @@ DB_PIPELINE = {
 DB_OPERATIONAL = {
     "host": "localhost",
     "port": 5433,
-    "dbname": "operational_db",
+    "dbname": "gestao_db",
     "user": "projeto_utilizador",
     "password": "projeto",
 }
@@ -126,13 +126,10 @@ def main():
                 Key=key,
                 Body=content,
                 Metadata={
-                    "file_id": str(file_id),
                     "report_id": str(report_id) if report_id is not None else "",
                     "extract_function": extract_function or "",
                     "file_type": file_type or "",
-                    "file_format": fmt,
                     "created_at": created_str,
-                    "source_url": file_url,
                 },
             )
             print(f"[OK]   file_id={file_id}  ({fmt})")

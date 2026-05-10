@@ -23,7 +23,7 @@ DB_WAREHOUSE = {
 DB_OPERATIONAL = {
     "host": "localhost",
     "port": 5433,
-    "dbname": "operational_db",
+    "dbname": "gestao_db",
     "user": "projeto_utilizador",
     "password": "projeto",
 }
@@ -31,7 +31,7 @@ DB_OPERATIONAL = {
 DB_PIPELINE = {
     "host": "localhost",
     "port": 5433,
-    "dbname": "pipeline_db",
+    "dbname": "gestao_db",
     "user": "projeto_utilizador",
     "password": "projeto",
 }
@@ -68,11 +68,11 @@ last_run = cur_pipe.fetchone()[0]
 if last_run is not None and last_run.tzinfo is None:
     last_run = last_run.replace(tzinfo=timezone.utc)
 
-def log_etl(file_name, step, status, error_message=None):
+def log_etl(step, status, error_message=None, file_id=None):
     cur_pipe.execute("""
-        INSERT INTO etl_logs_dados (file_name, step, status, error_message)
+        INSERT INTO etl_logs_dados (file_id, step, status, error_message)
         VALUES (%s, %s, %s, %s)
-    """, (file_name, step, status, error_message))
+    """, (str(file_id) if file_id is not None else None, step, status, error_message))
 
 # ===============================
 # HELPERS
@@ -107,7 +107,7 @@ def get_mapping():
                 metadata = get_object_metadata(key)
             except Exception as e:
                 print(f"Erro ao ler metadata de {key}: {e}")
-                log_etl(key, "load_mapping", "error", f"Erro metadata: {e}")
+                log_etl("load_mapping", "error", f"Erro metadata: {e}", file_id=base)
                 continue
 
             file_type  = metadata.get("file_type")
@@ -119,7 +119,7 @@ def get_mapping():
                 if report_id is None:
                     raise ValueError("report_id é None ou inválido")
             except (ValueError, TypeError) as e:
-                log_etl(key, "load_mapping", "error", f"Erro metadata: report_id inválido ({raw_report_id}) | {e}")
+                log_etl("load_mapping", "error", f"Erro metadata: report_id inválido ({raw_report_id}) | {e}", file_id=base)
                 continue
 
             try:
@@ -128,7 +128,7 @@ def get_mapping():
                     created_at_dt = created_at_dt.replace(tzinfo=timezone.utc)
             except Exception as e:
                 print(f"created_at inválido em {key}: {created_at}")
-                log_etl(key, "load_mapping", "error", f"created_at inválido: {e}")
+                log_etl("load_mapping", "error", f"created_at inválido: {e}", file_id=base)
                 continue
 
             if last_run is not None and created_at_dt <= last_run:
@@ -143,7 +143,10 @@ def get_mapping():
 # ===============================
 # LOAD DIMENSIONS
 # ===============================
-def load_dimensions(mapping):
+def load_dimensions(mapping, report_map):
+    cur_op.execute("SELECT report_id, source_code FROM op_report")
+    report_source_map = {r[0]: r[1] for r in cur_op.fetchall()}
+
     for nome_base, file_type in mapping.items():
         ficheiro = nome_base + ".parquet"
         print("Tentando ler ficheiro ", ficheiro)
@@ -151,29 +154,28 @@ def load_dimensions(mapping):
             df = read_parquet_from_s3(ficheiro)
         except Exception as e:
             print(f"Erro ao ler {ficheiro}: {e}")
-            log_etl(ficheiro, 'load', 'error', str(e))
+            log_etl('load', 'error', str(e), file_id=nome_base)
             continue
 
         if df.empty:
-            log_etl(ficheiro, 'load', 'error', "DataFrame vazio")
+            log_etl('load', 'error', "DataFrame vazio", file_id=nome_base)
             continue
 
-        if file_type == 'indicator':
-            query = """
-                INSERT INTO dim_indicator (indicator_code, indicator_name)
-                VALUES %s
-                ON CONFLICT DO NOTHING
-            """
-            dados = df[['code', 'name']].values.tolist()
-            psycopg2.extras.execute_values(cur_dw, query, dados, page_size=5000)
+        if file_type != 'indicator':
+            continue
 
-        elif file_type in ['countries', 'regions', 'groups']:
-            for code, name in df.itertuples(index=False):
-                cur_dw.execute("""
-                    INSERT INTO dim_location (location_code, location_name)
-                    VALUES (%s,%s)
-                    ON CONFLICT DO NOTHING
-                """, (code, name))
+        report_id = report_map.get(nome_base)
+        source_system = report_source_map.get(report_id)
+        if not source_system:
+            log_etl('load', 'error', f"source_system não encontrado para report_id {report_id}", file_id=nome_base)
+            continue
+
+        dados = [(source_system, row['code'], row['name']) for _, row in df.iterrows()]
+        psycopg2.extras.execute_values(cur_dw, """
+            INSERT INTO dim_indicator (source_system, indicator_code, indicator_name)
+            VALUES %s
+            ON CONFLICT DO NOTHING
+        """, dados, page_size=5000)
 
     conn_dw.commit()
     conn_pipe.commit()
@@ -184,11 +186,17 @@ def load_dimensions(mapping):
 # LOAD SOURCE + REPORTS (INCREMENTAL)
 # ===============================
 def load_source_and_reports():
-    cur_op.execute("""
-        SELECT report_id, source_code, report_url, publication_date
-        FROM op_report
-        WHERE created_at > %s;
-    """, (last_run,))
+    if last_run is not None:
+        cur_op.execute("""
+            SELECT report_id, source_code, report_url, publication_date
+            FROM op_report
+            WHERE created_at > %s;
+        """, (last_run,))
+    else:
+        cur_op.execute("""
+            SELECT report_id, source_code, report_url, publication_date
+            FROM op_report;
+        """)
 
     rows = cur_op.fetchall()
 
@@ -210,31 +218,20 @@ def load_source_and_reports():
 
 
 # ===============================
-# LOAD DATE (STATIC)
-# ===============================
-def load_date():
-    for year in range(1750, 2041):
-        cur_dw.execute("""
-            INSERT INTO dim_date (year)
-            VALUES (%s)
-            ON CONFLICT DO NOTHING
-        """, (year,))
-
-    conn_dw.commit()
-
-
-# ===============================
 # LOAD FACTS
 # ===============================
 def load_facts(mapping, report_map):
-    cur_dw.execute("SELECT location_code FROM dim_location")
-    loc_map = set(r[0] for r in cur_dw.fetchall())
+    cur_dw.execute("SELECT location_code, location_sk FROM dim_location")
+    loc_map = {code: sk for code, sk in cur_dw.fetchall()}
 
-    cur_dw.execute("SELECT indicator_code FROM dim_indicator")
-    ind_map = set(r[0] for r in cur_dw.fetchall())
+    cur_dw.execute("SELECT source_system, indicator_code, indicator_sk FROM dim_indicator")
+    ind_map = {(source, code): sk for source, code, sk in cur_dw.fetchall()}
 
     cur_dw.execute("SELECT year, date_id FROM dim_date")
     date_map = {year: date_id for year, date_id in cur_dw.fetchall()}
+
+    cur_op.execute("SELECT report_id, source_code FROM op_report")
+    report_source_map = {r[0]: r[1] for r in cur_op.fetchall()}
 
     for nome_base, file_type in mapping.items():
         if file_type != 'value':
@@ -247,44 +244,64 @@ def load_facts(mapping, report_map):
             df = read_parquet_from_s3(ficheiro)
         except Exception as e:
             print(f"Erro ao ler {ficheiro}: {e}")
-            log_etl(ficheiro, 'load', 'error', str(e))
+            log_etl('load', 'error', str(e), file_id=nome_base)
             continue
 
         if df.empty:
-            log_etl(ficheiro, 'load', 'error', "DataFrame vazio")
+            log_etl('load', 'error', "DataFrame vazio", file_id=nome_base)
             continue
 
         report_id = report_map[nome_base]
+        source_system = report_source_map.get(report_id)
+        if not source_system:
+            log_etl('load', 'error', f"source_system não encontrado para report_id {report_id}", file_id=nome_base)
+            continue
 
+        df['location_sk'] = df['location_code'].map(loc_map)
+        df['indicator_sk'] = df.apply(
+            lambda r: ind_map.get((source_system, r['indicator_code'])), axis=1
+        )
         df['date_id'] = df['year'].map(date_map)
+
         valid_df = df[
-            (df['location_code'].isin(loc_map)) &
-            (df['indicator_code'].isin(ind_map)) &
-            (df['date_id'].notna())
+            df['location_sk'].notna() &
+            df['indicator_sk'].notna() &
+            df['date_id'].notna()
         ].copy()
 
         if valid_df.empty:
+            dropped = len(df)
+            missing_loc = int(df['location_sk'].isna().sum())
+            missing_ind = int(df['indicator_sk'].isna().sum())
+            missing_date = int(df['date_id'].isna().sum())
+            log_etl('load', 'error',
+                    f"0 linhas válidas de {dropped} — "
+                    f"location_sk em falta: {missing_loc}, "
+                    f"indicator_sk em falta: {missing_ind}, "
+                    f"date_id em falta: {missing_date}",
+                    file_id=nome_base)
             continue
 
-        valid_df['report_id'] = report_id
-        valid_df['date_id'] = valid_df['date_id'].astype(int)
-        valid_df['report_id'] = valid_df['report_id'].astype(int)
+        valid_df['report_id']    = report_id
+        valid_df['location_sk']  = valid_df['location_sk'].astype(int)
+        valid_df['indicator_sk'] = valid_df['indicator_sk'].astype(int)
+        valid_df['date_id']      = valid_df['date_id'].astype(int)
+        valid_df['report_id']    = valid_df['report_id'].astype(int)
 
-        insert_data = valid_df[['report_id', 'location_code', 'indicator_code', 'date_id', 'value', 'value_type']].values.tolist()
+        insert_data = valid_df[['report_id', 'location_sk', 'indicator_sk', 'date_id', 'value', 'value_type']].values.tolist()
 
-        query = """
+        psycopg2.extras.execute_values(cur_dw, """
             INSERT INTO fact_values (
                 report_id,
-                location_code,
-                indicator_code,
+                location_sk,
+                indicator_sk,
                 date_id,
                 value,
                 value_type
             )
             VALUES %s
             ON CONFLICT DO NOTHING
-        """
-        psycopg2.extras.execute_values(cur_dw, query, insert_data, page_size=10000)
+        """, insert_data, page_size=10000)
 
     conn_dw.commit()
     conn_pipe.commit()
@@ -301,15 +318,12 @@ def run_etl():
         return
 
     print("1. Dimensões")
-    load_dimensions(mapping)
+    load_dimensions(mapping, report_map)
 
-    print("2. Datas")
-    load_date()
-
-    print("3. Source + Reports")
+    print("2. Source + Reports")
     load_source_and_reports()
 
-    print("4. Facts")
+    print("3. Facts")
     load_facts(mapping, report_map)
 
     print("ETL concluído com sucesso")

@@ -9,7 +9,7 @@ import boto3
 DB_OPERATIONAL = {
     "host": "localhost",
     "port": 5433,
-    "dbname": "operational_db",
+    "dbname": "gestao_db",
     "user": "projeto_utilizador",
     "password": "projeto",
 }
@@ -17,7 +17,7 @@ DB_OPERATIONAL = {
 DB_PIPELINE = {
     "host": "localhost",
     "port": 5433,
-    "dbname": "pipeline_db",
+    "dbname": "gestao_db",
     "user": "projeto_utilizador",
     "password": "projeto",
 }
@@ -56,17 +56,16 @@ def validate():
                 err_count += 1
                 continue
 
-            file_id_str = metadata.get("file_id", "")
             report_id_str = metadata.get("report_id", "")
             file_type = metadata.get("file_type", "")
             extract_function = metadata.get("extract_function", "")
             errors = []
 
-            # Validar file_id
+            # file_id é a própria chave do objeto
             try:
-                file_id = int(file_id_str)
+                file_id = int(key)
             except (ValueError, TypeError):
-                errors.append(f"file_id inválido na metadata: '{file_id_str}'")
+                errors.append(f"chave inválida (não é um file_id): '{key}'")
                 file_id = None
 
             # Validar report_id

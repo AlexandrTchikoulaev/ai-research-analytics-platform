@@ -15,18 +15,10 @@ DB_WAREHOUSE = {
     "password": "projeto",
 }
 
-DB_OPERATIONAL = {
+DB_GESTAO = {
     "host": "localhost",
     "port": 5433,
-    "dbname": "operational_db",
-    "user": "projeto_utilizador",
-    "password": "projeto",
-}
-
-DB_PIPELINE = {
-    "host": "localhost",
-    "port": 5433,
-    "dbname": "pipeline_db",
+    "dbname": "gestao_db",
     "user": "projeto_utilizador",
     "password": "projeto",
 }
@@ -267,6 +259,44 @@ def create_minio_buckets():
 
 
 # ===============================
+# CRIAR BASES DE DADOS
+# ===============================
+
+def create_databases():
+    step("A criar bases de dados")
+
+    import psycopg2
+
+    # Conectar à warehouse_db (garantida pelo POSTGRES_DB no docker-compose)
+    conn = psycopg2.connect(**DB_WAREHOUSE)
+    conn.autocommit = True  # CREATE DATABASE não pode correr dentro de uma transação
+    cur = conn.cursor()
+
+    for dbname in ["gestao_db", "vector_db"]:
+        cur.execute("SELECT 1 FROM pg_database WHERE datname = %s", (dbname,))
+        if cur.fetchone():
+            ok(f"Base de dados '{dbname}' já existe — ignorada")
+        else:
+            cur.execute(f'CREATE DATABASE "{dbname}"')
+            ok(f"Base de dados '{dbname}' criada")
+
+    cur.close()
+    conn.close()
+
+    # Activar extensão vector em vector_db
+    try:
+        conn_v = psycopg2.connect(**DB_VECTOR)
+        conn_v.autocommit = True
+        cur_v = conn_v.cursor()
+        cur_v.execute("CREATE EXTENSION IF NOT EXISTS vector;")
+        ok("Extensão 'vector' activada em vector_db")
+        cur_v.close()
+        conn_v.close()
+    except Exception as e:
+        warn(f"Não foi possível activar a extensão 'vector': {e}")
+
+
+# ===============================
 # CRIAR TABELAS (SCRIPTS CREATE)
 # ===============================
 
@@ -298,7 +328,7 @@ def create_database_tables():
 # POPULAR BASE OPERACIONAL
 # ===============================
 
-def populate_operational_db():
+def populate_gestao_db():
     step("A popular base de dados operacional (CSV)")
 
     # Verificar se os CSVs existem
@@ -366,8 +396,8 @@ def verify_setup():
 
     checks = [
         (DB_WAREHOUSE,    "warehouse_db",    ["dim_indicator", "dim_location", "dim_location_hierarchy", "dim_date", "dim_report", "fact_values"]),
-        (DB_OPERATIONAL,  "operational_db",  ["op_report", "op_data"]),
-        (DB_PIPELINE,     "pipeline_db",     ["etl_data", "etl_logs"]),
+        (DB_GESTAO,  "gestao_db",  ["op_report", "op_data"]),
+        (DB_GESTAO,     "gestao_db",     ["etl_data", "etl_logs_dados", "etl_logs_pdfs"]),
         (DB_VECTOR,       "vector_db",       ["documents"]),
     ]
 
@@ -389,41 +419,6 @@ def verify_setup():
             err(f"Erro a verificar {db_name}: {e}")
             todas_ok = False
 
-    # Verificar last_run em etl_data (pipeline_db)
-    try:
-        conn = psycopg2.connect(**DB_PIPELINE)
-        cur = conn.cursor()
-        cur.execute("SELECT last_run FROM etl_data WHERE process_name = 'etl_main'")
-        row = cur.fetchone()
-        if row:
-            ok(f"etl_data.last_run = {row[0]}")
-        else:
-            warn("Registo etl_main não encontrado em etl_data")
-            todas_ok = False
-        cur.close()
-        conn.close()
-    except Exception as e:
-        err(f"Erro ao verificar etl_data: {e}")
-        todas_ok = False
-
-    # Verificar populamento das tabelas operacionais
-    try:
-        conn = psycopg2.connect(**DB_OPERATIONAL)
-        cur = conn.cursor()
-        for tabela in ["op_report", "op_data"]:
-            cur.execute(f"SELECT COUNT(*) FROM {tabela}")
-            count = cur.fetchone()[0]
-            if count > 0:
-                ok(f"[operational_db] '{tabela}' populada ({count} registos)")
-            else:
-                warn(f"[operational_db] '{tabela}' está vazia — verifica os CSVs em populate/csv/")
-                todas_ok = False
-        cur.close()
-        conn.close()
-    except Exception as e:
-        err(f"Erro ao verificar operational_db: {e}")
-        todas_ok = False
-
     return todas_ok
 
 
@@ -438,8 +433,8 @@ def print_summary():
     print()
     print("  Serviços disponíveis:")
     print(f"  • warehouse_db    → localhost:5433/warehouse_db")
-    print(f"  • operational_db  → localhost:5433/operational_db")
-    print(f"  • pipeline_db     → localhost:5433/pipeline_db")
+    print(f"  • gestao_db  → localhost:5433/gestao_db")
+    print(f"  • gestao_db     → localhost:5433/gestao_db")
     print(f"  • vector_db       → localhost:5433/vector_db")
     print(f"  • MinIO API   → http://localhost:9002")
     print(f"  • MinIO UI    → http://localhost:9003")
@@ -447,7 +442,7 @@ def print_summary():
     print()
     print("  Próximos passos:")
     print("     (Opcional) Ingestão vetorial:")
-    print("     python "Codes/Pipeline Unstructured/ingest_vectorialdb.py"")
+    print('     python "Codes/Pipeline Unstructured/ingest_vectorialdb.py"')
     print(f"\n{'='*60}\n")
 
 
@@ -467,11 +462,10 @@ def main():
     check_dependencies()
     start_docker()
     wait_for_postgres()
+    create_databases()
     wait_for_minio()
     create_minio_buckets()
     create_database_tables()
-    populate_operational_db()
-    execute_etl()
     all_ok = verify_setup()
 
     if all_ok:

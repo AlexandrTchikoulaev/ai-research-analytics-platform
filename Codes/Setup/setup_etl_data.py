@@ -8,7 +8,7 @@ def main():
     conn = psycopg2.connect(
         host="localhost",
         port=5433,
-        dbname="pipeline_db",
+        dbname="gestao_db",
         user="projeto_utilizador",
         password="projeto"
     )

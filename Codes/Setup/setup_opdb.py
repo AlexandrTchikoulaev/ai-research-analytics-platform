@@ -8,7 +8,7 @@ def main():
     conn = psycopg2.connect(
         host="localhost",
         port=5433,
-        dbname="operational_db",
+        dbname="gestao_db",
         user="projeto_utilizador",
         password="projeto"
     )
@@ -52,6 +52,7 @@ def main():
         file_id SERIAL PRIMARY KEY,
         report_id INTEGER NOT NULL,
         file_url TEXT,
+        file_name VARCHAR,
         extract_function TEXT,
         file_type VARCHAR(50),
         created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,

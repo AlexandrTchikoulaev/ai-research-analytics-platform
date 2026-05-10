@@ -11,7 +11,7 @@ import pandas as pd
 DB_CONFIG = {
     "host": "localhost",
     "port": 5433,
-    "dbname": "pipeline_db",
+    "dbname": "gestao_db",
     "user": "projeto_utilizador",
     "password": "projeto",
 }
@@ -26,11 +26,8 @@ BUCKET_SILVER = "silver"
 
 # Colunas obrigatórias por tipo de ficheiro
 REQUIRED_COLUMNS = {
-    "indicator":  {"code", "name"},
-    "countries":  {"code", "name"},
-    "regions":    {"code", "name"},
-    "groups":     {"code", "name"},
-    "value":      {"location_code", "indicator_code", "year", "value", "value_type"},
+    "indicator": {"code", "name"},
+    "value":     {"location_code", "indicator_code", "year", "value", "value_type"},
 }
 
 
@@ -63,9 +60,9 @@ def validate():
             file_type = metadata.get("file_type", "")
 
             try:
-                file_id = int(metadata.get("file_id", ""))
+                file_id = int(key.rsplit(".", 1)[0])
             except (ValueError, TypeError):
-                errors.append("file_id inválido ou ausente na metadata")
+                errors.append(f"chave inválida (não é um file_id): '{key}'")
 
             # Ler o ficheiro Parquet
             try:

@@ -210,7 +210,7 @@
 
     input:not([type="checkbox"]):focus, textarea:focus, select:focus {
       border-color: var(--border2);
-      background: var(--surface);
+      background-color: var(--surface);
     }
 
     input:not([type="checkbox"])::placeholder, textarea::placeholder { color: var(--text-muted); font-weight: 300; }
@@ -267,6 +267,57 @@
     }
 
     .btn-ghost:hover { border-color: var(--border2); color: var(--text-secondary); }
+
+    /* ── Checkbox dropdown ── */
+    .chk-dropdown { position: relative; }
+    .chk-dropdown-toggle {
+      width: 100%; text-align: left; padding: 0.6rem 0.8rem;
+      border: 1px solid var(--border); border-radius: var(--radius);
+      background: var(--bg); color: var(--text);
+      font-family: var(--mono); font-size: 0.82rem; font-weight: 300;
+      cursor: pointer; display: flex; justify-content: space-between; align-items: center;
+      transition: border-color var(--transition);
+    }
+    .chk-dropdown-toggle:hover, .chk-dropdown-toggle.open { border-color: var(--border2); }
+    .chk-dropdown-menu {
+      position: absolute; top: calc(100% + 2px); left: 0; right: 0;
+      background: var(--surface); border: 1px solid var(--border2);
+      border-radius: var(--radius); z-index: 200;
+      max-height: 220px; overflow-y: auto;
+      box-shadow: 0 6px 16px rgba(0,0,0,0.12);
+    }
+    .chk-dropdown-item {
+      display: flex; align-items: center; gap: 0.55rem;
+      padding: 0.45rem 0.8rem; cursor: pointer;
+      font-family: var(--mono); font-size: 0.78rem; font-weight: 300; color: var(--text);
+      transition: background var(--transition);
+    }
+    .chk-dropdown-item:hover { background: var(--surface2); }
+    .chk-dropdown-item input[type="checkbox"] { width: auto; margin: 0; cursor: pointer; appearance: auto; }
+    .rep-dropdown-item {
+      display: flex; align-items: baseline; justify-content: space-between; gap: 1rem;
+      padding: 0.45rem 0.8rem; cursor: pointer;
+      font-family: var(--mono); font-size: 0.78rem; font-weight: 300; color: var(--text);
+      transition: background var(--transition);
+    }
+    .rep-dropdown-item:hover { background: var(--surface2); }
+    .rep-src { color: var(--text-muted); font-size: 0.7rem; white-space: nowrap; }
+
+    /* ── Upload preview ── */
+    .preview-chip {
+      display: inline-block; padding: 0.2rem 0.55rem;
+      border-radius: var(--radius); font-family: var(--mono); font-size: 0.72rem; font-weight: 400;
+    }
+    .preview-chip.fn   { background: var(--blue-light);  color: var(--blue); }
+    .preview-chip.file { background: var(--green-light); color: var(--green); }
+    .preview-block {
+      margin-top: 1rem; padding: 1rem 1.2rem;
+      background: var(--surface2); border: 1px solid var(--border); border-radius: var(--radius);
+    }
+    .preview-label {
+      font-family: var(--mono); font-size: 0.65rem; color: var(--text-muted);
+      letter-spacing: 0.1em; text-transform: uppercase; margin-bottom: 0.4rem;
+    }
 
     /* TABLE */
     .table-controls {
@@ -619,13 +670,51 @@
       border: none;
       border-top: 1px solid var(--border);
     }
+
+    .btn-edit-mini {
+      background: none;
+      border: 1px solid var(--border);
+      color: var(--text-muted);
+      border-radius: var(--radius);
+      padding: 0.15rem 0.45rem;
+      font-family: var(--mono);
+      font-size: 0.62rem;
+      letter-spacing: 0.06em;
+      cursor: pointer;
+      transition: all var(--transition);
+      white-space: nowrap;
+    }
+    .btn-edit-mini:hover { border-color: var(--border2); color: var(--text-secondary); }
+
+    .etl-modal-overlay {
+      position: fixed; inset: 0;
+      background: rgba(0,0,0,0.4);
+      display: flex; align-items: center; justify-content: center;
+      z-index: 500;
+    }
+    .etl-modal-card {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      width: 500px; max-width: 95vw;
+      padding: 1.8rem 2rem;
+      display: flex; flex-direction: column; gap: 1.2rem;
+    }
+    .etl-modal-header {
+      display: flex; align-items: center; justify-content: space-between;
+    }
+    .etl-modal-header span {
+      font-family: var(--mono); font-size: 0.88rem; font-weight: 400; letter-spacing: 0.04em;
+    }
+    .etl-modal-footer {
+      display: flex; justify-content: flex-end; gap: 0.8rem;
+      padding-top: 1rem; border-top: 1px solid var(--border);
+    }
     .dash-section-title {
       font-family: var(--mono);
-      font-size: 0.72rem;
+      font-size: 1.1rem;
       font-weight: 400;
-      color: var(--text-muted);
-      letter-spacing: 0.1em;
-      text-transform: uppercase;
+      letter-spacing: 0.04em;
       margin-bottom: 1.2rem;
     }
     .country-select-wrap {
@@ -791,16 +880,6 @@
 
   <div class="form-card">
     <div class="form-grid">
-      <div class="form-group">
-        <label>file_name *</label>
-        <input type="text" id="f-file_name" placeholder="ex: relatorio_2024_q1.pdf"
-          oninput="scheduleDuplicateCheck('file_name', this.value, 'f-dup-fname')"/>
-        <span class="dup-warn" id="f-dup-fname"></span>
-      </div>
-      <div class="form-group">
-        <label>source_code *</label>
-        <input type="text" id="f-source_code" placeholder="ex: IMF"/>
-      </div>
       <div class="form-group full">
         <div style="display:flex;justify-content:flex-end;margin-bottom:0.8rem;">
           <div class="section-toggle sm">
@@ -834,11 +913,21 @@
           <div id="batch-result" style="display:none;font-family:var(--mono);font-size:0.75rem;padding:0.8rem 1rem;border-radius:var(--radius);margin-top:0.5rem;"></div>
         </div>
       </div>
-      <div class="form-group">
+      <div class="form-group" id="rg-file_name">
+        <label>file_name *</label>
+        <input type="text" id="f-file_name" placeholder="ex: relatorio_2024_q1.pdf"
+          oninput="scheduleDuplicateCheck('file_name', this.value, 'f-dup-fname')"/>
+        <span class="dup-warn" id="f-dup-fname"></span>
+      </div>
+      <div class="form-group" id="rg-source_code">
+        <label>source_code *</label>
+        <input type="text" id="f-source_code" placeholder="ex: IMF"/>
+      </div>
+      <div class="form-group" id="rg-pub_date">
         <label>publication_date *</label>
         <input type="date" id="f-publication_date"/>
       </div>
-      <div class="form-group">
+      <div class="form-group" id="rg-area_tematica">
         <label>area_tematica</label>
         <select id="f-area_tematica">
           <option value="">— Seleciona —</option>
@@ -846,18 +935,18 @@
           <option>Saúde</option><option>Ambiente</option><option>Outros</option>
         </select>
       </div>
-      <div class="form-group">
+      <div class="form-group" id="rg-estado">
         <label>estado</label>
         <select id="f-estado">
           <option value="">— Seleciona —</option>
           <option>Anual</option><option>Bienal</option><option>Pontual</option><option>Descontinuado</option>
         </select>
       </div>
-      <div class="form-group full">
+      <div class="form-group full" id="rg-palavras_chave">
         <label>palavras_chave</label>
         <input type="text" id="f-palavras_chave" placeholder="ex: inflação, PIB, crescimento"/>
       </div>
-      <div class="form-group full">
+      <div class="form-group full" id="rg-resumo">
         <label>resumo</label>
         <textarea id="f-resumo" placeholder="Breve descrição do relatório..."></textarea>
       </div>
@@ -884,6 +973,10 @@
   <!-- Modo URL dados -->
   <div id="dmode-url" class="form-card">
     <div class="form-grid">
+      <div class="form-group full">
+        <label>file_url *</label>
+        <input type="url" id="d-file_url" placeholder="https://api.imf.org/dados"/>
+      </div>
       <div class="form-group">
         <label>report_id *</label>
         <select id="d-report_id" onclick="loadReportDropdown()">
@@ -891,27 +984,10 @@
         </select>
       </div>
       <div class="form-group">
-        <label>file_name</label>
-        <input type="text" id="d-file_name" placeholder="ex: imf_indicators.json"/>
-      </div>
-      <div class="form-group">
         <label>extract_function</label>
-        <input type="text" id="d-extract_function" placeholder="ex: funcao_imf_values"/>
-      </div>
-      <div class="form-group">
-        <label>file_type</label>
-        <select id="d-file_type">
-          <option value="">— Seleciona —</option>
-          <option value="indicator">indicator</option>
-          <option value="countries">countries</option>
-          <option value="regions">regions</option>
-          <option value="groups">groups</option>
-          <option value="value">value</option>
+        <select id="d-extract_function">
+          <option value="">— A carregar… —</option>
         </select>
-      </div>
-      <div class="form-group full">
-        <label>file_url *</label>
-        <input type="url" id="d-file_url" placeholder="https://api.imf.org/dados"/>
       </div>
     </div>
     <div class="form-actions">
@@ -924,33 +1000,52 @@
   <div id="dmode-upload" class="form-card" style="display:none;">
     <div class="form-grid">
       <div class="form-group">
-        <label>report_id *</label>
-        <select id="d-up-rid" onclick="loadReportDropdown2()">
-          <option value="">— Clica para ver IDs —</option>
-        </select>
+        <label>Relatório *</label>
+        <div class="chk-dropdown" id="rep-dropdown">
+          <button type="button" class="chk-dropdown-toggle" id="rep-dropdown-toggle" onclick="toggleRepDropdown()">
+            <span id="rep-dropdown-label">— Clica para carregar —</span>
+            <span>▾</span>
+          </button>
+          <div class="chk-dropdown-menu" id="rep-dropdown-menu" style="display:none;"></div>
+        </div>
+        <input type="hidden" id="d-up-rid"/>
       </div>
       <div class="form-group">
-        <label>extract_function</label>
-        <input type="text" id="d-up-fn" placeholder="ex: funcao_imf_values"/>
-      </div>
-      <div class="form-group">
-        <label>file_type</label>
-        <select id="d-up-type">
-          <option value="">— Seleciona —</option>
-          <option value="indicator">indicator</option>
-          <option value="countries">countries</option>
-          <option value="regions">regions</option>
-          <option value="groups">groups</option>
-          <option value="value">value</option>
-        </select>
+        <label>Funções de extração *</label>
+        <div class="chk-dropdown" id="fn-dropdown">
+          <button type="button" class="chk-dropdown-toggle" id="fn-dropdown-toggle" onclick="toggleFnDropdown()">
+            <span id="fn-dropdown-label">— Seleciona —</span>
+            <span>▾</span>
+          </button>
+          <div class="chk-dropdown-menu" id="fn-dropdown-menu" style="display:none;"></div>
+        </div>
       </div>
       <div class="form-group full">
-        <label>Ficheiro * (.json, .csv, .xlsx, .xls, .xml, .zip)</label>
-        <input type="file" id="d-up-file" accept=".json,.csv,.xlsx,.xls,.xml,.zip"/>
+        <label>Ficheiros * (.json, .csv, .xlsx, .xls, .xml, .zip)</label>
+        <input type="file" id="d-up-file" accept=".json,.csv,.xlsx,.xls,.xml,.zip" multiple onchange="updateUploadPreview()"/>
       </div>
     </div>
+
     <div class="form-actions">
-      <button class="btn-primary" id="btn-add-upload-data" onclick="submitDataUpload()">Carregar Ficheiro</button>
+      <button class="btn-primary" id="btn-add-upload-data" onclick="submitDataUpload()">Carregar Ficheiro(s)</button>
+      <span id="upload-summary" style="font-size:0.78rem;color:var(--text-muted);"></span>
+    </div>
+
+    <!-- Preview ao vivo -->
+    <div id="upload-preview" style="display:none;">
+      <div class="preview-block">
+        <div class="preview-label" id="preview-rows-label">Linhas a criar no op_data</div>
+        <table id="preview-rows-table" style="width:100%;border-collapse:collapse;font-size:0.75rem;font-family:var(--mono);margin-top:0.4rem;">
+          <thead>
+            <tr>
+              <th style="text-align:left;padding:0.25rem 0.5rem;border-bottom:1px solid var(--border);color:var(--text-muted);font-weight:400;">#</th>
+              <th style="text-align:left;padding:0.25rem 0.5rem;border-bottom:1px solid var(--border);color:var(--text-muted);font-weight:400;">Ficheiro</th>
+              <th style="text-align:left;padding:0.25rem 0.5rem;border-bottom:1px solid var(--border);color:var(--text-muted);font-weight:400;">Função</th>
+            </tr>
+          </thead>
+          <tbody id="preview-rows-body"></tbody>
+        </table>
+      </div>
     </div>
   </div>
 
@@ -960,8 +1055,8 @@
       <label>JSON / JSONC (array de ficheiros)</label>
       <textarea id="d-batch-json" style="min-height:180px;font-size:0.78rem;" placeholder='[
   // Ficheiros do relatório IMF 2024
-  { "report_id": 1, "file_url": "https://api.imf.org/indicadores", "extract_function": "funcao_imf_indicadores", "file_type": "indicator" },
-  { "report_id": 1, "file_url": "https://api.imf.org/valores", "extract_function": "funcao_imf_values", "file_type": "value" }
+  { "report_id": 1, "file_url": "https://api.imf.org/indicadores", "extract_function": "funcao_imf_indicadores" },
+  { "report_id": 1, "file_url": "https://api.imf.org/valores", "extract_function": "funcao_imf_values" }
 ]'></textarea>
     </div>
     <div id="dbatch-result" style="display:none;font-family:var(--mono);font-size:0.75rem;padding:0.8rem 1rem;border-radius:var(--radius);margin-bottom:1rem;"></div>
@@ -1041,14 +1136,13 @@
           <th>file_id</th>
           <th>report_id</th>
           <th>source_code</th>
-          <th>file_name</th>
           <th>file_url</th>
           <th>extract_function</th>
           <th>file_type</th>
         </tr>
       </thead>
       <tbody id="table-body-data">
-        <tr><td colspan="7"><div class="state-box"><p>A carregar dados...</p></div></td></tr>
+        <tr><td colspan="6"><div class="state-box"><p>A carregar dados...</p></div></td></tr>
       </tbody>
     </table>
   </div>
@@ -1095,8 +1189,10 @@
 <div class="page" id="page-dash">
   <div class="page-header">
     <div>
-      <h1>Dashboards</h1>
-      <div class="sub">visualizações do data warehouse</div>
+      <label style="font-size:0.78rem;font-weight:500;color:var(--text-secondary);letter-spacing:0.03em;display:block;margin-bottom:0.45rem;">Relatório</label>
+      <select id="dash-report-select" onchange="onDashReportChange()" style="min-width:300px;">
+        <option value="">— Seleciona um relatório —</option>
+      </select>
     </div>
     <div style="display:flex;align-items:center;gap:1rem;">
       <button class="btn-ghost" id="btn-update-dash" onclick="runPipeline('dados', 'btn-update-dash')">Atualizar dados</button>
@@ -1104,6 +1200,15 @@
     </div>
   </div>
 
+  <div id="dash-empty-state" style="display:flex;flex-direction:column;align-items:center;justify-content:center;padding:4rem 2rem;gap:0.75rem;color:var(--text-muted);text-align:center;">
+    <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.2" stroke-linecap="round" stroke-linejoin="round" style="opacity:0.35;"><rect x="3" y="3" width="18" height="18" rx="2"/><path d="M3 9h18M9 21V9"/></svg>
+    <div style="font-size:1rem;font-weight:500;opacity:0.6;">Selecione um relatório</div>
+    <div style="font-size:0.78rem;opacity:0.4;">Os dashboards ficam disponíveis após selecionar um relatório acima.</div>
+  </div>
+
+  <div id="dash-content" style="display:none;">
+
+  <div class="dash-section-title">Mapa Mundo</div>
   <div class="dash-layout">
     <!-- Sidebar de controlos -->
     <div class="dash-sidebar">
@@ -1115,8 +1220,8 @@
       </div>
       <div class="dash-control">
         <label>Ano</label>
-        <select id="dash-year">
-          <option value="">— A carregar... —</option>
+        <select id="dash-year" disabled>
+          <option value="">— Primeiro seleciona um indicador —</option>
         </select>
       </div>
       <div class="dash-control">
@@ -1147,7 +1252,7 @@
 
   <!-- ── Gráfico Temporal ── -->
   <hr class="dash-section-divider"/>
-  <div class="dash-section-title">Evolução Temporal por País</div>
+  <div class="dash-section-title">Evolução Temporal</div>
 
   <div class="ts-layout">
     <!-- Sidebar de controlos -->
@@ -1219,59 +1324,159 @@
     </div>
   </div>
 
+  </div><!-- end dash-content -->
+
 </div><!-- end page-dash -->
 <div class="page" id="page-etl">
+
+  <!-- Última execução como texto -->
+  <div id="etl-data-text" style="display:flex;gap:2rem;flex-wrap:wrap;font-size:0.82rem;color:var(--text-muted);margin-bottom:2rem;">
+    <span>A carregar...</span>
+  </div>
+
+  <!-- Page header com switch -->
   <div class="page-header">
     <div>
-      <h1>ETL</h1>
-      <div class="sub">ingestão de dados e histórico de execuções</div>
+      <h1 id="etl-h1">Ficheiros Inválidos — Relatórios</h1>
+      <div class="sub" id="etl-sub">registos com erros no pipeline de PDFs</div>
     </div>
-    <span class="method-tag tag-post">ETL</span>
-  </div>
-
-  <div style="margin-bottom: 2rem; display: flex; align-items: center; gap: 1rem; flex-wrap:wrap;">
-    <button class="btn-primary" id="btn-ingest" onclick="ingestData('dados')">Pipeline Dados</button>
-    <button class="btn-ghost" id="btn-ingest-pdfs" onclick="ingestData('pdfs')">Pipeline PDFs</button>
-    <span id="etl-status" style="font-family:var(--mono);font-size:0.72rem;color:var(--text-muted);letter-spacing:0.06em;"></span>
-  </div>
-
-  <!-- Log output panel (hidden until run) -->
-  <div id="etl-log-wrap" style="display:none; margin-bottom: 2rem;">
-    <div style="background:var(--surface2); border:1px solid var(--border); border-radius:var(--radius) var(--radius) 0 0; padding:0.6rem 1.2rem; display:flex; justify-content:space-between; align-items:center;">
-      <span style="font-family:var(--mono);font-size:0.65rem;color:var(--text-muted);letter-spacing:0.1em;text-transform:uppercase;">Output</span>
-      <button class="btn-refresh" onclick="document.getElementById('etl-log-wrap').style.display='none'">Fechar</button>
+    <div class="section-toggle">
+      <button class="active" id="etog-relatorios" onclick="switchEtlLog('relatorios')">Relatórios</button>
+      <button id="etog-dados" onclick="switchEtlLog('dados')">Dados</button>
     </div>
-    <pre id="etl-log" style="background:var(--surface);border:1px solid var(--border);border-top:none;border-radius:0 0 var(--radius) var(--radius);padding:1.2rem 1.4rem;font-family:var(--mono);font-size:0.75rem;font-weight:300;color:var(--text-secondary);line-height:1.7;max-height:320px;overflow-y:auto;margin:0;white-space:pre-wrap;word-break:break-word;"></pre>
   </div>
 
-  <!-- Tabela etl_logs -->
-  <div class="page-header" style="margin-top: 0; margin-bottom: 0;">
-    <div>
-      <h1>Tabela etl_logs</h1>
-      <div class="sub">/etl_logs — histórico de execuções ETL</div>
+  <!-- Secção Dados -->
+  <div id="etl-section-dados" style="display:none;">
+    <div class="table-controls">
+      <div class="table-search">
+        <input type="text" id="search-etl-logs-dados" placeholder="Filtrar registos..." oninput="filterEtlLogsTable('dados')"/>
+      </div>
+      <div class="record-count" id="record-count-etl-logs-dados"></div>
     </div>
-    <span class="method-tag tag-get">GET</span>
-  </div>
-
-  <div class="table-controls">
-    <div class="table-search">
-      <input type="text" id="search-input-etl" placeholder="Filtrar registos..." oninput="filterEtlTable()"/>
+    <div class="table-wrapper">
+      <table>
+        <thead>
+          <tr id="etl-logs-dados-thead-row">
+            <th>A carregar colunas...</th>
+          </tr>
+        </thead>
+        <tbody id="table-body-etl-logs-dados">
+          <tr><td colspan="7"><div class="state-box"><p>A carregar dados...</p></div></td></tr>
+        </tbody>
+      </table>
     </div>
-    <button class="btn-refresh" onclick="loadEtlLogs()">Atualizar</button>
-    <div class="record-count" id="record-count-etl"></div>
   </div>
 
-  <div class="table-wrapper">
-    <table>
-      <thead>
-        <tr id="etl-thead-row">
-          <th>A carregar colunas...</th>
-        </tr>
-      </thead>
-      <tbody id="table-body-etl">
-        <tr><td colspan="10"><div class="state-box"><p>A carregar dados...</p></div></td></tr>
-      </tbody>
-    </table>
+  <!-- Secção PDFs (Relatórios) -->
+  <div id="etl-section-pdfs">
+    <div class="table-controls">
+      <div class="table-search">
+        <input type="text" id="search-etl-logs-pdfs" placeholder="Filtrar registos..." oninput="filterEtlLogsTable('pdfs')"/>
+      </div>
+      <div class="record-count" id="record-count-etl-logs-pdfs"></div>
+    </div>
+    <div class="table-wrapper">
+      <table>
+        <thead>
+          <tr id="etl-logs-pdfs-thead-row">
+            <th>A carregar colunas...</th>
+          </tr>
+        </thead>
+        <tbody id="table-body-etl-logs-pdfs">
+          <tr><td colspan="7"><div class="state-box"><p>A carregar dados...</p></div></td></tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+
+</div>
+
+<!-- ══ Modal editar ficheiro ETL ══ -->
+<div id="etl-edit-modal" class="etl-modal-overlay" style="display:none;" onclick="closeEtlEditModal(event)">
+  <div class="etl-modal-card" onclick="event.stopPropagation()">
+    <div class="etl-modal-header">
+      <span>Editar Ficheiro</span>
+      <button class="btn-ghost" style="padding:0.25rem 0.55rem;font-size:0.85rem;line-height:1;" onclick="closeEtlEditModal()">×</button>
+    </div>
+    <div style="display:flex;flex-direction:column;gap:0.9rem;">
+      <div class="form-group">
+        <label>file_id</label>
+        <input type="text" id="etl-edit-file_id" disabled/>
+      </div>
+      <div class="form-group">
+        <label>file_name</label>
+        <input type="text" id="etl-edit-file_name" disabled/>
+      </div>
+      <div class="form-group">
+        <label>report_id</label>
+        <input type="number" id="etl-edit-report_id" disabled/>
+      </div>
+      <div class="form-group" id="etl-edit-file_url-group">
+        <label>file_url</label>
+        <input type="text" id="etl-edit-file_url" placeholder="https://..."/>
+      </div>
+      <div class="form-group">
+        <label>extract_function</label>
+        <select id="etl-edit-extract_function">
+          <option value="">— Nenhuma —</option>
+        </select>
+      </div>
+    </div>
+    <div class="etl-modal-footer">
+      <button class="btn-ghost" onclick="closeEtlEditModal()">Cancelar</button>
+      <button class="btn-primary" id="btn-etl-edit-save" onclick="saveEtlEdit()">Guardar e Reinserir</button>
+    </div>
+  </div>
+</div>
+
+<!-- ══ Modal editar relatório ETL (PDFs) ══ -->
+<div id="etl-report-edit-modal" class="etl-modal-overlay" style="display:none;" onclick="closeEtlReportEditModal(event)">
+  <div class="etl-modal-card" onclick="event.stopPropagation()">
+    <div class="etl-modal-header">
+      <span>Editar Relatório</span>
+      <button class="btn-ghost" style="padding:0.25rem 0.55rem;font-size:0.85rem;line-height:1;" onclick="closeEtlReportEditModal()">×</button>
+    </div>
+    <div style="display:flex;flex-direction:column;gap:0.9rem;">
+      <div class="form-group">
+        <label>report_id</label>
+        <input type="text" id="etl-report-edit-report_id" disabled/>
+      </div>
+      <div class="form-group">
+        <label>file_name</label>
+        <input type="text" id="etl-report-edit-file_name" placeholder="nome_ficheiro.pdf"/>
+      </div>
+      <div class="form-group">
+        <label>report_url</label>
+        <input type="text" id="etl-report-edit-report_url" placeholder="https://..."/>
+      </div>
+      <div class="form-group">
+        <label>area_tematica</label>
+        <select id="etl-report-edit-area_tematica">
+          <option value="">— Selecionar —</option>
+          <option value="Tecnologia">Tecnologia</option>
+          <option value="Economia">Economia</option>
+          <option value="Educação">Educação</option>
+          <option value="Saúde">Saúde</option>
+          <option value="Ambiente">Ambiente</option>
+          <option value="Outros">Outros</option>
+        </select>
+      </div>
+      <div class="form-group">
+        <label>estado</label>
+        <select id="etl-report-edit-estado">
+          <option value="">— Selecionar —</option>
+          <option value="Anual">Anual</option>
+          <option value="Bienal">Bienal</option>
+          <option value="Pontual">Pontual</option>
+          <option value="Descontinuado">Descontinuado</option>
+        </select>
+      </div>
+    </div>
+    <div class="etl-modal-footer">
+      <button class="btn-ghost" onclick="closeEtlReportEditModal()">Cancelar</button>
+      <button class="btn-primary" id="btn-etl-report-edit-save" onclick="saveEtlReportEdit()">Guardar e Reinserir</button>
+    </div>
   </div>
 </div>
 
@@ -1286,8 +1491,11 @@
   const ENDPOINT_DASH_FILTERS = `${API_BASE}/dashboard/filters`;
   const ENDPOINT_TIMESERIES   = `${API_BASE}/dashboard/timeseries`;
   const ENDPOINT_ETL_LOGS     = `${API_BASE}/etl_logs`;
+  const ENDPOINT_ETL_DATA     = `${API_BASE}/etl_data`;
+  const ENDPOINT_ETL_LOGS_DADOS = `${API_BASE}/etl_logs/dados`;
+  const ENDPOINT_ETL_LOGS_PDFS  = `${API_BASE}/etl_logs/pdfs`;
 
-  const allRows = { report: [], data: [], etl: [] };
+  const allRows = { report: [], data: [], etlData: [], etlLogsDados: [], etlLogsPdfs: [] };
   let selectedReportId = null;
 
   // ── NAVEGAÇÃO ──
@@ -1319,9 +1527,13 @@
       const activeTab = document.getElementById('tsec-dados').style.display === 'none' ? 'report' : 'data';
       loadTable(activeTab);
     }
+    if (name === 'insert') loadExtractFunctions();
     if (name === 'dash') initDashboard();
-    if (name === 'etl') loadEtlLogs();
+    if (name === 'etl') { loadEtlData(); loadEtlLogsTable('pdfs'); }
   }
+
+  // Carregar funções logo no arranque (página insert está activa por defeito)
+  loadExtractFunctions();
 
   function toggleTheme() {
     const html = document.documentElement;
@@ -1375,34 +1587,125 @@
   }
 
   // ── FORM: OP_DATA ──
+  async function loadExtractFunctions() {
+    try {
+      const res = await fetch(`${API_BASE}/extract_functions`);
+      if (!res.ok) return;
+      const fns = await res.json();
+      // Single-select (URL mode)
+      const elSingle = document.getElementById('d-extract_function');
+      if (elSingle) {
+        elSingle.innerHTML = '<option value="">— Seleciona —</option>' +
+          fns.map(f => `<option value="${f.name}">${f.name}</option>`).join('');
+      }
+      // Checkbox dropdown (upload mode)
+      const menuEl = document.getElementById('fn-dropdown-menu');
+      if (menuEl) {
+        menuEl.innerHTML = fns.map(f => `
+          <label class="chk-dropdown-item">
+            <input type="checkbox" value="${f.name}" onchange="updateFnDropdownLabel()"/>
+            ${f.name}
+          </label>`).join('');
+      }
+    } catch (e) { console.error('Erro a carregar funções:', e); }
+  }
+
+  function toggleFnDropdown() {
+    const menu   = document.getElementById('fn-dropdown-menu');
+    const toggle = document.getElementById('fn-dropdown-toggle');
+    const isOpen = menu.style.display !== 'none';
+    menu.style.display = isOpen ? 'none' : 'block';
+    toggle.classList.toggle('open', !isOpen);
+  }
+
+  document.addEventListener('click', function(e) {
+    const fnDd = document.getElementById('fn-dropdown');
+    if (fnDd && !fnDd.contains(e.target)) {
+      document.getElementById('fn-dropdown-menu').style.display = 'none';
+      const t = document.getElementById('fn-dropdown-toggle');
+      if (t) t.classList.remove('open');
+    }
+    const repDd = document.getElementById('rep-dropdown');
+    if (repDd && !repDd.contains(e.target)) {
+      document.getElementById('rep-dropdown-menu').style.display = 'none';
+      const t = document.getElementById('rep-dropdown-toggle');
+      if (t) t.classList.remove('open');
+    }
+  });
+
+  function getSelectedFns() {
+    return Array.from(document.querySelectorAll('#fn-dropdown-menu input[type="checkbox"]:checked')).map(c => c.value);
+  }
+
+  function updateFnDropdownLabel() {
+    const fns = getSelectedFns();
+    document.getElementById('fn-dropdown-label').textContent = fns.length
+      ? `${fns.length} selecionada${fns.length !== 1 ? 's' : ''}`
+      : '— Seleciona —';
+    updateUploadPreview();
+  }
+
+  function updateUploadPreview() {
+    const fns   = getSelectedFns();
+    const files = Array.from(document.getElementById('d-up-file').files).map(f => f.name);
+    const summary = document.getElementById('upload-summary');
+    const preview = document.getElementById('upload-preview');
+
+    const tbody    = document.getElementById('preview-rows-body');
+    const table    = document.getElementById('preview-rows-table');
+    const rowLabel = document.getElementById('preview-rows-label');
+
+    if (fns.length && files.length) {
+      const rows = [];
+      files.forEach(file => fns.forEach(fn => rows.push({ file, fn })));
+      tbody.innerHTML = rows.map((r, i) => `
+        <tr>
+          <td style="padding:0.25rem 0.5rem;color:var(--text-muted);">${i + 1}</td>
+          <td style="padding:0.25rem 0.5rem;">${r.file}</td>
+          <td style="padding:0.25rem 0.5rem;">${r.fn}</td>
+        </tr>`).join('');
+      table.style.display = 'table';
+      rowLabel.style.display = 'block';
+      preview.style.display = 'block';
+      summary.textContent = `${fns.length} ${fns.length !== 1 ? 'funções' : 'função'} · ${files.length} ficheiro${files.length !== 1 ? 's' : ''} · ${rows.length} linha${rows.length !== 1 ? 's' : ''}`;
+    } else {
+      table.style.display = 'none';
+      rowLabel.style.display = 'none';
+      tbody.innerHTML = '';
+      preview.style.display = 'none';
+      const parts = [];
+      if (fns.length) parts.push(`${fns.length} ${fns.length !== 1 ? 'funções' : 'função'}`);
+      if (files.length) parts.push(`${files.length} ficheiro${files.length !== 1 ? 's' : ''}`);
+      summary.textContent = parts.join(' · ');
+    }
+  }
+
   async function loadReportDropdown() {
     const sel = document.getElementById('d-report_id');
-    if (sel.options.length > 1) return;
     try {
       const res = await fetch(ENDPOINT_REPORT);
       if (!res.ok) return;
       const reports = await res.json();
+      const current = sel.value;
       sel.innerHTML = '<option value="">— Escolhe um report_id —</option>';
       reports.forEach(r => {
-        sel.innerHTML += `<option value="${r.report_id}">ID ${r.report_id} — ${r.source_code} (${r.file_name})</option>`;
+        sel.innerHTML += `<option value="${r.report_id}" ${String(current) === String(r.report_id) ? 'selected' : ''}>ID ${r.report_id} — ${r.source_code} (${r.file_name})</option>`;
       });
     } catch (e) { console.error('Erro a carregar IDs:', e); }
   }
 
   function clearDataForm() {
-    ['d-report_id','d-file_name','d-file_url','d-extract_function','d-file_type']
+    ['d-report_id','d-file_url','d-extract_function']
       .forEach(id => document.getElementById(id).value = '');
   }
 
   async function submitOpData() {
     const report_id        = document.getElementById('d-report_id').value;
-    const file_name        = document.getElementById('d-file_name').value.trim();
     const file_url         = document.getElementById('d-file_url').value.trim();
-    const extract_function = document.getElementById('d-extract_function').value.trim();
-    const file_type        = document.getElementById('d-file_type').value.trim();
+    const extract_function = document.getElementById('d-extract_function').value;
 
-    if (!report_id || !file_name || !file_url) {
-      showToast('Os campos report_id, file_name e file_url são obrigatórios.', 'error'); return;
+    if (!report_id) {
+      showToast('O campo report_id é obrigatório.', 'error'); return;
     }
 
     const btn = document.getElementById('btn-add-data');
@@ -1411,7 +1714,7 @@
       const res = await fetch(ENDPOINT_OP_DATA, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ report_id: parseInt(report_id), file_name, file_url, extract_function, file_type })
+        body: JSON.stringify({ report_id: parseInt(report_id), file_url, extract_function })
       });
       if (!res.ok) {
         const err = await res.json().catch(() => ({ detail: `HTTP ${res.status}` }));
@@ -1505,7 +1808,6 @@
           <td class="id-cell">${escHtml(String(r.file_id))}</td>
           <td class="id-cell">${escHtml(String(r.report_id))}</td>
           <td><span class="badge">${escHtml(r.source_code || '—')}</span></td>
-          <td>${escHtml(r.file_name)}</td>
           <td class="url-cell">${url}</td>
           <td>${escHtml(r.extract_function || '—')}</td>
           <td>${escHtml(r.file_type || '—')}</td>
@@ -1636,112 +1938,77 @@
   }
 
   // ── DASHBOARD ──
-  let allCountries = []; // cache para o filtro de países
+  let allCountries = [];
+  let dashListenersAdded = false;
 
   async function initDashboard() {
-    const selIndicator = document.getElementById('dash-indicator');
-    const selYear      = document.getElementById('dash-year');
-
-    if (selIndicator.options.length > 1) return;
-
+    const repSel = document.getElementById('dash-report-select');
+    const savedVal = repSel.value;
+    repSel.innerHTML = '<option value="">— Seleciona um relatório —</option>';
     try {
-      const res = await fetch(ENDPOINT_DASH_FILTERS);
+      const res = await fetch(ENDPOINT_REPORT);
       if (!res.ok) throw new Error(`HTTP ${res.status}`);
-      const { indicators } = await res.json();
-
-      selIndicator.innerHTML = '<option value="">— Seleciona um indicador —</option>';
-      indicators.forEach(ind => {
-        // sanitize: remove newlines from display and value
-        const clean = ind.replace(/[\r\n]+/g, ' ').trim();
+      const reports = await res.json();
+      reports.forEach(r => {
         const opt = document.createElement('option');
-        opt.value = clean;
-        opt.textContent = clean;
-        selIndicator.appendChild(opt);
+        opt.value = r.report_id;
+        opt.textContent = `[${r.report_id}] ${r.file_name}`;
+        repSel.appendChild(opt);
       });
-
-      selYear.innerHTML = '<option value="">— Primeiro seleciona um indicador —</option>';
-      selYear.disabled = true;
-
-      // Preencher o selector de indicador do gráfico temporal
-      const tsInd = document.getElementById('ts-indicator');
-      tsInd.innerHTML = '<option value="">— Seleciona um indicador —</option>';
-      indicators.forEach(ind => {
-        const clean = ind.replace(/[\r\n]+/g, ' ').trim();
-        const opt = document.createElement('option');
-        opt.value = clean;
-        opt.textContent = clean;
-        tsInd.appendChild(opt);
-      });
-
-      // Preencher o selector de indicador do ranking
-      const rankInd = document.getElementById('rank-indicator');
-      rankInd.innerHTML = '<option value="">— Seleciona um indicador —</option>';
-      indicators.forEach(ind => {
-        const clean = ind.replace(/[\r\n]+/g, ' ').trim();
-        const opt = document.createElement('option');
-        opt.value = clean;
-        opt.textContent = clean;
-        rankInd.appendChild(opt);
-      });
-
+      if (savedVal) repSel.value = savedVal;
     } catch (e) {
-      selIndicator.innerHTML = '<option value="">Erro ao carregar</option>';
-      document.getElementById('ts-indicator').innerHTML = '<option value="">Erro ao carregar</option>';
-      document.getElementById('rank-indicator').innerHTML = '<option value="">Erro ao carregar</option>';
-      showToast(`Erro ao carregar filtros: ${e.message}`, 'error');
+      showToast(`Erro ao carregar relatórios: ${e.message}`, 'error');
     }
 
-    // Atualizar anos quando o indicador muda (mapa)
-    selIndicator.addEventListener('change', async function () {
+    if (dashListenersAdded) return;
+    dashListenersAdded = true;
+
+    // Indicador (mapa) → anos
+    document.getElementById('dash-indicator').addEventListener('change', async function () {
       const indicator = this.value;
+      const report_id = document.getElementById('dash-report-select').value;
+      const selYear = document.getElementById('dash-year');
       selYear.innerHTML = '<option value="">A carregar anos...</option>';
       selYear.disabled = true;
-
-      if (!indicator) {
-        selYear.innerHTML = '<option value="">— Primeiro seleciona um indicador —</option>';
-        return;
-      }
-
+      if (!indicator) { selYear.innerHTML = '<option value="">— Primeiro seleciona um indicador —</option>'; return; }
       try {
-        const res = await fetch(`${ENDPOINT_DASH_FILTERS}?indicator_name=${encodeURIComponent(indicator)}`);
+        const p = new URLSearchParams({ indicator_name: indicator });
+        if (report_id) p.set('report_id', report_id);
+        const res = await fetch(`${ENDPOINT_DASH_FILTERS}?${p}`);
         if (!res.ok) throw new Error(`HTTP ${res.status}`);
         const { years } = await res.json();
-
         selYear.innerHTML = '<option value="">— Seleciona um ano —</option>';
         years.forEach(y => {
-          selYear.innerHTML += `<option value="${y}">${y}</option>`;
+          const opt = document.createElement('option');
+          opt.value = y; opt.textContent = y;
+          selYear.appendChild(opt);
         });
         if (years.length === 1) selYear.value = years[0];
-
       } catch (e) {
         selYear.innerHTML = '<option value="">Erro ao carregar</option>';
         showToast(`Erro ao carregar anos: ${e.message}`, 'error');
-      } finally {
-        selYear.disabled = false;
-      }
+      } finally { selYear.disabled = false; }
     });
 
-    // Carregar países quando o indicador do timeseries muda
+    // Indicador (timeseries) → países
     document.getElementById('ts-indicator').addEventListener('change', async function () {
       const indicator = this.value;
+      const report_id = document.getElementById('dash-report-select').value;
       const listEl = document.getElementById('ts-country-list');
       listEl.innerHTML = '<label style="color:var(--text-muted);cursor:default;">A carregar países...</label>';
       allCountries = [];
       document.getElementById('ts-country-search').value = '';
-
-      if (!indicator) {
-        listEl.innerHTML = '<label style="color:var(--text-muted);cursor:default;">Seleciona primeiro um indicador.</label>';
-        return;
-      }
-
+      if (!indicator) { listEl.innerHTML = '<label style="color:var(--text-muted);cursor:default;">Seleciona primeiro um indicador.</label>'; return; }
       try {
-        // Buscar o ano mais recente para obter lista de países
-        const resF = await fetch(`${ENDPOINT_DASH_FILTERS}?indicator_name=${encodeURIComponent(indicator)}`);
+        const pF = new URLSearchParams({ indicator_name: indicator });
+        if (report_id) pF.set('report_id', report_id);
+        const resF = await fetch(`${ENDPOINT_DASH_FILTERS}?${pF}`);
         if (!resF.ok) throw new Error(`HTTP ${resF.status}`);
         const { years } = await resF.json();
         if (!years.length) { listEl.innerHTML = '<label style="color:var(--text-muted);cursor:default;">Sem dados.</label>'; return; }
-
-        const resDash = await fetch(`${ENDPOINT_DASHBOARD}?indicator_name=${encodeURIComponent(indicator)}&year=${years[0]}`);
+        const pD = new URLSearchParams({ indicator_name: indicator, year: years[0] });
+        if (report_id) pD.set('report_id', report_id);
+        const resDash = await fetch(`${ENDPOINT_DASHBOARD}?${pD}`);
         if (!resDash.ok) throw new Error(`HTTP ${resDash.status}`);
         const data = await resDash.json();
         allCountries = data.map(d => d.location_name).sort();
@@ -1752,32 +2019,80 @@
       }
     });
 
-    // Carregar anos quando o indicador do ranking muda
+    // Indicador (ranking) → anos
     document.getElementById('rank-indicator').addEventListener('change', async function () {
       const indicator = this.value;
+      const report_id = document.getElementById('dash-report-select').value;
       const selRankYear = document.getElementById('rank-year');
       selRankYear.innerHTML = '<option value="">A carregar anos...</option>';
       selRankYear.disabled = true;
-
-      if (!indicator) {
-        selRankYear.innerHTML = '<option value="">— Primeiro seleciona um indicador —</option>';
-        return;
-      }
-
+      if (!indicator) { selRankYear.innerHTML = '<option value="">— Primeiro seleciona um indicador —</option>'; return; }
       try {
-        const res = await fetch(`${ENDPOINT_DASH_FILTERS}?indicator_name=${encodeURIComponent(indicator)}`);
+        const p = new URLSearchParams({ indicator_name: indicator });
+        if (report_id) p.set('report_id', report_id);
+        const res = await fetch(`${ENDPOINT_DASH_FILTERS}?${p}`);
         if (!res.ok) throw new Error(`HTTP ${res.status}`);
         const { years } = await res.json();
         selRankYear.innerHTML = '<option value="">— Seleciona um ano —</option>';
-        years.forEach(y => { selRankYear.innerHTML += `<option value="${y}">${y}</option>`; });
+        years.forEach(y => {
+          const opt = document.createElement('option');
+          opt.value = y; opt.textContent = y;
+          selRankYear.appendChild(opt);
+        });
         if (years.length === 1) selRankYear.value = years[0];
       } catch (e) {
         selRankYear.innerHTML = '<option value="">Erro ao carregar</option>';
         showToast(`Erro ao carregar anos: ${e.message}`, 'error');
-      } finally {
-        selRankYear.disabled = false;
-      }
+      } finally { selRankYear.disabled = false; }
     });
+  }
+
+  async function onDashReportChange() {
+    const report_id = document.getElementById('dash-report-select').value;
+    const content   = document.getElementById('dash-content');
+    const emptyState = document.getElementById('dash-empty-state');
+    if (!report_id) {
+      content.style.display = 'none';
+      emptyState.style.display = 'flex';
+      return;
+    }
+    emptyState.style.display = 'none';
+    content.style.display = '';
+
+    // Reset controles e gráficos
+    document.getElementById('dash-indicator').innerHTML = '<option value="">— A carregar... —</option>';
+    document.getElementById('dash-year').innerHTML = '<option value="">— Primeiro seleciona um indicador —</option>';
+    document.getElementById('dash-year').disabled = true;
+    document.getElementById('ts-indicator').innerHTML = '<option value="">— A carregar... —</option>';
+    document.getElementById('ts-country-list').innerHTML = '<label style="color:var(--text-muted);cursor:default;">A carregar...</label>';
+    document.getElementById('ts-country-search').value = '';
+    document.getElementById('rank-indicator').innerHTML = '<option value="">— A carregar... —</option>';
+    document.getElementById('rank-year').innerHTML = '<option value="">— Primeiro seleciona um indicador —</option>';
+    document.getElementById('rank-year').disabled = true;
+    document.getElementById('dash-plotly').innerHTML = '<div class="dash-empty">Seleciona um indicador e um ano e clica em Aplicar.</div>';
+    document.getElementById('ts-plotly').innerHTML = '<div class="dash-empty">Seleciona um indicador e pelo menos um país e clica em Aplicar.</div>';
+    document.getElementById('rank-plotly').innerHTML = '<div class="dash-empty">Seleciona um indicador e um ano e clica em Aplicar.</div>';
+    document.getElementById('dash-stats').style.display = 'none';
+    allCountries = [];
+
+    try {
+      const res = await fetch(`${ENDPOINT_DASH_FILTERS}?${new URLSearchParams({ report_id })}`);
+      if (!res.ok) throw new Error(`HTTP ${res.status}`);
+      const { indicators } = await res.json();
+      ['dash-indicator', 'ts-indicator', 'rank-indicator'].forEach(id => {
+        const sel = document.getElementById(id);
+        sel.innerHTML = '<option value="">— Seleciona um indicador —</option>';
+        indicators.forEach(ind => {
+          const clean = ind.replace(/[\r\n]+/g, ' ').trim();
+          const opt = document.createElement('option');
+          opt.value = clean; opt.textContent = clean;
+          sel.appendChild(opt);
+        });
+      });
+      document.getElementById('ts-country-list').innerHTML = '<label style="color:var(--text-muted);cursor:default;">Seleciona primeiro um indicador.</label>';
+    } catch (e) {
+      showToast(`Erro ao carregar indicadores: ${e.message}`, 'error');
+    }
   }
 
   async function applyRanking() {
@@ -1790,7 +2105,10 @@
     btn.disabled = true; btn.textContent = 'A carregar...';
 
     try {
-      const res = await fetch(`${ENDPOINT_DASHBOARD}?indicator_name=${encodeURIComponent(indicator)}&year=${year}`);
+      const report_id = document.getElementById('dash-report-select').value;
+      const p = new URLSearchParams({ indicator_name: indicator, year });
+      if (report_id) p.set('report_id', report_id);
+      const res = await fetch(`${ENDPOINT_DASHBOARD}?${p}`);
       if (!res.ok) throw new Error(`HTTP ${res.status}`);
       const data = await res.json();
 
@@ -1884,7 +2202,9 @@
     btn.disabled = true; btn.textContent = 'A carregar...';
 
     try {
+      const report_id = document.getElementById('dash-report-select').value;
       const params = new URLSearchParams({ indicator_name: indicator, countries: checked.join(',') });
+      if (report_id) params.set('report_id', report_id);
       const res = await fetch(`${ENDPOINT_TIMESERIES}?${params}`);
       if (!res.ok) throw new Error(`HTTP ${res.status}`);
       const data = await res.json();
@@ -1965,7 +2285,10 @@
     btn.disabled = true; btn.textContent = 'A carregar...';
 
     try {
-      const res = await fetch(`${ENDPOINT_DASHBOARD}?indicator_name=${encodeURIComponent(indicator)}&year=${year}`);
+      const report_id = document.getElementById('dash-report-select').value;
+      const p = new URLSearchParams({ indicator_name: indicator, year });
+      if (report_id) p.set('report_id', report_id);
+      const res = await fetch(`${ENDPOINT_DASHBOARD}?${p}`);
       if (!res.ok) throw new Error(`HTTP ${res.status}`);
       const data = await res.json();
 
@@ -2017,63 +2340,227 @@
   }
 
   // ── ETL ──
-  async function loadEtlLogs() {
-    const tbody = document.getElementById('table-body-etl');
-    const theadRow = document.getElementById('etl-thead-row');
-    const countEl = document.getElementById('record-count-etl');
-    tbody.innerHTML = `<tr><td colspan="10"><div class="state-box"><div class="spinner"></div><p>A carregar dados...</p></div></td></tr>`;
+  function switchEtlLog(tipo) {
+    const isRel = tipo === 'relatorios';
+    document.getElementById('etl-section-pdfs').style.display  = isRel ? '' : 'none';
+    document.getElementById('etl-section-dados').style.display = isRel ? 'none' : '';
+    document.getElementById('etog-relatorios').classList.toggle('active', isRel);
+    document.getElementById('etog-dados').classList.toggle('active', !isRel);
+    document.getElementById('etl-h1').textContent  = isRel ? 'Ficheiros Inválidos — Relatórios' : 'Ficheiros Inválidos — Dados';
+    document.getElementById('etl-sub').textContent = isRel ? 'registos com erros no pipeline de PDFs' : 'registos com erros no pipeline de dados estruturados';
+    if (isRel  && !allRows.etlLogsPdfs.length)  loadEtlLogsTable('pdfs');
+    if (!isRel && !allRows.etlLogsDados.length) loadEtlLogsTable('dados');
+  }
 
+  let _etlEditFnsLoaded = false;
+  async function _loadEtlEditFunctions() {
+    if (_etlEditFnsLoaded) return;
     try {
-      const res = await fetch(ENDPOINT_ETL_LOGS);
+      const res = await fetch(`${API_BASE}/extract_functions`);
+      if (!res.ok) return;
+      const fns = await res.json();
+      const sel = document.getElementById('etl-edit-extract_function');
+      fns.forEach(f => {
+        const opt = document.createElement('option');
+        opt.value = f.name; opt.textContent = f.name;
+        opt.dataset.fileType = f.file_type || '';
+        sel.appendChild(opt);
+      });
+      _etlEditFnsLoaded = true;
+    } catch (_) {}
+  }
+
+  async function openEtlEditModal(fileId) {
+    await _loadEtlEditFunctions();
+    try {
+      const res = await fetch(`${API_BASE}/op_data/${fileId}`);
       if (!res.ok) throw new Error(`HTTP ${res.status}`);
-      const rows = await res.json();
-      allRows.etl = rows;
-
-      if (!rows.length) {
-        theadRow.innerHTML = '<th>—</th>';
-        tbody.innerHTML = `<tr><td colspan="1"><div class="state-box"><p>Sem registos em etl_logs.</p></div></td></tr>`;
-        countEl.innerHTML = '';
-        return;
-      }
-
-      // Build headers dynamically from first row keys
-      const cols = Object.keys(rows[0]);
-      theadRow.innerHTML = cols.map(c => `<th>${escHtml(c)}</th>`).join('');
-
-      renderEtlTable(rows, cols);
-      countEl.innerHTML = `<span>${rows.length}</span> registos`;
+      const row = await res.json();
+      document.getElementById('etl-edit-file_id').value          = row.file_id;
+      document.getElementById('etl-edit-file_name').value        = row.file_name ?? '';
+      document.getElementById('etl-edit-report_id').value        = row.report_id ?? '';
+      document.getElementById('etl-edit-file_url').value         = row.file_url  ?? '';
+      document.getElementById('etl-edit-extract_function').value = row.extract_function ?? '';
+      document.getElementById('etl-edit-file_url-group').style.display = row.file_url ? '' : 'none';
     } catch (e) {
-      tbody.innerHTML = `<tr><td colspan="10"><div class="state-box"><p>Erro: ${escHtml(e.message)}</p></div></td></tr>`;
-      showToast(`Erro ao carregar etl_logs: ${e.message}`, 'error');
+      showToast(`Erro ao carregar ficheiro: ${escHtml(e.message)}`, 'error');
+      return;
+    }
+    document.getElementById('etl-edit-modal').style.display = 'flex';
+  }
+
+  function closeEtlEditModal(e) {
+    if (!e || e.target === document.getElementById('etl-edit-modal')) {
+      document.getElementById('etl-edit-modal').style.display = 'none';
     }
   }
 
-  function renderEtlTable(rows, cols) {
-    const tbody = document.getElementById('table-body-etl');
-    if (!cols) {
-      cols = allRows.etl.length ? Object.keys(allRows.etl[0]) : [];
+  async function saveEtlEdit() {
+    const fileId = document.getElementById('etl-edit-file_id').value;
+    const btn = document.getElementById('btn-etl-edit-save');
+    btn.disabled = true; btn.textContent = 'A guardar...';
+    try {
+      const payload = {
+        file_url:         document.getElementById('etl-edit-file_url').value.trim()  || null,
+        extract_function: document.getElementById('etl-edit-extract_function').value || null,
+      };
+      const res = await fetch(`${API_BASE}/op_data/${fileId}`, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(payload),
+      });
+      if (!res.ok) {
+        const err = await res.json().catch(() => ({}));
+        throw new Error(err.detail || `HTTP ${res.status}`);
+      }
+      showToast('Ficheiro atualizado. Será reinserido na próxima pipeline.', 'ok');
+      document.getElementById('etl-edit-modal').style.display = 'none';
+      loadEtlLogsTable('dados');
+    } catch (e) {
+      showToast(`Erro: ${escHtml(e.message)}`, 'error');
+    } finally {
+      btn.disabled = false; btn.textContent = 'Guardar e Reinserir';
     }
+  }
+
+  async function openEtlReportEditModal(reportId) {
+    try {
+      const res = await fetch(`${API_BASE}/op_report/${reportId}`);
+      if (!res.ok) throw new Error(`HTTP ${res.status}`);
+      const row = await res.json();
+      document.getElementById('etl-report-edit-report_id').value      = row.report_id;
+      document.getElementById('etl-report-edit-file_name').value      = row.file_name    ?? '';
+      document.getElementById('etl-report-edit-report_url').value     = row.report_url   ?? '';
+      document.getElementById('etl-report-edit-area_tematica').value  = row.area_tematica ?? '';
+      document.getElementById('etl-report-edit-estado').value         = row.estado        ?? '';
+    } catch (e) {
+      showToast(`Erro ao carregar relatório: ${escHtml(e.message)}`, 'error');
+      return;
+    }
+    document.getElementById('etl-report-edit-modal').style.display = 'flex';
+  }
+
+  function closeEtlReportEditModal(e) {
+    if (!e || e.target === document.getElementById('etl-report-edit-modal')) {
+      document.getElementById('etl-report-edit-modal').style.display = 'none';
+    }
+  }
+
+  async function saveEtlReportEdit() {
+    const reportId = document.getElementById('etl-report-edit-report_id').value;
+    const btn = document.getElementById('btn-etl-report-edit-save');
+    btn.disabled = true; btn.textContent = 'A guardar...';
+    try {
+      const payload = {
+        file_name:    document.getElementById('etl-report-edit-file_name').value.trim()  || null,
+        report_url:   document.getElementById('etl-report-edit-report_url').value.trim() || null,
+        area_tematica: document.getElementById('etl-report-edit-area_tematica').value    || null,
+        estado:        document.getElementById('etl-report-edit-estado').value           || null,
+      };
+      const res = await fetch(`${API_BASE}/op_report/${reportId}`, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(payload),
+      });
+      if (!res.ok) {
+        const err = await res.json().catch(() => ({}));
+        throw new Error(err.detail || `HTTP ${res.status}`);
+      }
+      showToast('Relatório atualizado. Será reingerido na próxima pipeline.', 'ok');
+      document.getElementById('etl-report-edit-modal').style.display = 'none';
+      loadEtlLogsTable('pdfs');
+    } catch (e) {
+      showToast(`Erro: ${escHtml(e.message)}`, 'error');
+    } finally {
+      btn.disabled = false; btn.textContent = 'Guardar e Reinserir';
+    }
+  }
+
+  async function loadEtlData() {
+    const el = document.getElementById('etl-data-text');
+    el.innerHTML = '<span style="color:var(--text-muted);font-size:0.82rem;">A carregar...</span>';
+    try {
+      const res = await fetch(ENDPOINT_ETL_DATA);
+      if (!res.ok) throw new Error(`HTTP ${res.status}`);
+      const rows = await res.json();
+      allRows.etlData = rows;
+      if (!rows.length) { el.innerHTML = '<span style="font-size:0.82rem;color:var(--text-muted);">Sem dados.</span>'; return; }
+      const labels = { etl_dados: 'Última execução — Dados', etl_pdfs: 'Última execução — PDFs' };
+      el.innerHTML = rows.map(r => {
+        const label = labels[r.process_name] || r.process_name;
+        const date = r.last_run ? r.last_run.replace('T', ' ').slice(0, 19) : '—';
+        return `<span style="font-size:0.82rem;"><span style="color:var(--text-secondary);font-weight:500;">${escHtml(label)}</span><span style="color:var(--text-muted);margin-left:0.5rem;">${escHtml(date)}</span></span>`;
+      }).join('');
+    } catch (e) {
+      el.innerHTML = `<span style="font-size:0.82rem;color:var(--red);">Erro: ${escHtml(e.message)}</span>`;
+    }
+  }
+
+  async function loadEtlLogsTable(tipo) {
+    const endpoint = tipo === 'pdfs' ? ENDPOINT_ETL_LOGS_PDFS : ENDPOINT_ETL_LOGS_DADOS;
+    const key = tipo === 'pdfs' ? 'etlLogsPdfs' : 'etlLogsDados';
+    const tbody = document.getElementById(`table-body-etl-logs-${tipo}`);
+    const theadRow = document.getElementById(`etl-logs-${tipo}-thead-row`);
+    const countEl = document.getElementById(`record-count-etl-logs-${tipo}`);
+    tbody.innerHTML = `<tr><td colspan="7"><div class="state-box"><div class="spinner"></div><p>A carregar dados...</p></div></td></tr>`;
+    try {
+      const res = await fetch(endpoint);
+      if (!res.ok) throw new Error(`HTTP ${res.status}`);
+      const rows = await res.json();
+      allRows[key] = rows;
+      if (!rows.length) {
+        theadRow.innerHTML = '<th>—</th>';
+        tbody.innerHTML = `<tr><td colspan="1"><div class="state-box"><p>Sem registos em etl_logs_${tipo}.</p></div></td></tr>`;
+        countEl.innerHTML = '';
+        return;
+      }
+      const cols = Object.keys(rows[0]);
+      const editTh = (tipo === 'dados' || tipo === 'pdfs') ? '<th style="width:2.5rem;"></th>' : '';
+      theadRow.innerHTML = editTh + cols.map(c => `<th>${escHtml(c)}</th>`).join('');
+      renderEtlLogsTable(tipo, rows, cols);
+      countEl.innerHTML = `<span>${rows.length}</span> registos`;
+    } catch (e) {
+      tbody.innerHTML = `<tr><td colspan="7"><div class="state-box"><p>Erro: ${escHtml(e.message)}</p></div></td></tr>`;
+      showToast(`Erro ao carregar etl_logs_${tipo}: ${e.message}`, 'error');
+    }
+  }
+
+  function renderEtlLogsTable(tipo, rows, cols) {
+    const tbody = document.getElementById(`table-body-etl-logs-${tipo}`);
+    const key = tipo === 'pdfs' ? 'etlLogsPdfs' : 'etlLogsDados';
+    if (!cols) cols = allRows[key].length ? Object.keys(allRows[key][0]) : [];
     if (!rows.length) {
       tbody.innerHTML = `<tr><td colspan="${cols.length || 1}"><div class="state-box"><p>Sem resultados.</p></div></td></tr>`;
       return;
     }
-    tbody.innerHTML = rows.map(row =>
-      `<tr>${cols.map(c => {
+    tbody.innerHTML = rows.map(row => {
+      const cells = cols.map(c => {
         const val = row[c];
         const display = val === null || val === undefined ? '<span style="color:var(--text-muted)">null</span>' : escHtml(truncate(String(val), 60));
         return `<td class="td-wide">${display}</td>`;
-      }).join('')}</tr>`
-    ).join('');
+      }).join('');
+      const editTd = tipo === 'dados'
+        ? (row.file_id != null && row.file_id !== ''
+            ? `<td style="width:2.5rem;"><button class="btn-edit-mini" onclick="openEtlEditModal(${parseInt(row.file_id)})">editar</button></td>`
+            : '<td style="width:2.5rem;"></td>')
+        : tipo === 'pdfs'
+          ? (row.report_id != null && row.report_id !== ''
+              ? `<td style="width:2.5rem;"><button class="btn-edit-mini" onclick="openEtlReportEditModal(${parseInt(row.report_id)})">editar</button></td>`
+              : '<td style="width:2.5rem;"></td>')
+          : '';
+      return `<tr>${editTd}${cells}</tr>`;
+    }).join('');
   }
 
-  function filterEtlTable() {
-    const q = document.getElementById('search-input-etl').value.toLowerCase();
-    const cols = allRows.etl.length ? Object.keys(allRows.etl[0]) : [];
+  function filterEtlLogsTable(tipo) {
+    const q = document.getElementById(`search-etl-logs-${tipo}`).value.toLowerCase();
+    const key = tipo === 'pdfs' ? 'etlLogsPdfs' : 'etlLogsDados';
+    const cols = allRows[key].length ? Object.keys(allRows[key][0]) : [];
     const filtered = q
-      ? allRows.etl.filter(row => cols.some(c => String(row[c] ?? '').toLowerCase().includes(q)))
-      : allRows.etl;
-    document.getElementById('record-count-etl').innerHTML = `<span>${filtered.length}</span> registos`;
-    renderEtlTable(filtered, cols);
+      ? allRows[key].filter(row => cols.some(c => String(row[c] ?? '').toLowerCase().includes(q)))
+      : allRows[key];
+    document.getElementById(`record-count-etl-logs-${tipo}`).innerHTML = `<span>${filtered.length}</span> registos`;
+    renderEtlLogsTable(tipo, filtered, cols);
   }
 
   async function ingestData(tipo = 'dados') {
@@ -2116,7 +2603,7 @@
       status.style.color = success ? 'var(--green)' : 'var(--red)';
       showToast(success ? 'Pipeline concluído.' : 'Pipeline terminou com erros.', success ? 'success' : 'error');
 
-      if (success) loadEtlLogs();
+      if (success) { loadEtlLogsTable('dados'); loadEtlLogsTable('pdfs'); }
 
     } catch (e) {
       log.textContent += `\n✗ Erro: ${e.message}`;
@@ -2186,8 +2673,11 @@
       document.getElementById(`rsrc-${m}`).style.display = m === mode ? '' : 'none';
       document.getElementById(`rtab-${m}`).classList.toggle('active', m === mode);
     });
+    const isBatch = mode === 'batch';
+    ['rg-file_name','rg-source_code','rg-pub_date','rg-area_tematica','rg-estado','rg-palavras_chave','rg-resumo']
+      .forEach(id => document.getElementById(id).style.display = isBatch ? 'none' : '');
     const btn = document.getElementById('btn-report-submit');
-    btn.textContent = mode === 'batch' ? 'Importar Lote' : mode === 'upload' ? 'Carregar PDF' : 'Adicionar Relatório';
+    btn.textContent = isBatch ? 'Importar Lote' : mode === 'upload' ? 'Carregar PDF' : 'Adicionar Relatório';
   }
 
   function submitReportAuto() {
@@ -2263,15 +2753,32 @@
   }
 
   // ── SUBMIT: BATCH RELATÓRIOS ──
-  function stripJsoncComments(text) {
-    return text.replace(/\/\/[^\n]*/g, '').replace(/\/\*[\s\S]*?\*\//g, '');
+  function sanitizeJson(text) {
+    let out = '', inStr = false, esc = false;
+    for (let i = 0; i < text.length; i++) {
+      const ch = text[i];
+      if (esc) { out += ch; esc = false; continue; }
+      if (ch === '\\' && inStr) { out += ch; esc = true; continue; }
+      if (ch === '"') { inStr = !inStr; out += ch; continue; }
+      if (!inStr) {
+        if (ch === '/' && text[i+1] === '/') { while (i < text.length && text[i] !== '\n') i++; continue; }
+        if (ch === '/' && text[i+1] === '*') { i += 2; while (i < text.length && !(text[i] === '*' && text[i+1] === '/')) i++; i++; continue; }
+      }
+      if (inStr) {
+        if (ch === '\n') { out += '\\n'; continue; }
+        if (ch === '\r') { out += '\\r'; continue; }
+        if (ch === '\t') { out += '\\t'; continue; }
+      }
+      out += ch;
+    }
+    return out;
   }
 
   async function submitBatchReports() {
     const raw = document.getElementById('f-batch-json').value.trim();
     let payload;
     try {
-      payload = JSON.parse(stripJsoncComments(raw));
+      payload = JSON.parse(sanitizeJson(raw));
       if (!Array.isArray(payload)) throw new Error('O JSON deve ser um array.');
     } catch (e) { showToast(`JSON inválido: ${e.message}`, 'error'); return; }
 
@@ -2307,78 +2814,89 @@
   }
 
   // ── DROPDOWNS ADICIONAIS ──
-  async function loadReportDropdown2() {
-    const sel = document.getElementById('d-up-rid');
-    if (sel.options.length > 1) return;
-    await _fillReportDropdown(sel);
+  function _escHtml(s) {
+    return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
   }
-  async function loadReportDropdown3() {
-    const sel = document.getElementById('d-pairs-rid');
-    if (sel.options.length > 1) return;
-    await _fillReportDropdown(sel);
+
+  async function toggleRepDropdown() {
+    const menu   = document.getElementById('rep-dropdown-menu');
+    const toggle = document.getElementById('rep-dropdown-toggle');
+    const isOpen = menu.style.display !== 'none';
+    if (!isOpen) await _loadRepDropdown();
+    menu.style.display = isOpen ? 'none' : 'block';
+    toggle.classList.toggle('open', !isOpen);
   }
+  async function _loadRepDropdown() {
+    const menu = document.getElementById('rep-dropdown-menu');
+    try {
+      const res = await fetch(ENDPOINT_REPORT);
+      if (!res.ok) return;
+      const reports = await res.json();
+      menu.innerHTML = reports.map(r => `
+        <div class="rep-dropdown-item" onclick="selectReport(${r.report_id},'${_escHtml(r.file_name)}')">
+          <span>${_escHtml(r.file_name)}</span>
+          <span class="rep-src">${_escHtml(r.source_code || '')}</span>
+        </div>`).join('');
+    } catch (e) { console.error(e); }
+  }
+  function selectReport(id, name) {
+    document.getElementById('d-up-rid').value = id;
+    document.getElementById('rep-dropdown-label').textContent = name;
+    document.getElementById('rep-dropdown-menu').style.display = 'none';
+    document.getElementById('rep-dropdown-toggle').classList.remove('open');
+  }
+
   async function _fillReportDropdown(sel) {
     try {
       const res = await fetch(ENDPOINT_REPORT);
       if (!res.ok) return;
       const reports = await res.json();
-      sel.innerHTML = '<option value="">— Escolhe um report_id —</option>';
+      sel.innerHTML = '<option value="">— Escolhe um relatório —</option>';
+      const groups = {};
       reports.forEach(r => {
-        sel.innerHTML += `<option value="${r.report_id}">ID ${r.report_id} — ${r.source_code} (${r.file_name})</option>`;
+        const src = r.source_code || 'Sem fonte';
+        if (!groups[src]) groups[src] = [];
+        groups[src].push(r);
+      });
+      Object.entries(groups).forEach(([src, items]) => {
+        const grp = document.createElement('optgroup');
+        grp.label = src;
+        items.forEach(r => {
+          const opt = document.createElement('option');
+          opt.value = r.report_id;
+          opt.textContent = r.file_name;
+          grp.appendChild(opt);
+        });
+        sel.appendChild(grp);
       });
     } catch (e) { console.error(e); }
   }
 
   // ── SUBMIT: DADOS UPLOAD ──
   async function submitDataUpload() {
-    const fileInput = document.getElementById('d-up-file');
-    const reportId  = document.getElementById('d-up-rid').value;
-    if (!fileInput.files.length || !reportId) {
-      showToast('Seleciona um ficheiro e um report_id.', 'error'); return;
+    const fileInput   = document.getElementById('d-up-file');
+    const reportId    = document.getElementById('d-up-rid').value;
+    const selectedFns = getSelectedFns();
+    if (!fileInput.files.length || !reportId || !selectedFns.length) {
+      showToast('Seleciona pelo menos um ficheiro, um relatório e uma função.', 'error'); return;
     }
     const fd = new FormData();
-    fd.append('file', fileInput.files[0]);
+    Array.from(fileInput.files).forEach(f => fd.append('files', f));
     fd.append('report_id', reportId);
-    fd.append('extract_function', document.getElementById('d-up-fn').value.trim());
-    fd.append('file_type', document.getElementById('d-up-type').value);
+    fd.append('extract_functions', selectedFns.join(','));
 
     const btn = document.getElementById('btn-add-upload-data');
     btn.disabled = true; btn.textContent = 'A carregar...';
-    try {
-      const res = await fetch(`${API_BASE}/op_data/upload`, { method: 'POST', body: fd });
-      if (!res.ok) throw new Error((await res.json()).detail || `HTTP ${res.status}`);
-      showToast('Ficheiro carregado e registado.');
-      fileInput.value = '';
-      document.getElementById('d-up-fn').value = '';
-    } catch (e) { showToast(e.message, 'error'); }
-    finally { btn.disabled = false; btn.textContent = 'Carregar Ficheiro'; }
-  }
-
-  // ── SUBMIT: DADOS PARES ──
-  async function submitDataPairs() {
-    const fileInput = document.getElementById('d-pairs-file');
-    const reportId  = document.getElementById('d-pairs-rid').value;
-    const fns       = document.getElementById('d-pairs-fns').value.trim();
-    if (!fileInput.files.length || !reportId || !fns) {
-      showToast('Ficheiro, report_id e funções são obrigatórios.', 'error'); return;
-    }
-    const fd = new FormData();
-    fd.append('file', fileInput.files[0]);
-    fd.append('report_id', reportId);
-    fd.append('extract_functions', fns);
-    fd.append('file_type', document.getElementById('d-pairs-type').value);
-
-    const btn = document.getElementById('btn-add-pairs');
-    btn.disabled = true; btn.textContent = 'A criar...';
     try {
       const res = await fetch(`${API_BASE}/op_data/pairs`, { method: 'POST', body: fd });
       if (!res.ok) throw new Error((await res.json()).detail || `HTTP ${res.status}`);
       const data = await res.json();
       showToast(data.message);
       fileInput.value = '';
-      document.getElementById('d-pairs-fns').value = '';
+      document.querySelectorAll('#fn-dropdown-menu input[type="checkbox"]').forEach(c => c.checked = false);
+      updateFnDropdownLabel();
     } catch (e) { showToast(e.message, 'error'); }
-    finally { btn.disabled = false; btn.textContent = 'Criar Pares'; }
+    finally { btn.disabled = false; btn.textContent = 'Carregar Ficheiro(s)'; }
   }
 
   // ── SUBMIT: BATCH DADOS ──
@@ -2386,7 +2904,7 @@
     const raw = document.getElementById('d-batch-json').value.trim();
     let payload;
     try {
-      payload = JSON.parse(stripJsoncComments(raw));
+      payload = JSON.parse(sanitizeJson(raw));
       if (!Array.isArray(payload)) throw new Error('O JSON deve ser um array.');
     } catch (e) { showToast(`JSON inválido: ${e.message}`, 'error'); return; }
 

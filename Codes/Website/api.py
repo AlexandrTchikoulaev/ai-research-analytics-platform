@@ -2,6 +2,7 @@ from fastapi import FastAPI, HTTPException, UploadFile, File, Form
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import StreamingResponse
 from pydantic import BaseModel
+from typing import Optional
 from datetime import datetime, date
 import psycopg2
 import psycopg2.extras
@@ -11,6 +12,10 @@ import os
 import re
 import json
 import boto3
+
+# Importar mapeamentos do silver_functions
+sys.path.insert(0, os.path.normpath(os.path.join(os.path.dirname(__file__), "..", "Pipeline")))
+from silver_functions import EXTRACT_FUNCTIONS as _EXTRACT_FUNCTIONS, FUNCTION_FILE_TYPE
 
 # ── RAG imports ──────────────────────────────────────────
 from langchain_core.prompts import ChatPromptTemplate
@@ -22,8 +27,8 @@ from langchain_community.embeddings.ollama import OllamaEmbeddings
 _DB_BASE = {"host": "localhost", "port": 5433, "user": "projeto_utilizador", "password": "projeto"}
 
 DB_WAREHOUSE   = {**_DB_BASE, "database": "warehouse_db"}
-DB_OPERATIONAL = {**_DB_BASE, "database": "operational_db"}
-DB_PIPELINE    = {**_DB_BASE, "database": "pipeline_db"}
+DB_OPERATIONAL = {**_DB_BASE, "database": "gestao_db"}
+DB_PIPELINE    = {**_DB_BASE, "database": "gestao_db"}
 DB_VECTOR      = {**_DB_BASE, "database": "vector_db"}
 
 MINIO_CONFIG = {
@@ -34,6 +39,7 @@ MINIO_CONFIG = {
 
 BUCKET_UNSTRUCTURED = "bronze-unstructured"
 BUCKET_RAW = "bronze"
+
 
 PROMPT_TEMPLATE = """
 Answer the question based only on the following context:
@@ -100,7 +106,7 @@ app = FastAPI(title="Repositório de Rankings e Relatórios")
 app.add_middleware(
     CORSMiddleware,
     allow_origins=["*"],
-    allow_methods=["GET", "POST"],
+    allow_methods=["GET", "POST", "PATCH"],
     allow_headers=["*"],
 )
 
@@ -125,7 +131,24 @@ class OpDataIn(BaseModel):
     report_id: int
     file_url: str = ""
     extract_function: str = ""
-    file_type: str = ""
+
+
+class OpDataPatch(BaseModel):
+    report_id: Optional[int] = None
+    file_url: Optional[str] = None
+    extract_function: Optional[str] = None
+    file_type: Optional[str] = None
+
+
+class ReportPatch(BaseModel):
+    report_url: Optional[str] = None
+    file_name: Optional[str] = None
+    source_code: Optional[str] = None
+    publication_date: Optional[date] = None
+    area_tematica: Optional[str] = None
+    estado: Optional[str] = None
+    palavras_chave: Optional[str] = None
+    resumo: Optional[str] = None
 
 
 # ── Helpers RAG ───────────────────────────────────────────
@@ -197,7 +220,7 @@ async def upload_report(
 ):
     """Insere um relatório PDF via upload direto para MinIO."""
     content = await file.read()
-    if not content[:4] == b"%PDF":
+    if content[:4] != b"%PDF":
         raise HTTPException(status_code=400, detail="O ficheiro não é um PDF válido.")
 
     try:
@@ -205,19 +228,7 @@ async def upload_report(
     except ValueError as e:
         raise HTTPException(status_code=400, detail=str(e))
 
-    s3 = get_s3()
-    ensure_bucket(s3, BUCKET_UNSTRUCTURED)
-
-    try:
-        s3.put_object(
-            Bucket=BUCKET_UNSTRUCTURED,
-            Key=file_name,
-            Body=content,
-            ContentType="application/pdf",
-        )
-    except Exception as e:
-        raise HTTPException(status_code=500, detail=f"Erro ao guardar PDF no MinIO: {e}")
-
+    # Inserir na DB primeiro para obter report_id, depois usar na metadata do MinIO
     try:
         conn = get_operational_connection()
         cur = conn.cursor()
@@ -231,9 +242,24 @@ async def upload_report(
         conn.commit()
         cur.close()
         conn.close()
-        return {"report_id": report_id, "message": "PDF carregado e relatório registado com sucesso."}
     except Exception as e:
-        raise HTTPException(status_code=500, detail=str(e))
+        raise HTTPException(status_code=500, detail=f"Erro ao registar relatório: {e}")
+
+    s3 = get_s3()
+    ensure_bucket(s3, BUCKET_UNSTRUCTURED)
+
+    try:
+        s3.put_object(
+            Bucket=BUCKET_UNSTRUCTURED,
+            Key=file_name,
+            Body=content,
+            ContentType="application/pdf",
+            Metadata={"report_id": str(report_id), "file_name": file_name},
+        )
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Erro ao guardar PDF no MinIO: {e}")
+
+    return {"report_id": report_id, "message": "PDF carregado e relatório registado com sucesso."}
 
 
 @app.post("/op_report/batch", status_code=201)
@@ -262,8 +288,8 @@ async def batch_reports(payload: list[dict]):
                                        area_tematica, estado, palavras_chave, resumo)
                 VALUES (%s, %s, %s, %s, %s, %s, %s, %s)
             """, (source_code, file_name, report_url, pub_date,
-                  item.get("area_tematica", ""), item.get("estado", ""),
-                  item.get("palavras_chave", ""), item.get("resumo", "")))
+                  item.get("areaTematica", ""), item.get("estado", ""),
+                  item.get("palavras-chave", ""), item.get("resumo", "")))
             cur.execute(f"RELEASE SAVEPOINT {sp}")
             inserted += 1
         except Exception as e:
@@ -290,12 +316,13 @@ def add_op_data(data: OpDataIn):
         if not cur.fetchone():
             raise HTTPException(status_code=404, detail=f"report_id {data.report_id} não existe.")
 
+        file_type = FUNCTION_FILE_TYPE.get(data.extract_function) if data.extract_function else None
         cur.execute("""
             INSERT INTO op_data (report_id, file_url, extract_function, file_type)
             VALUES (%s, %s, %s, %s)
             RETURNING file_id;
         """, (data.report_id, data.file_url or None,
-              data.extract_function or None, data.file_type or None))
+              data.extract_function or None, file_type))
         file_id = cur.fetchone()[0]
         conn.commit()
         cur.close()
@@ -314,7 +341,6 @@ async def upload_op_data(
     file: UploadFile = File(...),
     report_id: int = Form(...),
     extract_function: str = Form(""),
-    file_type: str = Form(""),
 ):
     """Carrega um ficheiro de dados diretamente para Bronze (MinIO raw)."""
     content = await file.read()
@@ -329,12 +355,14 @@ async def upload_op_data(
         raise HTTPException(status_code=404, detail=f"report_id {report_id} não existe.")
 
     # Criar registo primeiro para obter o file_id
+    file_type = FUNCTION_FILE_TYPE.get(extract_function) if extract_function else None
+    original_name = file.filename or ""
     try:
         cur.execute("""
-            INSERT INTO op_data (report_id, file_url, extract_function, file_type)
-            VALUES (%s, NULL, %s, %s)
+            INSERT INTO op_data (report_id, file_url, file_name, extract_function, file_type)
+            VALUES (%s, NULL, %s, %s, %s)
             RETURNING file_id, created_at;
-        """, (report_id, extract_function or None, file_type or None))
+        """, (report_id, original_name, extract_function or None, file_type))
         file_id, created_at = cur.fetchone()
         conn.commit()
     except Exception as e:
@@ -356,35 +384,34 @@ async def upload_op_data(
             Key=str(file_id),
             Body=content,
             Metadata={
-                "file_id": str(file_id),
                 "report_id": str(report_id),
                 "extract_function": extract_function or "",
                 "file_type": file_type or "",
-                "file_format": fmt,
                 "created_at": created_str,
-                "source_url": "",
             },
         )
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"Erro ao guardar no MinIO: {e}")
 
-    return {"file_id": file_id, "message": "Ficheiro carregado e registado com sucesso."}
+    return {"file_id": file_id, "file_type": file_type, "message": "Ficheiro carregado e registado com sucesso."}
 
 
 @app.post("/op_data/pairs", status_code=201)
 async def upload_op_data_pairs(
-    file: UploadFile = File(...),
+    files: list[UploadFile] = File(...),
     report_id: int = Form(...),
     extract_functions: str = Form(...),
-    file_type: str = Form(""),
 ):
-    """Carrega um ficheiro e associa-o a múltiplas funções de extração (modo pares)."""
-    content = await file.read()
-    fmt = (file.filename or "").rsplit(".", 1)[-1].lower() if "." in (file.filename or "") else "json"
+    """Carrega múltiplos ficheiros e associa-os a múltiplas funções (produto cartesiano)."""
     functions = [f.strip() for f in extract_functions.split(",") if f.strip()]
-
     if not functions:
         raise HTTPException(status_code=400, detail="Pelo menos uma extract_function é necessária.")
+
+    file_data = []
+    for f in files:
+        content = await f.read()
+        fmt = (f.filename or "").rsplit(".", 1)[-1].lower() if "." in (f.filename or "") else "json"
+        file_data.append((content, fmt, f.filename or ""))
 
     conn = get_operational_connection()
     cur = conn.cursor()
@@ -399,31 +426,28 @@ async def upload_op_data_pairs(
 
     created_ids = []
     try:
-        for fn in functions:
-            cur.execute("""
-                INSERT INTO op_data (report_id, file_url, extract_function, file_type)
-                VALUES (%s, NULL, %s, %s)
-                RETURNING file_id, created_at;
-            """, (report_id, fn, file_type or None))
-            file_id, created_at = cur.fetchone()
-            created_str = created_at.isoformat() if hasattr(created_at, "isoformat") else str(created_at)
-
-            s3.put_object(
-                Bucket=BUCKET_RAW,
-                Key=str(file_id),
-                Body=content,
-                Metadata={
-                    "file_id": str(file_id),
-                    "report_id": str(report_id),
-                    "extract_function": fn,
-                    "file_type": file_type or "",
-                    "file_format": fmt,
-                    "created_at": created_str,
-                    "source_url": "",
-                },
-            )
-            created_ids.append(file_id)
-
+        for content, fmt, file_name in file_data:
+            for fn in functions:
+                fn_file_type = FUNCTION_FILE_TYPE.get(fn)
+                cur.execute("""
+                    INSERT INTO op_data (report_id, file_url, file_name, extract_function, file_type)
+                    VALUES (%s, NULL, %s, %s, %s)
+                    RETURNING file_id, created_at;
+                """, (report_id, file_name, fn, fn_file_type))
+                file_id, created_at = cur.fetchone()
+                created_str = created_at.isoformat() if hasattr(created_at, "isoformat") else str(created_at)
+                s3.put_object(
+                    Bucket=BUCKET_RAW,
+                    Key=str(file_id),
+                    Body=content,
+                    Metadata={
+                        "report_id": str(report_id),
+                        "extract_function": fn,
+                        "file_type": fn_file_type or "",
+                        "created_at": created_str,
+                    },
+                )
+                created_ids.append(file_id)
         conn.commit()
     except Exception as e:
         conn.rollback()
@@ -433,7 +457,8 @@ async def upload_op_data_pairs(
 
     cur.close()
     conn.close()
-    return {"file_ids": created_ids, "message": f"{len(created_ids)} registos criados (modo pares)."}
+    n_files, n_fns = len(file_data), len(functions)
+    return {"file_ids": created_ids, "message": f"{len(created_ids)} registos criados ({n_files} ficheiro(s) × {n_fns} função(ões))."}
 
 
 @app.post("/op_data/batch", status_code=201)
@@ -451,7 +476,7 @@ async def batch_op_data(payload: list[dict]):
             report_id = item.get("report_id")
             file_url = item.get("file_url") or None
             extract_function = item.get("extract_function") or None
-            file_type = item.get("file_type") or None
+            file_type = FUNCTION_FILE_TYPE.get(extract_function) if extract_function else None
 
             if not report_id:
                 raise ValueError("report_id é obrigatório")
@@ -542,6 +567,198 @@ def get_op_data():
         raise HTTPException(status_code=500, detail=str(e))
 
 
+@app.get("/op_data/{file_id}")
+def get_op_data_by_id(file_id: int):
+    try:
+        conn = get_operational_connection()
+        cur = conn.cursor(cursor_factory=psycopg2.extras.RealDictCursor)
+        cur.execute(
+            "SELECT file_id, file_name, report_id, file_url, extract_function, file_type FROM op_data WHERE file_id = %s",
+            (file_id,)
+        )
+        row = cur.fetchone()
+        cur.close()
+        conn.close()
+        if not row:
+            raise HTTPException(status_code=404, detail=f"file_id {file_id} não encontrado.")
+        return dict(row)
+    except HTTPException:
+        raise
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
+
+@app.patch("/op_data/{file_id}")
+def patch_op_data(file_id: int, data: OpDataPatch):
+    """Edita os campos de um ficheiro em op_data e repõe created_at para ser reprocessado na próxima pipeline."""
+    try:
+        conn_op = get_operational_connection()
+        cur_op = conn_op.cursor()
+
+        # Se extract_function for fornecida, derivar file_type automaticamente
+        file_type = data.file_type
+        if data.extract_function:
+            computed = FUNCTION_FILE_TYPE.get(data.extract_function)
+            if computed:
+                file_type = computed
+
+        cur_op.execute("""
+            UPDATE op_data
+            SET report_id        = COALESCE(%s, report_id),
+                file_url         = %s,
+                extract_function = %s,
+                file_type        = %s,
+                created_at       = CURRENT_TIMESTAMP
+            WHERE file_id = %s
+            RETURNING report_id, file_url, extract_function, file_type, created_at
+        """, (data.report_id, data.file_url or None, data.extract_function or None, file_type or None, file_id))
+
+        row = cur_op.fetchone()
+        if not row:
+            conn_op.rollback()
+            cur_op.close(); conn_op.close()
+            raise HTTPException(status_code=404, detail=f"file_id {file_id} não encontrado.")
+
+        new_report_id, new_file_url, new_extract_function, new_file_type, new_created_at = row
+        conn_op.commit()
+        cur_op.close()
+        conn_op.close()
+
+        # Remover logs de erro deste file_id para que o bronze não o coloque na blacklist
+        try:
+            conn_pipe = get_pipeline_connection()
+            cur_pipe = conn_pipe.cursor()
+            cur_pipe.execute(
+                "DELETE FROM etl_logs_dados WHERE file_id = %s AND status = 'error'",
+                (str(file_id),)
+            )
+            conn_pipe.commit()
+            cur_pipe.close()
+            conn_pipe.close()
+        except Exception:
+            pass
+
+        # Atualizar metadados no MinIO se o objeto existir
+        try:
+            s3 = get_s3()
+            head = s3.head_object(Bucket=BUCKET_RAW, Key=str(file_id))
+            current_meta = head.get("Metadata", {})
+            created_str = new_created_at.isoformat() if hasattr(new_created_at, "isoformat") else str(new_created_at)
+            new_meta = {
+                "report_id":        str(new_report_id) if new_report_id is not None else "",
+                "extract_function": new_extract_function or "",
+                "file_type":        new_file_type or "",
+                "created_at":       created_str,
+            }
+            s3.copy_object(
+                Bucket=BUCKET_RAW,
+                Key=str(file_id),
+                CopySource={"Bucket": BUCKET_RAW, "Key": str(file_id)},
+                Metadata=new_meta,
+                MetadataDirective="REPLACE",
+            )
+        except Exception:
+            pass
+
+        return {"message": "Ficheiro atualizado. Será reinserido na próxima execução da pipeline."}
+    except HTTPException:
+        raise
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
+
+@app.get("/op_report/{report_id}")
+def get_op_report_by_id(report_id: int):
+    try:
+        conn = get_operational_connection()
+        cur = conn.cursor(cursor_factory=psycopg2.extras.RealDictCursor)
+        cur.execute(
+            "SELECT report_id, source_code, file_name, report_url, publication_date, area_tematica, estado, palavras_chave, resumo FROM op_report WHERE report_id = %s",
+            (report_id,)
+        )
+        row = cur.fetchone()
+        cur.close()
+        conn.close()
+        if not row:
+            raise HTTPException(status_code=404, detail=f"report_id {report_id} não encontrado.")
+        return dict(row)
+    except HTTPException:
+        raise
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
+
+@app.patch("/op_report/{report_id}")
+def patch_op_report(report_id: int, data: ReportPatch):
+    """Edita campos de op_report, repõe created_at e limpa erros para reprocessamento."""
+    try:
+        conn_op = get_operational_connection()
+        cur_op = conn_op.cursor()
+        cur_op.execute("""
+            UPDATE op_report
+            SET report_url       = COALESCE(%s, report_url),
+                file_name        = COALESCE(%s, file_name),
+                source_code      = COALESCE(%s, source_code),
+                publication_date = COALESCE(%s, publication_date),
+                area_tematica    = COALESCE(%s, area_tematica),
+                estado           = COALESCE(%s, estado),
+                palavras_chave   = COALESCE(%s, palavras_chave),
+                resumo           = COALESCE(%s, resumo),
+                created_at       = CURRENT_TIMESTAMP
+            WHERE report_id = %s
+            RETURNING file_name
+        """, (
+            data.report_url, data.file_name, data.source_code,
+            data.publication_date, data.area_tematica, data.estado,
+            data.palavras_chave, data.resumo,
+            report_id,
+        ))
+        row = cur_op.fetchone()
+        if not row:
+            conn_op.rollback()
+            cur_op.close(); conn_op.close()
+            raise HTTPException(status_code=404, detail=f"report_id {report_id} não encontrado.")
+        new_file_name = row[0]
+        conn_op.commit()
+        cur_op.close()
+        conn_op.close()
+
+        # Limpar erros deste report no etl_logs_pdfs
+        try:
+            conn_pipe = get_pipeline_connection()
+            cur_pipe = conn_pipe.cursor()
+            cur_pipe.execute(
+                "DELETE FROM etl_logs_pdfs WHERE report_id = %s AND status = 'error'",
+                (report_id,)
+            )
+            conn_pipe.commit()
+            cur_pipe.close()
+            conn_pipe.close()
+        except Exception:
+            pass
+
+        # Remover PDF do bucket bronze-unstructured para forçar nova transferência
+        try:
+            s3 = get_s3()
+            s3.delete_object(Bucket=BUCKET_UNSTRUCTURED, Key=new_file_name)
+        except Exception:
+            pass
+
+        return {"message": "Relatório atualizado. Será reingerido na próxima execução da pipeline."}
+    except HTTPException:
+        raise
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
+
+@app.get("/extract_functions")
+def get_extract_functions():
+    return [
+        {"name": name, "file_type": FUNCTION_FILE_TYPE.get(name, "")}
+        for name in _EXTRACT_FUNCTIONS
+    ]
+
+
 @app.get("/sources")
 def get_sources():
     try:
@@ -571,26 +788,26 @@ def get_indicators(source_code: str = None):
                 rows = []
             else:
                 cur_dw.execute("""
-                    SELECT DISTINCT i.indicator_code, i.indicator_name
+                    SELECT DISTINCT i.indicator_sk, i.indicator_code, i.indicator_name, i.source_system
                     FROM dim_indicator i
-                    JOIN fact_values f ON f.indicator_code = i.indicator_code
+                    JOIN fact_values f ON f.indicator_sk = i.indicator_sk
                     WHERE f.report_id = ANY(%s)
                     ORDER BY i.indicator_name;
                 """, (report_ids,))
                 rows = [dict(r) | {"source_code": source_code} for r in cur_dw.fetchall()]
         else:
             cur_dw.execute("""
-                SELECT DISTINCT ON (i.indicator_code) i.indicator_code, i.indicator_name, f.report_id
+                SELECT DISTINCT ON (i.indicator_sk) i.indicator_sk, i.indicator_code, i.indicator_name, i.source_system, f.report_id
                 FROM dim_indicator i
-                JOIN fact_values f ON f.indicator_code = i.indicator_code
-                ORDER BY i.indicator_code;
+                JOIN fact_values f ON f.indicator_sk = i.indicator_sk
+                ORDER BY i.indicator_sk;
             """)
             dw_rows = cur_dw.fetchall()
             if dw_rows:
                 rids = list({r["report_id"] for r in dw_rows})
                 cur_op.execute("SELECT report_id, source_code FROM op_report WHERE report_id = ANY(%s)", (rids,))
                 src_map = {r["report_id"]: r["source_code"] for r in cur_op.fetchall()}
-                rows = [{"indicator_code": r["indicator_code"], "indicator_name": r["indicator_name"], "source_code": src_map.get(r["report_id"])} for r in dw_rows]
+                rows = [{"indicator_sk": r["indicator_sk"], "indicator_code": r["indicator_code"], "indicator_name": r["indicator_name"], "source_system": r["source_system"], "source_code": src_map.get(r["report_id"])} for r in dw_rows]
             else:
                 rows = []
 
@@ -602,19 +819,19 @@ def get_indicators(source_code: str = None):
 
 
 @app.get("/fact_values")
-def get_fact_values(indicator_code: str):
+def get_fact_values(indicator_sk: int):
     try:
         conn = get_warehouse_connection()
         cur = conn.cursor(cursor_factory=psycopg2.extras.RealDictCursor)
         cur.execute("""
-            SELECT c.location_code, c.location_name, d.year, f.value
+            SELECT c.location_code, c.name AS location_name, d.year, f.value
             FROM fact_values f
-            JOIN dim_location c ON f.location_code = c.location_code
-            JOIN dim_indicator i ON f.indicator_code = i.indicator_code
+            JOIN dim_location c ON f.location_sk = c.location_sk
+            JOIN dim_indicator i ON f.indicator_sk = i.indicator_sk
             JOIN dim_date d ON f.date_id = d.date_id
-            WHERE i.indicator_code = %s
-            ORDER BY d.year ASC, c.location_name ASC;
-        """, (indicator_code,))
+            WHERE i.indicator_sk = %s
+            ORDER BY d.year ASC, c.name ASC;
+        """, (indicator_sk,))
         rows = cur.fetchall()
         cur.close()
         conn.close()
@@ -628,16 +845,28 @@ def get_fact_values(indicator_code: str):
 # ════════════════════════════════════════════════════════════
 
 @app.get("/dashboard")
-def get_dashboard(indicator_name: str, year: int):
+def get_dashboard(indicator_name: str, year: int, report_id: int = None):
     try:
         conn = get_warehouse_connection()
         cur = conn.cursor(cursor_factory=psycopg2.extras.RealDictCursor)
-        cur.execute(
-            """SELECT location_name, value FROM view
-               WHERE REPLACE(REPLACE(indicator_name, E'\n', ' '), E'\r', '') = %s
-               AND year = %s ORDER BY location_name;""",
-            (indicator_name.strip(), year),
-        )
+        if report_id is not None:
+            cur.execute("""
+                SELECT dl.name AS location_name, fv.value
+                FROM fact_values fv
+                JOIN dim_indicator di ON fv.indicator_sk = di.indicator_sk
+                JOIN dim_location dl ON fv.location_sk = dl.location_sk
+                JOIN dim_date dd ON fv.date_id = dd.date_id
+                WHERE TRIM(REPLACE(REPLACE(di.indicator_name, E'\n', ' '), E'\r', '')) = %s
+                  AND dd.year = %s AND fv.report_id = %s
+                ORDER BY dl.name;
+            """, (indicator_name.strip(), year, report_id))
+        else:
+            cur.execute(
+                """SELECT location_name, value FROM view
+                   WHERE TRIM(REPLACE(REPLACE(indicator_name, E'\n', ' '), E'\r', '')) = %s
+                   AND year = %s ORDER BY location_name;""",
+                (indicator_name.strip(), year),
+            )
         rows = cur.fetchall()
         cur.close()
         conn.close()
@@ -647,22 +876,47 @@ def get_dashboard(indicator_name: str, year: int):
 
 
 @app.get("/dashboard/filters")
-def get_dashboard_filters(indicator_name: str = None):
+def get_dashboard_filters(indicator_name: str = None, report_id: int = None):
     try:
         conn = get_warehouse_connection()
         cur = conn.cursor(cursor_factory=psycopg2.extras.RealDictCursor)
-        cur.execute("""
-            SELECT DISTINCT REPLACE(REPLACE(indicator_name, E'\n', ' '), E'\r', '') AS indicator_name
-            FROM view ORDER BY 1;
-        """)
+        if report_id is not None:
+            cur.execute("""
+                SELECT DISTINCT REPLACE(REPLACE(di.indicator_name, E'\n', ' '), E'\r', '') AS indicator_name
+                FROM fact_values fv
+                JOIN dim_indicator di ON fv.indicator_sk = di.indicator_sk
+                WHERE fv.report_id = %s ORDER BY 1;
+            """, (report_id,))
+        else:
+            cur.execute("""
+                SELECT DISTINCT REPLACE(REPLACE(indicator_name, E'\n', ' '), E'\r', '') AS indicator_name
+                FROM view ORDER BY 1;
+            """)
         indicators = [r["indicator_name"].strip() for r in cur.fetchall()]
 
-        if indicator_name:
+        if indicator_name and report_id is not None:
+            cur.execute("""
+                SELECT DISTINCT dd.year
+                FROM fact_values fv
+                JOIN dim_indicator di ON fv.indicator_sk = di.indicator_sk
+                JOIN dim_date dd ON fv.date_id = dd.date_id
+                WHERE TRIM(REPLACE(REPLACE(di.indicator_name, E'\n', ' '), E'\r', '')) = %s
+                  AND fv.report_id = %s
+                ORDER BY dd.year DESC;
+            """, (indicator_name.strip(), report_id))
+        elif indicator_name:
             cur.execute("""
                 SELECT DISTINCT year FROM view
-                WHERE REPLACE(REPLACE(indicator_name, E'\n', ' '), E'\r', '') = %s
+                WHERE TRIM(REPLACE(REPLACE(indicator_name, E'\n', ' '), E'\r', '')) = %s
                 ORDER BY year DESC;
             """, (indicator_name.strip(),))
+        elif report_id is not None:
+            cur.execute("""
+                SELECT DISTINCT dd.year
+                FROM fact_values fv
+                JOIN dim_date dd ON fv.date_id = dd.date_id
+                WHERE fv.report_id = %s ORDER BY dd.year DESC;
+            """, (report_id,))
         else:
             cur.execute("SELECT DISTINCT year FROM view ORDER BY year DESC;")
 
@@ -675,20 +929,31 @@ def get_dashboard_filters(indicator_name: str = None):
 
 
 @app.get("/dashboard/timeseries")
-def get_dashboard_timeseries(indicator_name: str, countries: str):
+def get_dashboard_timeseries(indicator_name: str, countries: str, report_id: int = None):
     try:
         country_list = [c.strip() for c in countries.split(",") if c.strip()]
         if not country_list:
             raise HTTPException(status_code=400, detail="Pelo menos um país deve ser fornecido.")
         conn = get_warehouse_connection()
         cur = conn.cursor(cursor_factory=psycopg2.extras.RealDictCursor)
-        cur.execute(
-            """SELECT location_name, year, value FROM view
-               WHERE REPLACE(REPLACE(indicator_name, E'\n', ' '), E'\r', '') = %s
-                 AND location_name = ANY(%s)
-               ORDER BY location_name, year ASC;""",
-            (indicator_name.strip(), country_list),
-        )
+        if report_id is not None:
+            cur.execute("""
+                SELECT dl.name AS location_name, dd.year, fv.value
+                FROM fact_values fv
+                JOIN dim_indicator di ON fv.indicator_sk = di.indicator_sk
+                JOIN dim_location dl ON fv.location_sk = dl.location_sk
+                JOIN dim_date dd ON fv.date_id = dd.date_id
+                WHERE TRIM(REPLACE(REPLACE(di.indicator_name, E'\n', ' '), E'\r', '')) = %s
+                  AND dl.name = ANY(%s) AND fv.report_id = %s
+                ORDER BY dl.name, dd.year ASC;
+            """, (indicator_name.strip(), country_list, report_id))
+        else:
+            cur.execute("""
+                SELECT location_name, year, value FROM view
+                WHERE TRIM(REPLACE(REPLACE(indicator_name, E'\n', ' '), E'\r', '')) = %s
+                  AND location_name = ANY(%s)
+                ORDER BY location_name, year ASC;
+            """, (indicator_name.strip(), country_list))
         rows = cur.fetchall()
         cur.close()
         conn.close()
@@ -755,10 +1020,57 @@ def get_etl_logs():
         conn = get_pipeline_connection()
         cur = conn.cursor(cursor_factory=psycopg2.extras.RealDictCursor)
         cur.execute("""
-            SELECT *, 'dados' AS pipeline FROM etl_logs_dados
+            SELECT id, file_id, NULL::integer AS report_id, file_name, step, status, error_message, log_time, 'dados' AS pipeline FROM etl_logs_dados
             UNION ALL
-            SELECT *, 'pdfs'  AS pipeline FROM etl_logs_pdfs
+            SELECT id, NULL AS file_id, report_id, file_name, step, status, error_message, log_time, 'pdfs' AS pipeline FROM etl_logs_pdfs
             ORDER BY log_time DESC LIMIT 500
+        """)
+        rows = cur.fetchall()
+        cur.close()
+        conn.close()
+        return [dict(r) for r in rows]
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
+
+@app.get("/etl_data")
+def get_etl_data():
+    try:
+        conn = get_pipeline_connection()
+        cur = conn.cursor(cursor_factory=psycopg2.extras.RealDictCursor)
+        cur.execute("SELECT * FROM etl_data ORDER BY process_name")
+        rows = cur.fetchall()
+        cur.close()
+        conn.close()
+        return [dict(r) for r in rows]
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
+
+@app.get("/etl_logs/dados")
+def get_etl_logs_dados():
+    try:
+        conn = get_pipeline_connection()
+        cur = conn.cursor(cursor_factory=psycopg2.extras.RealDictCursor)
+        cur.execute("SELECT * FROM etl_logs_dados ORDER BY log_time DESC LIMIT 500")
+        rows = cur.fetchall()
+        cur.close()
+        conn.close()
+        return [dict(r) for r in rows]
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
+
+@app.get("/etl_logs/pdfs")
+def get_etl_logs_pdfs():
+    try:
+        conn = get_pipeline_connection()
+        cur = conn.cursor(cursor_factory=psycopg2.extras.RealDictCursor)
+        cur.execute("""
+            SELECT report_id, file_name, step, status, error_message, log_time
+            FROM etl_logs_pdfs
+            ORDER BY log_time DESC
+            LIMIT 500
         """)
         rows = cur.fetchall()
         cur.close()

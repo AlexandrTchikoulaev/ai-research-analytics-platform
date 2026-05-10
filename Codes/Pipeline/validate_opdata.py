@@ -8,7 +8,7 @@ import psycopg2
 DB_PIPELINE = {
     "host": "localhost",
     "port": 5433,
-    "dbname": "pipeline_db",
+    "dbname": "gestao_db",
     "user": "projeto_utilizador",
     "password": "projeto",
 }
@@ -16,7 +16,7 @@ DB_PIPELINE = {
 DB_OPERATIONAL = {
     "host": "localhost",
     "port": 5433,
-    "dbname": "operational_db",
+    "dbname": "gestao_db",
     "user": "projeto_utilizador",
     "password": "projeto",
 }
@@ -27,8 +27,7 @@ VALID_FILE_TYPES = {"indicator", "countries", "regions", "groups", "value"}
 
 
 def _get_extract_functions():
-    # Importação tardia para evitar dependências circulares
-    from transform import EXTRACT_FUNCTIONS
+    from silver_functions import EXTRACT_FUNCTIONS
     return set(EXTRACT_FUNCTIONS.keys())
 
 

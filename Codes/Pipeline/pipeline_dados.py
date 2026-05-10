@@ -19,7 +19,7 @@ sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 DB_CONFIG = {
     "host": "localhost",
     "port": 5433,
-    "dbname": "pipeline_db",
+    "dbname": "gestao_db",
     "user": "projeto_utilizador",
     "password": "projeto",
 }
@@ -53,6 +53,19 @@ def run_step(label: str, fn):
         raise
 
 
+def get_prev_last_run():
+    try:
+        conn = psycopg2.connect(**DB_CONFIG)
+        cur = conn.cursor()
+        cur.execute("SELECT last_run FROM etl_data WHERE process_name = %s", (PROCESS_NAME,))
+        row = cur.fetchone()
+        cur.close()
+        conn.close()
+        return row[0] if row else None
+    except Exception:
+        return None
+
+
 def run_pipeline():
     import validate_opdata
     import bronze
@@ -60,32 +73,43 @@ def run_pipeline():
     import silver
     import validate_silver
     import gold
+    import report_pipeline
+
+    run_start    = datetime.now()
+    prev_last_run = get_prev_last_run()
 
     print("\n PIPELINE DE DADOS INICIADO")
-    print(f" {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}\n")
+    print(f" {run_start.strftime('%Y-%m-%d %H:%M:%S')}\n")
 
-    # 1. Validar op_data
-    run_step("1/6 — validate_opdata", validate_opdata.validate)
+    success = False
+    try:
+        # 1. Validar op_data
+        run_step("1/6 — validate_opdata", validate_opdata.validate)
 
-    # 2. Ingerir ficheiros brutos para Bronze
-    run_step("2/6 — ingest_raw", bronze.main)
+        # 2. Ingerir ficheiros brutos para Bronze
+        run_step("2/6 — ingest_raw", bronze.main)
 
-    # 3. Validar camada Bronze
-    run_step("3/6 — validate_bronze", validate_bronze.validate)
+        # 3. Validar camada Bronze
+        run_step("3/6 — validate_bronze", validate_bronze.validate)
 
-    # 4. Transformar para Silver
-    run_step("4/6 — transform", silver.transformar)
+        # 4. Transformar para Silver
+        run_step("4/6 — transform", silver.transformar)
 
-    # 5. Validar camada Silver
-    run_step("5/6 — validate_silver", validate_silver.validate)
+        # 5. Validar camada Silver
+        run_step("5/6 — validate_silver", validate_silver.validate)
 
-    # 6. Carregar para o Data Warehouse
-    run_step("6/6 — load", gold.run_etl)
+        # 6. Carregar para o Data Warehouse
+        run_step("6/6 — load", gold.run_etl)
 
-    # Atualizar timestamp
-    update_timestamp()
+        success = True
+        print("\n PIPELINE DE DADOS CONCLUÍDO COM SUCESSO")
 
-    print("\n PIPELINE DE DADOS CONCLUÍDO COM SUCESSO")
+    finally:
+        update_timestamp()
+        try:
+            report_pipeline.generate(prev_last_run, run_start, success)
+        except Exception as e:
+            print(f"[AVISO] Não foi possível gerar o relatório: {e}")
 
 
 if __name__ == "__main__":
