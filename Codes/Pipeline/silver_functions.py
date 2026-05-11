@@ -217,6 +217,48 @@ FUNCTION_FILE_TYPE = {
 
 
 # ══════════════════════════════════════════════════════════════
+# AUTO-GENERATED FUNCTIONS (carregadas de silver_functions_auto.json)
+# ══════════════════════════════════════════════════════════════
+
+def _load_auto_functions() -> dict:
+    import os, json as _json
+    store = os.path.join(os.path.dirname(__file__), "silver_functions_auto.json")
+    if not os.path.exists(store):
+        return {}
+    try:
+        with open(store, encoding="utf-8") as f:
+            stored = _json.load(f)
+    except Exception:
+        return {}
+    ns = {"pd": pd}
+    loaded = {}
+    for name, entry in stored.items():
+        try:
+            exec(compile(entry["code"], "<auto>", "exec"), ns)
+            fn = ns.get(name)
+            if callable(fn):
+                loaded[name] = fn
+        except Exception:
+            pass
+    return loaded
+
+
+_auto = _load_auto_functions()
+EXTRACT_FUNCTIONS.update(_auto)
+
+# Tipos das funções geradas automaticamente
+import os as _os, json as _json_ft
+_auto_store = _os.path.join(_os.path.dirname(__file__), "silver_functions_auto.json")
+if _os.path.exists(_auto_store):
+    try:
+        with open(_auto_store, encoding="utf-8") as _f:
+            _stored_ft = _json_ft.load(_f)
+        FUNCTION_FILE_TYPE.update({n: e.get("file_type", "") for n, e in _stored_ft.items()})
+    except Exception:
+        pass
+
+
+# ══════════════════════════════════════════════════════════════
 # LIMPEZA
 # ══════════════════════════════════════════════════════════════
 

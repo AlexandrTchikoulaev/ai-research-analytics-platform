@@ -16,6 +16,7 @@ import boto3
 # Importar mapeamentos do silver_functions
 sys.path.insert(0, os.path.normpath(os.path.join(os.path.dirname(__file__), "..", "Pipeline")))
 from silver_functions import EXTRACT_FUNCTIONS as _EXTRACT_FUNCTIONS, FUNCTION_FILE_TYPE
+from silver_function_generator import generate_and_validate as _generate_and_validate
 
 from sql_chat import chatbot_sql
 
@@ -130,6 +131,11 @@ class ReportIn(BaseModel):
 
 class ChatIn(BaseModel):
     question: str
+
+
+class GenerateFunctionUrlIn(BaseModel):
+    url: str
+    file_type: str
 
 
 class OpDataIn(BaseModel):
@@ -507,6 +513,108 @@ async def batch_op_data(payload: list[dict]):
 
 
 # ════════════════════════════════════════════════════════════
+# ENDPOINTS — Geração automática de funções de transformação
+# ════════════════════════════════════════════════════════════
+
+_AUTO_STORE = os.path.normpath(
+    os.path.join(_HERE, "..", "Pipeline", "silver_functions_auto.json")
+)
+
+
+def _load_auto_store() -> dict:
+    if not os.path.exists(_AUTO_STORE):
+        return {}
+    try:
+        with open(_AUTO_STORE, encoding="utf-8") as f:
+            return json.load(f)
+    except Exception:
+        return {}
+
+
+def _save_to_auto_store(name: str, code: str, file_type: str):
+    from datetime import datetime
+    store = _load_auto_store()
+    store[name] = {
+        "code":       code,
+        "file_type":  file_type,
+        "created_at": datetime.utcnow().isoformat(),
+    }
+    with open(_AUTO_STORE, "w", encoding="utf-8") as f:
+        json.dump(store, f, ensure_ascii=False, indent=2)
+    # Refresh in-memory EXTRACT_FUNCTIONS so api.py sees it immediately
+    _EXTRACT_FUNCTIONS.update({name: None})
+    FUNCTION_FILE_TYPE[name] = file_type
+
+
+@app.post("/generate_function")
+async def generate_function(
+    file: UploadFile = File(...),
+    file_type: str = Form(...),
+):
+    """Gera automaticamente uma função de transformação silver via Ollama."""
+    if file_type not in ("indicator", "value"):
+        raise HTTPException(status_code=400, detail="file_type deve ser 'indicator' ou 'value'.")
+
+    content = await file.read()
+    result = _generate_and_validate(content, file_type)
+
+    if result["generated"] and result["valid"]:
+        try:
+            _save_to_auto_store(result["function_name"], result["code"], file_type)
+        except Exception as e:
+            result["error"] = f"Função válida mas erro ao guardar: {e}"
+
+    return {
+        "function_name": result["function_name"],
+        "code":          result["code"],
+        "fmt":           result["fmt"],
+        "generated":     result["generated"],
+        "valid":         result["valid"],
+        "error":         result["error"],
+        "preview":       result["preview"],
+    }
+
+
+@app.post("/generate_function_url")
+async def generate_function_url(body: GenerateFunctionUrlIn):
+    """Gera automaticamente uma função de transformação a partir de um URL."""
+    if body.file_type not in ("indicator", "value"):
+        raise HTTPException(status_code=400, detail="file_type deve ser 'indicator' ou 'value'.")
+    if not body.url.strip():
+        raise HTTPException(status_code=400, detail="URL é obrigatório.")
+
+    import requests as _req
+    try:
+        resp = _req.get(body.url.strip(), timeout=30, stream=True)
+        resp.raise_for_status()
+        content = b""
+        for chunk in resp.iter_content(chunk_size=8192):
+            content += chunk
+            if len(content) >= 512 * 1024:  # limite 500 KB para a amostra
+                break
+    except Exception as e:
+        raise HTTPException(status_code=400, detail=f"Erro ao descarregar URL: {e}")
+
+    result = _generate_and_validate(content, body.file_type)
+
+    if result["generated"] and result["valid"]:
+        try:
+            _save_to_auto_store(result["function_name"], result["code"], body.file_type)
+        except Exception as e:
+            result["error"] = f"Função válida mas erro ao guardar: {e}"
+
+    return {
+        "function_name": result["function_name"],
+        "code":          result["code"],
+        "fmt":           result["fmt"],
+        "generated":     result["generated"],
+        "valid":         result["valid"],
+        "error":         result["error"],
+        "preview":       result["preview"],
+    }
+
+
+# ════════════════════════════════════════════════════════════
 # ENDPOINT — Verificação de Duplicados
 # ════════════════════════════════════════════════════════════
 
@@ -802,10 +910,12 @@ def delete_op_report(report_id: int):
 
 @app.get("/extract_functions")
 def get_extract_functions():
-    return [
-        {"name": name, "file_type": FUNCTION_FILE_TYPE.get(name, "")}
-        for name in _EXTRACT_FUNCTIONS
-    ]
+    auto = _load_auto_store()
+    all_fns = {
+        **{n: FUNCTION_FILE_TYPE.get(n, "") for n in _EXTRACT_FUNCTIONS},
+        **{n: e.get("file_type", "") for n, e in auto.items()},
+    }
+    return [{"name": name, "file_type": ft} for name, ft in all_fns.items()]
 
 
 @app.get("/sources")
