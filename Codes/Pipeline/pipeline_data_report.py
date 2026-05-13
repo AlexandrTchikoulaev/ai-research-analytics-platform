@@ -73,7 +73,7 @@ def generate(prev_last_run, run_start: datetime, success: bool):
     if prev_last_run:
         cur_op.execute("""
             SELECT d.file_id, d.report_id, d.file_url, d.extract_function,
-                   d.file_type, d.created_at,
+                   d.created_at,
                    r.file_name AS report_name, r.source_code
             FROM op_data d
             LEFT JOIN op_report r ON r.report_id = d.report_id
@@ -83,7 +83,7 @@ def generate(prev_last_run, run_start: datetime, success: bool):
     else:
         cur_op.execute("""
             SELECT d.file_id, d.report_id, d.file_url, d.extract_function,
-                   d.file_type, d.created_at,
+                   d.created_at,
                    r.file_name AS report_name, r.source_code
             FROM op_data d
             LEFT JOIN op_report r ON r.report_id = d.report_id
@@ -97,14 +97,14 @@ def generate(prev_last_run, run_start: datetime, success: bool):
     # (prev_last_run=None) mostra todos os logs.
     if prev_last_run is not None:
         cur_pipe.execute("""
-            SELECT file_id, file_name, step, status, error_message, log_time
+            SELECT file_id, file_name, step, error_message, log_time
             FROM etl_logs_dados
             WHERE log_time > %s
             ORDER BY log_time ASC
         """, (prev_last_run,))
     else:
         cur_pipe.execute("""
-            SELECT file_id, file_name, step, status, error_message, log_time
+            SELECT file_id, file_name, step, error_message, log_time
             FROM etl_logs_dados
             ORDER BY log_time ASC
         """)
@@ -263,14 +263,13 @@ def generate(prev_last_run, run_start: datetime, success: bool):
             fid = r["file_id"]
             label = f"[{r['source_code']}] {r['report_name']}" if r["report_name"] else f"report_id={r['report_id']}"
             fn  = r["extract_function"] or "—"
-            ft  = r["file_type"] or "—"
             url = (r["file_url"] or "upload direto")
             if fid in invalid_opdata:
                 w(f"  INVALIDO  file_id={fid}  {label}")
-                w(f"            fn={fn}  type={ft}")
+                w(f"            fn={fn}")
                 w(f"            Erro: {invalid_opdata[fid]}")
             else:
-                w(f"  OK        file_id={fid}  {label}  fn={fn}  type={ft}")
+                w(f"  OK        file_id={fid}  {label}  fn={fn}")
     w("")
 
     # ══════════════════════════════════════════════════════════════════════
@@ -359,12 +358,11 @@ def generate(prev_last_run, run_start: datetime, success: bool):
     else:
         for r in to_validate_silver:
             fid = r["file_id"]
-            ft  = r["file_type"] or "—"
             if fid in silver_errs:
-                w(f"  INVALIDO  file_id={fid}  type={ft}")
+                w(f"  INVALIDO  file_id={fid}")
                 w(f"            Erro: {silver_errs[fid]}")
             else:
-                w(f"  OK        file_id={fid}  type={ft}")
+                w(f"  OK        file_id={fid}")
     w("")
 
     # ══════════════════════════════════════════════════════════════════════
@@ -397,16 +395,15 @@ def generate(prev_last_run, run_start: datetime, success: bool):
     if not run_logs:
         w("  Nenhum erro registado.")
     else:
-        header = f"  {'file_id':<10} {'step':<22} {'status':<8} {'log_time':<22} {'erro'}"
+        header = f"  {'file_id':<10} {'step':<22} {'log_time':<22} {'erro'}"
         w(header)
         w("  " + "-" * 70)
         for lg in run_logs:
             fid   = str(lg["file_id"]  or "—")
             step  = str(lg["step"]     or "—")
-            stat  = str(lg["status"]   or "—")
             lt    = str(lg["log_time"])[:19]
             msg   = (lg["error_message"] or "")
-            w(f"  {fid:<10} {step:<22} {stat:<8} {lt:<22} {msg}")
+            w(f"  {fid:<10} {step:<22} {lt:<22} {msg}")
     w("")
 
     w(SEP)

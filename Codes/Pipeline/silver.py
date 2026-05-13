@@ -27,6 +27,27 @@ BUCKET_SILVER = "silver"
 PROCESS_NAME  = "etl_dados"
 
 
+def _log_error(file_id, step: str, message: str):
+    """Regista um erro em etl_logs_dados com conexão própria em autocommit.
+
+    Usar uma conexão separada garante que o log é persistido mesmo que a
+    transação principal faça rollback ou esteja em estado de erro.
+    """
+    try:
+        _conn = psycopg2.connect(**DB_CONFIG)
+        _conn.autocommit = True
+        _cur = _conn.cursor()
+        _cur.execute(
+            "INSERT INTO etl_logs_dados (file_id, step, error_message) "
+            "VALUES (%s, %s, %s)",
+            (str(file_id) if file_id is not None else None, step, message),
+        )
+        _cur.close()
+        _conn.close()
+    except Exception as log_exc:
+        print(f"[AVISO] Não foi possível registar erro no etl_logs: {log_exc}")
+
+
 def detect_format(content: bytes) -> str:
     snippet = content[:20].lstrip()
     if snippet.startswith(b"PK"):
@@ -68,21 +89,51 @@ def transformar():
     row      = cur.fetchone()
     last_run = row[0] if row else None
 
+    # Conjunto de file_ids que deveriam chegar ao Silver nesta execução:
+    # novos ficheiros em op_data (após last_run) sem erros nas fases anteriores.
+    if last_run:
+        cur.execute("""
+            SELECT d.file_id FROM op_data d
+            WHERE d.extract_function IS NOT NULL AND d.extract_function != ''
+              AND d.created_at > %s
+              AND NOT EXISTS (
+                  SELECT 1 FROM etl_logs_dados l
+                  WHERE l.file_id = d.file_id::text
+                    AND l.step IN ('validate_opdata', 'ingest_raw', 'validate_bronze')
+              )
+        """, (last_run,))
+    else:
+        cur.execute("""
+            SELECT d.file_id FROM op_data d
+            WHERE d.extract_function IS NOT NULL AND d.extract_function != ''
+              AND NOT EXISTS (
+                  SELECT 1 FROM etl_logs_dados l
+                  WHERE l.file_id = d.file_id::text
+                    AND l.step IN ('validate_opdata', 'ingest_raw', 'validate_bronze')
+              )
+        """)
+    expected_ids = {str(r[0]) for r in cur.fetchall()}
+
     paginator = s3.get_paginator("list_objects_v2")
     pages     = paginator.paginate(Bucket=BUCKET_RAW)
 
-    ok_count  = 0
-    err_count = 0
+    ok_count         = 0
+    err_count        = 0
+    found_in_bronze  = set()   # todos os keys vistos no bucket Bronze
+    processed_ids    = set()   # keys para os quais a transformação foi tentada
 
     for page in pages:
         for obj in page.get("Contents", []):
             key = obj["Key"]
+            found_in_bronze.add(key)
 
             try:
                 head     = s3.head_object(Bucket=BUCKET_RAW, Key=key)
                 metadata = head.get("Metadata", {})
             except Exception as e:
                 print(f"[ERRO] Metadata de {key}: {e}")
+                _log_error(key, "transform", f"Não foi possível ler metadata do Bronze: {e}")
+                err_count += 1
                 continue
 
             extract_function = metadata.get("extract_function", "")
@@ -101,20 +152,19 @@ def transformar():
                     pass
 
             if not extract_function:
-                print(f"[SKIP] Sem extract_function: {key}")
+                print(f"[ERRO] Sem extract_function: {key}")
+                _log_error(key, "transform", "Sem extract_function na metadata Bronze")
+                err_count += 1
                 continue
 
             if extract_function not in EXTRACT_FUNCTIONS:
-                print(f"[SKIP] Função desconhecida '{extract_function}': {key}")
-                cur.execute("""
-                    INSERT INTO etl_logs_dados (file_id, step, status, error_message)
-                    VALUES (%s, %s, %s, %s)
-                """, (key, "transform", "error",
-                      f"Função desconhecida: {extract_function}"))
+                print(f"[ERRO] Função desconhecida '{extract_function}': {key}")
+                _log_error(key, "transform", f"Função desconhecida: {extract_function}")
                 err_count += 1
                 continue
 
             print(f"A transformar: {key} ({extract_function})")
+            processed_ids.add(key)
 
             try:
                 data  = read_raw_object(s3, key)
@@ -135,7 +185,6 @@ def transformar():
                     Body=buffer.getvalue(),
                     Metadata={
                         "report_id":  metadata.get("report_id", ""),
-                        "file_type":  metadata.get("file_type", ""),
                         "created_at": metadata.get("created_at", ""),
                     },
                 )
@@ -143,12 +192,17 @@ def transformar():
                 ok_count += 1
 
             except Exception as e:
-                cur.execute("""
-                    INSERT INTO etl_logs_dados (file_id, step, status, error_message)
-                    VALUES (%s, %s, %s, %s)
-                """, (key, "transform", "error", str(e)))
                 print(f"[ERRO] {key}: {e}")
+                _log_error(key, "transform", str(e))
                 err_count += 1
+
+    # Detetar ficheiros esperados que não estavam no bucket Bronze de todo
+    missing_from_bronze = expected_ids - found_in_bronze
+    for missing_key in sorted(missing_from_bronze):
+        print(f"[ERRO] file_id={missing_key} esperado mas não encontrado no bucket Bronze")
+        _log_error(missing_key, "transform",
+                   "Ficheiro esperado não encontrado no bucket Bronze")
+        err_count += 1
 
     conn.commit()
     cur.close()

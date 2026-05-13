@@ -17,3 +17,8 @@ docker/minio-data/
 # Virtual environments
 venv/
 .venv/
+
+# Dados e relatórios gerados
+Dados/
+Reports/
+Extra/

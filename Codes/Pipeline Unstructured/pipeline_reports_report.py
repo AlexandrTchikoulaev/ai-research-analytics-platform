@@ -89,14 +89,14 @@ def generate(prev_last_run, run_start: datetime, success: bool):
     # ── Logs desta execução ────────────────────────────────────────────────
     if prev_last_run is not None:
         cur_pipe.execute("""
-            SELECT report_id, file_name, step, status, error_message, log_time
+            SELECT report_id, file_name, step, error_message, log_time
             FROM etl_logs_pdfs
             WHERE log_time > %s
             ORDER BY log_time ASC
         """, (prev_last_run,))
     else:
         cur_pipe.execute("""
-            SELECT report_id, file_name, step, status, error_message, log_time
+            SELECT report_id, file_name, step, error_message, log_time
             FROM etl_logs_pdfs
             ORDER BY log_time ASC
         """)
@@ -291,17 +291,16 @@ def generate(prev_last_run, run_start: datetime, success: bool):
     if not run_logs:
         w("  Nenhum erro registado.")
     else:
-        header = f"  {'report_id':<12} {'file_name':<30} {'step':<30} {'status':<8} {'log_time':<22} {'erro'}"
+        header = f"  {'report_id':<12} {'file_name':<30} {'step':<30} {'log_time':<22} {'erro'}"
         w(header)
         w("  " + "-" * 70)
         for lg in run_logs:
             rid   = str(lg["report_id"] or "—")
             fname = str(lg["file_name"] or "—")
             step  = str(lg["step"]      or "—")
-            stat  = str(lg["status"]    or "—")
             lt    = str(lg["log_time"])[:19]
             msg   = (lg["error_message"] or "")
-            w(f"  {rid:<12} {fname:<30} {step:<30} {stat:<8} {lt:<22} {msg}")
+            w(f"  {rid:<12} {fname:<30} {step:<30} {lt:<22} {msg}")
     w("")
 
     w(SEP)

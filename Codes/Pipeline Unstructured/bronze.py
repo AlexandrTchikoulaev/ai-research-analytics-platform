@@ -108,8 +108,8 @@ def main(valid_ids=None):
             if report_url is None:
                 # Ficheiro devia ter sido uploaded directamente mas não está no bucket
                 cur_pipe.execute(
-                    "INSERT INTO etl_logs_pdfs (report_id, file_name, step, status, error_message) VALUES (%s, %s, %s, %s, %s)",
-                    (report_id, file_name, "bronze", "error", "report_url é NULL e ficheiro não encontrado no bucket — faça upload directo via /op_report/upload"),
+                    "INSERT INTO etl_logs_pdfs (report_id, file_name, step, error_message) VALUES (%s, %s, %s, %s)",
+                    (report_id, file_name, "bronze", "report_url é NULL e ficheiro não encontrado no bucket — faça upload directo via /op_report/upload"),
                 )
                 print(f"[ERRO] report_id={report_id}: sem report_url e sem ficheiro no bucket")
                 err_count += 1
@@ -145,8 +145,8 @@ def main(valid_ids=None):
 
             except Exception as e:
                 cur_pipe.execute(
-                    "INSERT INTO etl_logs_pdfs (report_id, file_name, step, status, error_message) VALUES (%s, %s, %s, %s, %s)",
-                    (report_id, file_name, "bronze", "error", str(e)),
+                    "INSERT INTO etl_logs_pdfs (report_id, file_name, step, error_message) VALUES (%s, %s, %s, %s)",
+                    (report_id, file_name, "bronze", str(e)),
                 )
                 print(f"[ERRO] {file_name}: {e}")
                 err_count += 1
@@ -158,8 +158,8 @@ def main(valid_ids=None):
         if conn_pipe:
             try:
                 conn_pipe.cursor().execute(
-                    "INSERT INTO etl_logs_pdfs (report_id, file_name, step, status, error_message) VALUES (%s, %s, %s, %s, %s)",
-                    (None, "N/A", "bronze", "error", str(e)),
+                    "INSERT INTO etl_logs_pdfs (report_id, file_name, step, error_message) VALUES (%s, %s, %s, %s)",
+                    (None, "N/A", "bronze", str(e)),
                 )
                 conn_pipe.commit()
             except Exception:

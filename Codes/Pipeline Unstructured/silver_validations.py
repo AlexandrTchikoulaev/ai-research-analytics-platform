@@ -63,8 +63,8 @@ def validate():
                     msg = f"Não foi possível ler metadata: {e}"
                     print(f"[ERRO] {key}: {msg}")
                     cur_pipe.execute(
-                        "INSERT INTO etl_logs_pdfs (report_id, file_name, step, status, error_message) VALUES (%s, %s, %s, %s, %s)",
-                        (None, key, "validate_bronze_unstructured", "error", msg),
+                        "INSERT INTO etl_logs_pdfs (report_id, file_name, step, error_message) VALUES (%s, %s, %s, %s)",
+                        (None, key, "validate_bronze_unstructured",msg),
                     )
                     err_count += 1
                     continue
@@ -106,8 +106,8 @@ def validate():
                         print(f"  Erro ao apagar {key}: {del_e}")
 
                     cur_pipe.execute(
-                        "INSERT INTO etl_logs_pdfs (report_id, file_name, step, status, error_message) VALUES (%s, %s, %s, %s, %s)",
-                        (report_id, key, "validate_bronze_unstructured", "error", msg),
+                        "INSERT INTO etl_logs_pdfs (report_id, file_name, step, error_message) VALUES (%s, %s, %s, %s)",
+                        (report_id, key, "validate_bronze_unstructured",msg),
                     )
                     err_count += 1
                 else:
@@ -120,8 +120,8 @@ def validate():
         if conn_pipe:
             try:
                 conn_pipe.cursor().execute(
-                    "INSERT INTO etl_logs_pdfs (report_id, file_name, step, status, error_message) VALUES (%s, %s, %s, %s, %s)",
-                    (None, "N/A", "validate_bronze_unstructured", "error", str(e)),
+                    "INSERT INTO etl_logs_pdfs (report_id, file_name, step, error_message) VALUES (%s, %s, %s, %s)",
+                    (None, "N/A", "validate_bronze_unstructured",str(e)),
                 )
                 conn_pipe.commit()
             except Exception:

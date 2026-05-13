@@ -80,8 +80,8 @@ def validate(last_run=None):
             if errors:
                 msg = "; ".join(errors)
                 cur_pipe.execute(
-                    "INSERT INTO etl_logs_pdfs (report_id, file_name, step, status, error_message) VALUES (%s, %s, %s, %s, %s)",
-                    (report_id, file_name or f"report_id={report_id}", "validate_op_report", "error", msg),
+                    "INSERT INTO etl_logs_pdfs (report_id, file_name, step, error_message) VALUES (%s, %s, %s, %s)",
+                    (report_id, file_name or f"report_id={report_id}", "validate_op_report", msg),
                 )
                 print(f"[INVÁLIDO] report_id={report_id}: {msg}")
                 invalid_ids.append(report_id)
@@ -96,8 +96,8 @@ def validate(last_run=None):
         if conn_pipe:
             try:
                 conn_pipe.cursor().execute(
-                    "INSERT INTO etl_logs_pdfs (report_id, file_name, step, status, error_message) VALUES (%s, %s, %s, %s, %s)",
-                    (None, "N/A", "validate_op_report", "error", str(e)),
+                    "INSERT INTO etl_logs_pdfs (report_id, file_name, step, error_message) VALUES (%s, %s, %s, %s)",
+                    (None, "N/A", "validate_op_report", str(e)),
                 )
                 conn_pipe.commit()
             except Exception:

@@ -1,6 +1,6 @@
 """
 Valida os ficheiros Parquet presentes no bucket Silver (transformed).
-Verifica estrutura e colunas obrigatórias conforme o file_type.
+Verifica estrutura e colunas obrigatórias.
 Remove ficheiros inválidos e regista erros em etl_logs_dados.
 """
 import io
@@ -24,11 +24,8 @@ MINIO_CONFIG = {
 
 BUCKET_SILVER = "silver"
 
-# Colunas obrigatórias por tipo de ficheiro
-REQUIRED_COLUMNS = {
-    "indicator": {"code", "name"},
-    "value":     {"location_code", "indicator_code", "year", "value", "value_type"},
-}
+_INDICATOR_COLS = {"code", "name"}
+_VALUE_COLS = {"location_code", "indicator_code", "year", "value", "value_type"}
 
 
 def validate():
@@ -57,8 +54,6 @@ def validate():
                 err_count += 1
                 continue
 
-            file_type = metadata.get("file_type", "")
-
             try:
                 file_id = int(key.rsplit(".", 1)[0])
             except (ValueError, TypeError):
@@ -76,13 +71,14 @@ def validate():
             if df is not None:
                 if df.empty:
                     errors.append("Ficheiro Parquet está vazio")
-                elif file_type in REQUIRED_COLUMNS:
+                else:
                     cols = set(df.columns)
-                    missing = REQUIRED_COLUMNS[file_type] - cols
-                    if missing:
-                        errors.append(f"Colunas obrigatórias em falta: {missing}")
-                elif file_type:
-                    errors.append(f"file_type desconhecido: {file_type}")
+                    if cols == _INDICATOR_COLS:
+                        pass
+                    elif _VALUE_COLS <= cols:
+                        pass
+                    else:
+                        errors.append(f"Estrutura de colunas não reconhecida: {sorted(cols)}")
 
             if errors:
                 msg = "; ".join(errors)
@@ -93,9 +89,9 @@ def validate():
                     print(f"  Erro ao apagar {key}: {del_e}")
 
                 cur.execute("""
-                    INSERT INTO etl_logs_dados (file_id, step, status, error_message)
-                    VALUES (%s, %s, %s, %s)
-                """, (file_id, "validate_silver", "error", msg))
+                    INSERT INTO etl_logs_dados (file_id, step, error_message)
+                    VALUES (%s, %s, %s)
+                """, (file_id, "validate_silver", msg))
                 err_count += 1
             else:
                 ok_count += 1

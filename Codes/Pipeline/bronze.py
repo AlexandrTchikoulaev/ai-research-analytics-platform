@@ -76,13 +76,13 @@ def main():
     # Blacklist: file_ids já registados com erro nesta fase
     cur_pipe.execute("""
         SELECT DISTINCT file_id FROM etl_logs_dados
-        WHERE step = 'ingest_raw' AND status = 'error' AND file_id IS NOT NULL
+        WHERE step = 'ingest_raw' AND file_id IS NOT NULL
     """)
     blacklist = {r[0] for r in cur_pipe.fetchall()}
 
     # Buscar novos registos
     cur_op.execute("""
-        SELECT file_id, report_id, file_url, extract_function, file_type, created_at
+        SELECT file_id, report_id, file_url, extract_function, created_at
         FROM op_data
         WHERE created_at > %s
         ORDER BY file_id ASC
@@ -99,7 +99,7 @@ def main():
     ok_count = 0
     err_count = 0
 
-    for file_id, report_id, file_url, extract_function, file_type, created_at in rows:
+    for file_id, report_id, file_url, extract_function, created_at in rows:
 
         if file_id in blacklist:
             print(f"[SKIP] Blacklist: file_id={file_id}")
@@ -128,7 +128,6 @@ def main():
                 Metadata={
                     "report_id": str(report_id) if report_id is not None else "",
                     "extract_function": extract_function or "",
-                    "file_type": file_type or "",
                     "created_at": created_str,
                 },
             )
@@ -137,9 +136,9 @@ def main():
 
         except Exception as e:
             cur_pipe.execute("""
-                INSERT INTO etl_logs_dados (file_id, step, status, error_message)
-                VALUES (%s, %s, %s, %s)
-            """, (file_id, "ingest_raw", "error", str(e)))
+                INSERT INTO etl_logs_dados (file_id, step, error_message)
+                VALUES (%s, %s, %s)
+            """, (file_id, "ingest_raw", str(e)))
             print(f"[ERRO] file_id={file_id}  {e}")
             err_count += 1
 

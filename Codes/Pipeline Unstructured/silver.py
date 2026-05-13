@@ -45,8 +45,8 @@ def _log_to_etl(file_name: str, step: str, error_message: str, report_id=None):
         conn = psycopg2.connect(**DB_GESTAO)
         cur = conn.cursor()
         cur.execute(
-            "INSERT INTO etl_logs_pdfs (report_id, file_name, step, status, error_message) VALUES (%s, %s, %s, %s, %s)",
-            (report_id, file_name, step, "error", error_message),
+            "INSERT INTO etl_logs_pdfs (report_id, file_name, step, error_message) VALUES (%s, %s, %s, %s)",
+            (report_id, file_name, step, error_message),
         )
         conn.commit()
         cur.close()

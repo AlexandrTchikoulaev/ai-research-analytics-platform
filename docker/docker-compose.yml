@@ -11,6 +11,8 @@ services:
       POSTGRES_DB: warehouse_db
       POSTGRES_USER: projeto_utilizador
       POSTGRES_PASSWORD: projeto
+      TZ: Europe/Lisbon
+    command: postgres -c timezone=Europe/Lisbon
     ports:
       - "5433:5432"
     volumes:

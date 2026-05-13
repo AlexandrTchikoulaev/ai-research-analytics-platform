@@ -31,11 +31,30 @@ MINIO_CONFIG = {
 BUCKET_RAW = "bronze"
 
 
+def _log_error_bronze(file_id, message: str):
+    """Escreve um erro de validate_bronze em conexão autocommit independente.
+
+    Garante que o registo é persistido mesmo que a transação principal
+    seja revertida ou que o objeto já tenha sido apagado do bucket Bronze.
+    """
+    try:
+        _conn = psycopg2.connect(**DB_PIPELINE)
+        _conn.autocommit = True
+        _cur = _conn.cursor()
+        _cur.execute(
+            "INSERT INTO etl_logs_dados (file_id, step, error_message) "
+            "VALUES (%s, %s, %s)",
+            (str(file_id) if file_id is not None else None, "validate_bronze", message),
+        )
+        _cur.close()
+        _conn.close()
+    except Exception as log_exc:
+        print(f"[AVISO] Não foi possível registar erro validate_bronze: {log_exc}")
+
+
 def validate():
-    conn_op   = psycopg2.connect(**DB_OPERATIONAL)
-    cur_op    = conn_op.cursor()
-    conn_pipe = psycopg2.connect(**DB_PIPELINE)
-    cur_pipe  = conn_pipe.cursor()
+    conn_op = psycopg2.connect(**DB_OPERATIONAL)
+    cur_op  = conn_op.cursor()
     s3 = boto3.client("s3", **MINIO_CONFIG)
 
     paginator = s3.get_paginator("list_objects_v2")
@@ -53,11 +72,11 @@ def validate():
                 metadata = head.get("Metadata", {})
             except Exception as e:
                 print(f"[ERRO] Não foi possível ler metadata de {key}: {e}")
+                _log_error_bronze(key, f"Não foi possível ler metadata: {e}")
                 err_count += 1
                 continue
 
             report_id_str = metadata.get("report_id", "")
-            file_type = metadata.get("file_type", "")
             extract_function = metadata.get("extract_function", "")
             errors = []
 
@@ -78,14 +97,14 @@ def validate():
             # Verificar consistência com op_data
             if file_id is not None:
                 cur_op.execute("""
-                    SELECT report_id, extract_function, file_type
+                    SELECT report_id, extract_function
                     FROM op_data WHERE file_id = %s
                 """, (file_id,))
                 row = cur_op.fetchone()
                 if not row:
                     errors.append(f"file_id={file_id} não existe em op_data")
                 else:
-                    db_report_id, db_extract_fn, db_file_type = row
+                    db_report_id, db_extract_fn = row
                     if report_id is not None and db_report_id != report_id:
                         errors.append(
                             f"report_id inconsistente: metadata={report_id}, db={db_report_id}"
@@ -94,31 +113,23 @@ def validate():
                         errors.append(
                             f"extract_function inconsistente: metadata={extract_function}, db={db_extract_fn}"
                         )
-                    if file_type and db_file_type and file_type != db_file_type:
-                        errors.append(
-                            f"file_type inconsistente: metadata={file_type}, db={db_file_type}"
-                        )
 
             if errors:
                 msg = "; ".join(errors)
                 print(f"[INVÁLIDO] {key}: {msg}")
-                # Remover do bucket Bronze
+                # Registar ANTES de apagar: garante que o log existe mesmo que
+                # o delete falhe, e usa autocommit para não depender do commit final.
+                _log_error_bronze(file_id, msg)
                 try:
                     s3.delete_object(Bucket=BUCKET_RAW, Key=key)
                 except Exception as del_e:
                     print(f"  Erro ao apagar {key}: {del_e}")
-
-                cur_pipe.execute("""
-                    INSERT INTO etl_logs_dados (file_id, step, status, error_message)
-                    VALUES (%s, %s, %s, %s)
-                """, (file_id, "validate_bronze", "error", msg))
                 err_count += 1
             else:
                 ok_count += 1
 
-    conn_pipe.commit()
-    cur_pipe.close(); conn_pipe.close()
-    cur_op.close();   conn_op.close()
+    cur_op.close()
+    conn_op.close()
     print(f"validate_bronze — {ok_count} válidos, {err_count} inválidos/removidos")
 
 

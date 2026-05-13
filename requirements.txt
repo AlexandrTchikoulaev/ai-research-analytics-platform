@@ -7,3 +7,10 @@ langchain-community
 langchain-text-splitters
 pgvector
 pypdf
+pycountry
+country_converter
+rapidfuzz
+boto3
+python-multipart
+pyarrow
+pandas

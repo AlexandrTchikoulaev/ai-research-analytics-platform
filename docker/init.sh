@@ -2,8 +2,7 @@
 set -e
 
 psql -v ON_ERROR_STOP=1 --username "$POSTGRES_USER" --dbname "$POSTGRES_DB" <<-EOSQL
-    CREATE DATABASE operational_db;
-    CREATE DATABASE pipeline_db;
+    CREATE DATABASE gestao_db;
     CREATE DATABASE vector_db;
 EOSQL
 

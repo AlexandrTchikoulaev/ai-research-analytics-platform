@@ -68,11 +68,11 @@ last_run = cur_pipe.fetchone()[0]
 if last_run is not None and last_run.tzinfo is None:
     last_run = last_run.replace(tzinfo=timezone.utc)
 
-def log_etl(step, status, error_message=None, file_id=None):
+def log_etl(step, error_message=None, file_id=None):
     cur_pipe.execute("""
-        INSERT INTO etl_logs_dados (file_id, step, status, error_message)
-        VALUES (%s, %s, %s, %s)
-    """, (str(file_id) if file_id is not None else None, step, status, error_message))
+        INSERT INTO etl_logs_dados (file_id, step, error_message)
+        VALUES (%s, %s, %s)
+    """, (str(file_id) if file_id is not None else None, step, error_message))
 
 # ===============================
 # HELPERS
@@ -95,7 +95,6 @@ def get_mapping():
     paginator = s3.get_paginator("list_objects_v2")
     pages = paginator.paginate(Bucket=BUCKET_NAME)
 
-    mapping = {}
     report_map = {}
 
     for page in pages:
@@ -107,10 +106,9 @@ def get_mapping():
                 metadata = get_object_metadata(key)
             except Exception as e:
                 print(f"Erro ao ler metadata de {key}: {e}")
-                log_etl("load_mapping", "error", f"Erro metadata: {e}", file_id=base)
+                log_etl("load_mapping",f"Erro metadata: {e}", file_id=base)
                 continue
 
-            file_type  = metadata.get("file_type")
             created_at = metadata.get("created_at")
             raw_report_id = metadata.get("report_id")
 
@@ -119,7 +117,7 @@ def get_mapping():
                 if report_id is None:
                     raise ValueError("report_id é None ou inválido")
             except (ValueError, TypeError) as e:
-                log_etl("load_mapping", "error", f"Erro metadata: report_id inválido ({raw_report_id}) | {e}", file_id=base)
+                log_etl("load_mapping",f"Erro metadata: report_id inválido ({raw_report_id}) | {e}", file_id=base)
                 continue
 
             try:
@@ -128,46 +126,43 @@ def get_mapping():
                     created_at_dt = created_at_dt.replace(tzinfo=timezone.utc)
             except Exception as e:
                 print(f"created_at inválido em {key}: {created_at}")
-                log_etl("load_mapping", "error", f"created_at inválido: {e}", file_id=base)
+                log_etl("load_mapping",f"created_at inválido: {e}", file_id=base)
                 continue
 
             if last_run is not None and created_at_dt <= last_run:
                 continue
 
-            mapping[base] = file_type
             report_map[base] = report_id
 
-    return mapping, report_map
+    return report_map
 
 
 # ===============================
 # LOAD DIMENSIONS
 # ===============================
-def load_dimensions(mapping, report_map):
+def load_dimensions(report_map):
     cur_op.execute("SELECT report_id, source_code FROM op_report")
     report_source_map = {r[0]: r[1] for r in cur_op.fetchall()}
 
-    for nome_base, file_type in mapping.items():
+    for nome_base, report_id in report_map.items():
         ficheiro = nome_base + ".parquet"
         print("Tentando ler ficheiro ", ficheiro)
         try:
             df = read_parquet_from_s3(ficheiro)
         except Exception as e:
             print(f"Erro ao ler {ficheiro}: {e}")
-            log_etl('load', 'error', str(e), file_id=nome_base)
+            log_etl('load',str(e), file_id=nome_base)
             continue
 
         if df.empty:
-            log_etl('load', 'error', "DataFrame vazio", file_id=nome_base)
+            log_etl('load',"DataFrame vazio", file_id=nome_base)
             continue
 
-        if file_type != 'indicator':
+        if set(df.columns) != {"code", "name"}:
             continue
-
-        report_id = report_map.get(nome_base)
         source_system = report_source_map.get(report_id)
         if not source_system:
-            log_etl('load', 'error', f"source_system não encontrado para report_id {report_id}", file_id=nome_base)
+            log_etl('load',f"source_system não encontrado para report_id {report_id}", file_id=nome_base)
             continue
 
         dados = [(source_system, row['code'], row['name']) for _, row in df.iterrows()]
@@ -220,7 +215,7 @@ def load_source_and_reports():
 # ===============================
 # LOAD FACTS
 # ===============================
-def load_facts(mapping, report_map):
+def load_facts(report_map):
     cur_dw.execute("SELECT location_code, location_sk FROM dim_location")
     loc_map = {code: sk for code, sk in cur_dw.fetchall()}
 
@@ -233,28 +228,24 @@ def load_facts(mapping, report_map):
     cur_op.execute("SELECT report_id, source_code FROM op_report")
     report_source_map = {r[0]: r[1] for r in cur_op.fetchall()}
 
-    for nome_base, file_type in mapping.items():
-        if file_type != 'value':
-            continue
-        if nome_base not in report_map:
-            continue
-
+    for nome_base, report_id in report_map.items():
         ficheiro = nome_base + ".parquet"
         try:
             df = read_parquet_from_s3(ficheiro)
         except Exception as e:
             print(f"Erro ao ler {ficheiro}: {e}")
-            log_etl('load', 'error', str(e), file_id=nome_base)
+            log_etl('load',str(e), file_id=nome_base)
             continue
 
         if df.empty:
-            log_etl('load', 'error', "DataFrame vazio", file_id=nome_base)
+            log_etl('load',"DataFrame vazio", file_id=nome_base)
             continue
 
-        report_id = report_map[nome_base]
+        if set(df.columns) != {"location_code", "indicator_code", "year", "value", "value_type"}:
+            continue
         source_system = report_source_map.get(report_id)
         if not source_system:
-            log_etl('load', 'error', f"source_system não encontrado para report_id {report_id}", file_id=nome_base)
+            log_etl('load',f"source_system não encontrado para report_id {report_id}", file_id=nome_base)
             continue
 
         df['location_sk'] = df['location_code'].map(loc_map)
@@ -274,7 +265,7 @@ def load_facts(mapping, report_map):
             missing_loc = int(df['location_sk'].isna().sum())
             missing_ind = int(df['indicator_sk'].isna().sum())
             missing_date = int(df['date_id'].isna().sum())
-            log_etl('load', 'error',
+            log_etl('load',
                     f"0 linhas válidas de {dropped} — "
                     f"location_sk em falta: {missing_loc}, "
                     f"indicator_sk em falta: {missing_ind}, "
@@ -331,21 +322,21 @@ def ensure_views():
 # PIPELINE
 # ===============================
 def run_etl():
-    mapping, report_map = get_mapping()
+    report_map = get_mapping()
 
-    if not mapping:
+    if not report_map:
         print("Sem novos dados para carregar.")
         ensure_views()
         return
 
     print("1. Dimensões")
-    load_dimensions(mapping, report_map)
+    load_dimensions(report_map)
 
     print("2. Source + Reports")
     load_source_and_reports()
 
     print("3. Facts")
-    load_facts(mapping, report_map)
+    load_facts(report_map)
 
     print("4. Views")
     ensure_views()

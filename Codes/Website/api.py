@@ -141,14 +141,15 @@ class GenerateFunctionUrlIn(BaseModel):
 class OpDataIn(BaseModel):
     report_id: int
     file_url: str = ""
+    file_name: str = ""
     extract_function: str = ""
 
 
 class OpDataPatch(BaseModel):
     report_id: Optional[int] = None
     file_url: Optional[str] = None
+    file_name: Optional[str] = None
     extract_function: Optional[str] = None
-    file_type: Optional[str] = None
 
 
 class ReportPatch(BaseModel):
@@ -215,6 +216,8 @@ def add_report(report: ReportIn):
         conn.close()
         return {"report_id": report_id, "message": "Relatório inserido com sucesso."}
     except Exception as e:
+        if getattr(e, 'pgcode', None) == '23505':
+            raise HTTPException(status_code=409, detail="Já existe um relatório com este URL.")
         raise HTTPException(status_code=500, detail=str(e))
 
 
@@ -305,7 +308,8 @@ async def batch_reports(payload: list[dict]):
             inserted += 1
         except Exception as e:
             cur.execute(f"ROLLBACK TO SAVEPOINT {sp}")
-            errors.append({"index": i, "file_name": item.get("file_name", "?"), "error": str(e)})
+            msg = "URL duplicado" if getattr(e, 'pgcode', None) == '23505' else str(e)
+            errors.append({"index": i, "file_name": item.get("file_name", "?"), "error": msg})
 
     conn.commit()
     cur.close()
@@ -327,13 +331,12 @@ def add_op_data(data: OpDataIn):
         if not cur.fetchone():
             raise HTTPException(status_code=404, detail=f"report_id {data.report_id} não existe.")
 
-        file_type = FUNCTION_FILE_TYPE.get(data.extract_function) if data.extract_function else None
         cur.execute("""
-            INSERT INTO op_data (report_id, file_url, extract_function, file_type)
+            INSERT INTO op_data (report_id, file_url, file_name, extract_function)
             VALUES (%s, %s, %s, %s)
             RETURNING file_id;
-        """, (data.report_id, data.file_url or None,
-              data.extract_function or None, file_type))
+        """, (data.report_id, data.file_url or None, data.file_name or "",
+              data.extract_function or None))
         file_id = cur.fetchone()[0]
         conn.commit()
         cur.close()
@@ -366,14 +369,13 @@ async def upload_op_data(
         raise HTTPException(status_code=404, detail=f"report_id {report_id} não existe.")
 
     # Criar registo primeiro para obter o file_id
-    file_type = FUNCTION_FILE_TYPE.get(extract_function) if extract_function else None
     original_name = file.filename or ""
     try:
         cur.execute("""
-            INSERT INTO op_data (report_id, file_url, file_name, extract_function, file_type)
-            VALUES (%s, NULL, %s, %s, %s)
+            INSERT INTO op_data (report_id, file_url, file_name, extract_function)
+            VALUES (%s, NULL, %s, %s)
             RETURNING file_id, created_at;
-        """, (report_id, original_name, extract_function or None, file_type))
+        """, (report_id, original_name, extract_function or None))
         file_id, created_at = cur.fetchone()
         conn.commit()
     except Exception as e:
@@ -397,14 +399,13 @@ async def upload_op_data(
             Metadata={
                 "report_id": str(report_id),
                 "extract_function": extract_function or "",
-                "file_type": file_type or "",
                 "created_at": created_str,
             },
         )
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"Erro ao guardar no MinIO: {e}")
 
-    return {"file_id": file_id, "file_type": file_type, "message": "Ficheiro carregado e registado com sucesso."}
+    return {"file_id": file_id, "message": "Ficheiro carregado e registado com sucesso."}
 
 
 @app.post("/op_data/pairs", status_code=201)
@@ -439,12 +440,11 @@ async def upload_op_data_pairs(
     try:
         for content, fmt, file_name in file_data:
             for fn in functions:
-                fn_file_type = FUNCTION_FILE_TYPE.get(fn)
                 cur.execute("""
-                    INSERT INTO op_data (report_id, file_url, file_name, extract_function, file_type)
-                    VALUES (%s, NULL, %s, %s, %s)
+                    INSERT INTO op_data (report_id, file_url, file_name, extract_function)
+                    VALUES (%s, NULL, %s, %s)
                     RETURNING file_id, created_at;
-                """, (report_id, file_name, fn, fn_file_type))
+                """, (report_id, file_name, fn))
                 file_id, created_at = cur.fetchone()
                 created_str = created_at.isoformat() if hasattr(created_at, "isoformat") else str(created_at)
                 s3.put_object(
@@ -454,7 +454,6 @@ async def upload_op_data_pairs(
                     Metadata={
                         "report_id": str(report_id),
                         "extract_function": fn,
-                        "file_type": fn_file_type or "",
                         "created_at": created_str,
                     },
                 )
@@ -487,8 +486,6 @@ async def batch_op_data(payload: list[dict]):
             report_id = item.get("report_id")
             file_url = item.get("file_url") or None
             extract_function = item.get("extract_function") or None
-            file_type = FUNCTION_FILE_TYPE.get(extract_function) if extract_function else None
-
             if not report_id:
                 raise ValueError("report_id é obrigatório")
 
@@ -497,9 +494,9 @@ async def batch_op_data(payload: list[dict]):
                 raise ValueError(f"report_id {report_id} não existe")
 
             cur.execute("""
-                INSERT INTO op_data (report_id, file_url, extract_function, file_type)
-                VALUES (%s, %s, %s, %s)
-            """, (report_id, file_url, extract_function, file_type))
+                INSERT INTO op_data (report_id, file_url, extract_function)
+                VALUES (%s, %s, %s)
+            """, (report_id, file_url, extract_function))
             cur.execute(f"RELEASE SAVEPOINT {sp}")
             inserted += 1
         except Exception as e:
@@ -537,7 +534,7 @@ def _save_to_auto_store(name: str, code: str, file_type: str):
     store[name] = {
         "code":       code,
         "file_type":  file_type,
-        "created_at": datetime.utcnow().isoformat(),
+        "created_at": datetime.now().isoformat(),
     }
     with open(_AUTO_STORE, "w", encoding="utf-8") as f:
         json.dump(store, f, ensure_ascii=False, indent=2)
@@ -647,15 +644,41 @@ def get_reports():
     try:
         conn = get_operational_connection()
         cur = conn.cursor(cursor_factory=psycopg2.extras.RealDictCursor)
+
+        cur.execute("SELECT process_name, last_run FROM etl_data WHERE process_name IN ('etl_pdfs', 'etl_dados')")
+        etl_times = {r["process_name"]: r["last_run"] for r in cur.fetchall()}
+        pdfs_last  = etl_times.get("etl_pdfs")
+        dados_last = etl_times.get("etl_dados")
+
         cur.execute("""
             SELECT report_id, source_code, file_name, report_url, publication_date,
                    area_tematica, estado, palavras_chave, resumo, created_at
             FROM op_report ORDER BY report_id DESC;
         """)
-        rows = cur.fetchall()
+        reports = cur.fetchall()
+
+        cur.execute("SELECT DISTINCT report_id FROM etl_logs_pdfs")
+        pdf_error_ids = {r["report_id"] for r in cur.fetchall()}
+
+        if dados_last:
+            cur.execute("SELECT DISTINCT report_id FROM op_data WHERE created_at <= %s", (dados_last,))
+            data_processed_ids = {r["report_id"] for r in cur.fetchall()}
+        else:
+            data_processed_ids = set()
+
         cur.close()
         conn.close()
-        return [dict(r) for r in rows]
+
+        result = []
+        for r in reports:
+            row = dict(r)
+            pdf_done  = bool(pdfs_last and r["created_at"] and r["created_at"] <= pdfs_last)
+            data_done = r["report_id"] in data_processed_ids
+            row["can_delete"] = not pdf_done and not data_done
+            row["url_locked"] = pdf_done and r["report_id"] not in pdf_error_ids
+            result.append(row)
+
+        return result
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
 
@@ -667,7 +690,7 @@ def get_op_data():
         cur = conn.cursor(cursor_factory=psycopg2.extras.RealDictCursor)
         cur.execute("""
             SELECT d.file_id, d.report_id, d.file_url,
-                   d.extract_function, d.file_type, r.source_code, d.created_at
+                   d.extract_function, r.source_code, d.file_name, d.created_at
             FROM op_data d
             LEFT JOIN op_report r ON r.report_id = d.report_id
             ORDER BY d.file_id DESC;
@@ -685,10 +708,13 @@ def get_op_data_by_id(file_id: int):
     try:
         conn = get_operational_connection()
         cur = conn.cursor(cursor_factory=psycopg2.extras.RealDictCursor)
-        cur.execute(
-            "SELECT file_id, file_name, report_id, file_url, extract_function, file_type FROM op_data WHERE file_id = %s",
-            (file_id,)
-        )
+        cur.execute("""
+            SELECT d.file_id, d.file_name, d.report_id, d.file_url, d.extract_function,
+                   r.file_name AS report_name, r.source_code
+            FROM op_data d
+            LEFT JOIN op_report r ON r.report_id = d.report_id
+            WHERE d.file_id = %s
+        """, (file_id,))
         row = cur.fetchone()
         cur.close()
         conn.close()
@@ -708,23 +734,16 @@ def patch_op_data(file_id: int, data: OpDataPatch):
         conn_op = get_operational_connection()
         cur_op = conn_op.cursor()
 
-        # Se extract_function for fornecida, derivar file_type automaticamente
-        file_type = data.file_type
-        if data.extract_function:
-            computed = FUNCTION_FILE_TYPE.get(data.extract_function)
-            if computed:
-                file_type = computed
-
         cur_op.execute("""
             UPDATE op_data
             SET report_id        = COALESCE(%s, report_id),
                 file_url         = %s,
+                file_name        = COALESCE(%s, file_name),
                 extract_function = %s,
-                file_type        = %s,
                 created_at       = CURRENT_TIMESTAMP
             WHERE file_id = %s
-            RETURNING report_id, file_url, extract_function, file_type, created_at
-        """, (data.report_id, data.file_url or None, data.extract_function or None, file_type or None, file_id))
+            RETURNING report_id, file_url, extract_function, created_at
+        """, (data.report_id, data.file_url or None, data.file_name or None, data.extract_function or None, file_id))
 
         row = cur_op.fetchone()
         if not row:
@@ -732,7 +751,7 @@ def patch_op_data(file_id: int, data: OpDataPatch):
             cur_op.close(); conn_op.close()
             raise HTTPException(status_code=404, detail=f"file_id {file_id} não encontrado.")
 
-        new_report_id, new_file_url, new_extract_function, new_file_type, new_created_at = row
+        new_report_id, new_file_url, new_extract_function, new_created_at = row
         conn_op.commit()
         cur_op.close()
         conn_op.close()
@@ -742,7 +761,7 @@ def patch_op_data(file_id: int, data: OpDataPatch):
             conn_pipe = get_pipeline_connection()
             cur_pipe = conn_pipe.cursor()
             cur_pipe.execute(
-                "DELETE FROM etl_logs_dados WHERE file_id = %s AND status = 'error'",
+                "DELETE FROM etl_logs_dados WHERE file_id = %s",
                 (str(file_id),)
             )
             conn_pipe.commit()
@@ -760,7 +779,6 @@ def patch_op_data(file_id: int, data: OpDataPatch):
             new_meta = {
                 "report_id":        str(new_report_id) if new_report_id is not None else "",
                 "extract_function": new_extract_function or "",
-                "file_type":        new_file_type or "",
                 "created_at":       created_str,
             }
             s3.copy_object(
@@ -841,7 +859,7 @@ def patch_op_report(report_id: int, data: ReportPatch):
             conn_pipe = get_pipeline_connection()
             cur_pipe = conn_pipe.cursor()
             cur_pipe.execute(
-                "DELETE FROM etl_logs_pdfs WHERE report_id = %s AND status = 'error'",
+                "DELETE FROM etl_logs_pdfs WHERE report_id = %s",
                 (report_id,)
             )
             conn_pipe.commit()
@@ -861,7 +879,45 @@ def patch_op_report(report_id: int, data: ReportPatch):
     except HTTPException:
         raise
     except Exception as e:
+        if getattr(e, 'pgcode', None) == '23505':
+            raise HTTPException(status_code=409, detail="Já existe um relatório com este URL.")
         raise HTTPException(status_code=500, detail=str(e))
+
+
+@app.delete("/op_data/{file_id}")
+def delete_op_data(file_id: int):
+    """Apaga ficheiro de dados: remove de op_data, etl_logs_dados e do bucket MinIO bronze."""
+    try:
+        conn = get_operational_connection()
+        cur = conn.cursor()
+        cur.execute("SELECT file_id FROM op_data WHERE file_id = %s", (file_id,))
+        if not cur.fetchone():
+            cur.close(); conn.close()
+            raise HTTPException(status_code=404, detail=f"file_id {file_id} não encontrado.")
+        cur.execute("DELETE FROM op_data WHERE file_id = %s", (file_id,))
+        conn.commit()
+        cur.close(); conn.close()
+    except HTTPException:
+        raise
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
+    try:
+        conn_pipe = get_pipeline_connection()
+        cur_pipe = conn_pipe.cursor()
+        cur_pipe.execute("DELETE FROM etl_logs_dados WHERE file_id = %s", (str(file_id),))
+        conn_pipe.commit()
+        cur_pipe.close(); conn_pipe.close()
+    except Exception:
+        pass
+
+    try:
+        s3 = get_s3()
+        s3.delete_object(Bucket=BUCKET_RAW, Key=str(file_id))
+    except Exception:
+        pass
+
+    return {"deleted": file_id}
 
 
 @app.delete("/op_report/{report_id}")
@@ -871,7 +927,7 @@ def delete_op_report(report_id: int):
         conn = get_operational_connection()
         cur = conn.cursor(cursor_factory=psycopg2.extras.RealDictCursor)
 
-        cur.execute("SELECT created_at FROM op_report WHERE report_id = %s", (report_id,))
+        cur.execute("SELECT created_at, file_name FROM op_report WHERE report_id = %s", (report_id,))
         report = cur.fetchone()
         if not report:
             cur.close(); conn.close()
@@ -898,9 +954,26 @@ def delete_op_report(report_id: int):
                 detail="Este relatório tem dados já processados pelo pipeline de dados e não pode ser apagado diretamente."
             )
 
+        file_name = report["file_name"]
         cur.execute("DELETE FROM op_report WHERE report_id = %s", (report_id,))
         conn.commit()
         cur.close(); conn.close()
+
+        try:
+            s3 = get_s3()
+            s3.delete_object(Bucket=BUCKET_UNSTRUCTURED, Key=file_name)
+        except Exception:
+            pass
+
+        try:
+            conn_pipe = get_pipeline_connection()
+            cur_pipe = conn_pipe.cursor()
+            cur_pipe.execute("DELETE FROM etl_logs_pdfs WHERE report_id = %s", (report_id,))
+            conn_pipe.commit()
+            cur_pipe.close(); conn_pipe.close()
+        except Exception:
+            pass
+
         return {"deleted": report_id}
     except HTTPException:
         raise
@@ -1002,6 +1075,39 @@ def get_fact_values(indicator_sk: int):
 # ════════════════════════════════════════════════════════════
 # ENDPOINTS — Dashboard
 # ════════════════════════════════════════════════════════════
+
+@app.get("/dashboard/reports")
+def get_dashboard_reports():
+    """Devolve apenas os relatórios que têm dados em fact_values."""
+    try:
+        conn_wh = get_warehouse_connection()
+        conn_op = get_operational_connection()
+        cur_wh = conn_wh.cursor()
+        cur_op = conn_op.cursor(cursor_factory=psycopg2.extras.RealDictCursor)
+
+        cur_wh.execute("SELECT DISTINCT report_id FROM fact_values WHERE report_id IS NOT NULL")
+        report_ids = [r[0] for r in cur_wh.fetchall()]
+        cur_wh.close()
+        conn_wh.close()
+
+        if not report_ids:
+            cur_op.close()
+            conn_op.close()
+            return []
+
+        cur_op.execute("""
+            SELECT report_id, source_code, file_name, publication_date
+            FROM op_report
+            WHERE report_id = ANY(%s)
+            ORDER BY report_id DESC;
+        """, (report_ids,))
+        rows = cur_op.fetchall()
+        cur_op.close()
+        conn_op.close()
+        return [dict(r) for r in rows]
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
 
 @app.get("/dashboard")
 def get_dashboard(indicator_name: str, year: int, report_id: int = None):
@@ -1179,9 +1285,9 @@ def get_etl_logs():
         conn = get_pipeline_connection()
         cur = conn.cursor(cursor_factory=psycopg2.extras.RealDictCursor)
         cur.execute("""
-            SELECT id, file_id, NULL::integer AS report_id, file_name, step, status, error_message, log_time, 'dados' AS pipeline FROM etl_logs_dados
+            SELECT id, file_id, NULL::integer AS report_id, file_name, step, error_message, log_time, 'dados' AS pipeline FROM etl_logs_dados
             UNION ALL
-            SELECT id, NULL AS file_id, report_id, file_name, step, status, error_message, log_time, 'pdfs' AS pipeline FROM etl_logs_pdfs
+            SELECT id, NULL AS file_id, report_id, file_name, step, error_message, log_time, 'pdfs' AS pipeline FROM etl_logs_pdfs
             ORDER BY log_time DESC LIMIT 500
         """)
         rows = cur.fetchall()
@@ -1226,7 +1332,7 @@ def get_etl_logs_pdfs():
         conn = get_pipeline_connection()
         cur = conn.cursor(cursor_factory=psycopg2.extras.RealDictCursor)
         cur.execute("""
-            SELECT report_id, file_name, step, status, error_message, log_time
+            SELECT report_id, file_name, step, error_message, log_time
             FROM etl_logs_pdfs
             ORDER BY log_time DESC
             LIMIT 500
@@ -1235,6 +1341,53 @@ def get_etl_logs_pdfs():
         cur.close()
         conn.close()
         return [dict(r) for r in rows]
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
+
+@app.delete("/etl_logs/dados")
+def clear_etl_logs_dados():
+    """Apaga todos os registos de etl_logs_dados."""
+    try:
+        conn = get_pipeline_connection()
+        cur = conn.cursor()
+        cur.execute("DELETE FROM etl_logs_dados")
+        deleted = cur.rowcount
+        conn.commit()
+        cur.close(); conn.close()
+        return {"deleted": deleted}
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
+
+@app.delete("/etl_logs/pdfs")
+def clear_etl_logs_pdfs():
+    """Apaga todos os registos de etl_logs_pdfs."""
+    try:
+        conn = get_pipeline_connection()
+        cur = conn.cursor()
+        cur.execute("DELETE FROM etl_logs_pdfs")
+        deleted = cur.rowcount
+        conn.commit()
+        cur.close(); conn.close()
+        return {"deleted": deleted}
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
+
+@app.get("/etl_logs/errors_since")
+def get_etl_errors_since(tipo: str = "dados", minutes: int = 15):
+    table = "etl_logs_dados" if tipo == "dados" else "etl_logs_pdfs"
+    try:
+        conn = get_pipeline_connection()
+        cur = conn.cursor()
+        cur.execute(
+            f"SELECT COUNT(*) FROM {table} WHERE log_time > NOW() - INTERVAL '{minutes} minutes'"
+        )
+        count = cur.fetchone()[0]
+        cur.close()
+        conn.close()
+        return {"errors": count}
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
 

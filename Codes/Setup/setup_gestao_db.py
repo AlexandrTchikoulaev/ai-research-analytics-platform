@@ -26,7 +26,7 @@ def main():
         report_id        SERIAL PRIMARY KEY,
         file_name        VARCHAR(100),
         source_code      VARCHAR(50),
-        report_url       TEXT,
+        report_url       TEXT UNIQUE,
         publication_date DATE,
         area_tematica    VARCHAR(100),
         estado           VARCHAR(50),
@@ -46,7 +46,6 @@ def main():
         file_url         TEXT,
         file_name        VARCHAR,
         extract_function TEXT,
-        file_type        VARCHAR(50),
         created_at       TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
         CONSTRAINT fk_report
             FOREIGN KEY(report_id) REFERENCES op_report(report_id) ON DELETE CASCADE
@@ -81,7 +80,6 @@ def main():
         file_id       VARCHAR,
         file_name     VARCHAR,
         step          VARCHAR,
-        status        VARCHAR,
         error_message TEXT,
         log_time      TIMESTAMP DEFAULT CURRENT_TIMESTAMP
     );
@@ -96,7 +94,6 @@ def main():
         report_id     INTEGER,
         file_name     VARCHAR,
         step          VARCHAR,
-        status        VARCHAR,
         error_message TEXT,
         log_time      TIMESTAMP DEFAULT CURRENT_TIMESTAMP
     );
@@ -126,6 +123,9 @@ def main():
     BEFORE INSERT ON etl_logs_dados
     FOR EACH ROW EXECUTE FUNCTION fill_etl_log_file_name();
     """)
+
+    cur.execute("ALTER TABLE etl_logs_dados DROP COLUMN IF EXISTS status;")
+    cur.execute("ALTER TABLE etl_logs_pdfs  DROP COLUMN IF EXISTS status;")
 
     conn.commit()
     cur.close()
