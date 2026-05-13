@@ -95,7 +95,7 @@ Ver diferenças ainda não commitadas:
 
    git pull origin main          <- buscar alterações
    (fazer o trabalho...)
-   git add Projeto-Final-Eu/     <- preparar ficheiros
+   git add .     <- preparar ficheiros
    git commit -m "mensagem"      <- guardar localmente
    git push origin main          <- enviar para o GitHub
 
