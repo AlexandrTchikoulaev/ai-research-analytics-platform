@@ -2,7 +2,6 @@ import pandas as pd
 
 # ══════════════════════════════════════════════════════════════
 # FUNÇÕES DE TRANSFORMAÇÃO — IMF (formato JSON compacto)
-# Estrutura: {"indicators":{}, "countries":{}, "values":{ind:{loc:{year:val}}}}
 # ══════════════════════════════════════════════════════════════
 
 def funcao_imf_indicadores(data):

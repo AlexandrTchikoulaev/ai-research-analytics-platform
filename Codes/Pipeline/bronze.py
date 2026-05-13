@@ -54,7 +54,7 @@ def detect_format(url: str, content: bytes) -> str:
 
 
 def main():
-    print("A correr ingest_raw...")
+    print("A correr bronze...")
 
     s3 = boto3.client("s3", **MINIO_CONFIG)
     conn_pipe = psycopg2.connect(**DB_PIPELINE)
