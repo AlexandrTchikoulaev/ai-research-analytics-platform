@@ -4,7 +4,7 @@ from langchain_community.embeddings.ollama import OllamaEmbeddings
 from langchain_community.vectorstores import PGVector
 
 from minio import Minio
-from pypdf import PdfReader
+import pdfplumber
 
 import io
 import psycopg2
@@ -98,6 +98,14 @@ def _get_already_indexed(bucket_names: list[str]) -> set:
             conn.close()
 
 
+def _table_to_text(table: list[list]) -> str:
+    rows = []
+    for row in table:
+        cells = [str(cell).strip() if cell is not None else "" for cell in row]
+        rows.append(" | ".join(cells))
+    return "\n".join(rows)
+
+
 def load_new_documents(new_names: list[str]) -> list:
     client = Minio(
         MINIO_SETTINGS["endpoint"],
@@ -115,14 +123,43 @@ def load_new_documents(new_names: list[str]) -> list:
         response.release_conn()
 
         try:
-            reader = PdfReader(pdf_bytes)
-            for page_num, page in enumerate(reader.pages):
-                text = page.extract_text() or ""
-                if text.strip():
-                    documents.append(Document(
-                        page_content=text,
-                        metadata={"source": name, "page": page_num},
-                    ))
+            with pdfplumber.open(pdf_bytes) as pdf:
+                for page_num, page in enumerate(pdf.pages):
+                    parts = []
+
+                    # Texto fora das tabelas
+                    found_tables = page.find_tables()
+                    if found_tables:
+                        table_bboxes = [t.bbox for t in found_tables]
+
+                        def not_in_table(obj):
+                            for bbox in table_bboxes:
+                                if (obj.get("x0", 0) >= bbox[0] - 1
+                                        and obj.get("top", 0) >= bbox[1] - 1
+                                        and obj.get("x1", 0) <= bbox[2] + 1
+                                        and obj.get("bottom", 0) <= bbox[3] + 1):
+                                    return False
+                            return True
+
+                        text = page.filter(not_in_table).extract_text() or ""
+                    else:
+                        text = page.extract_text() or ""
+
+                    if text.strip():
+                        parts.append(text.strip())
+
+                    # Tabelas convertidas para texto estruturado
+                    for table in page.extract_tables():
+                        table_text = _table_to_text(table)
+                        if table_text.strip():
+                            parts.append(f"[TABELA]\n{table_text}")
+
+                    combined = "\n\n".join(parts)
+                    if combined.strip():
+                        documents.append(Document(
+                            page_content=combined,
+                            metadata={"source": name, "page": page_num},
+                        ))
         except Exception as e:
             msg = f"Erro ao processar PDF: {e}"
             print(f"  {name}: {msg}")

@@ -1,19 +1,22 @@
 import subprocess
 import sys
 import time
-import webbrowser
 import os
 import threading
 import urllib.request
 
 from PIL import Image, ImageDraw
 import pystray
+import webview
 
 _script_dir = os.path.dirname(os.path.abspath(__file__))
 _api_process = None
+_window = None
 
-# Garante python.exe mesmo que o launcher seja pythonw.exe
 _python_exe = os.path.join(os.path.dirname(sys.executable), "python.exe")
+_html_url = "file:///" + os.path.join(
+    _script_dir, "Codes", "Website", "index.html"
+).replace(os.sep, "/")
 
 
 def _criar_imagem_icone():
@@ -26,9 +29,14 @@ def _criar_imagem_icone():
     return img
 
 
-def _abrir_browser(icon=None, item=None):
-    html_path = os.path.join(_script_dir, "Codes", "Website", "index.html")
-    webbrowser.open(f"file:///{html_path.replace(os.sep, '/')}")
+def _on_closing():
+    # Fechar a janela minimiza para a bandeja em vez de encerrar
+    _window.hide()
+    return False
+
+
+def _mostrar_janela(icon=None, item=None):
+    _window.show()
 
 
 def _parar_sistema(icon, item):
@@ -39,6 +47,7 @@ def _parar_sistema(icon, item):
         subprocess.run(f"docker stop {c}", shell=True,
                        creationflags=subprocess.CREATE_NO_WINDOW)
     icon.stop()
+    _window.destroy()
 
 
 def _esperar_docker(timeout=90):
@@ -54,7 +63,7 @@ def _esperar_docker(timeout=90):
     return False
 
 
-def _iniciar(icon):
+def _iniciar():
     global _api_process
 
     # 1. Docker Desktop
@@ -62,8 +71,6 @@ def _iniciar(icon):
         r"C:\Program Files\Docker\Docker\Docker Desktop.exe",
         creationflags=subprocess.CREATE_NO_WINDOW,
     )
-
-    # Aguarda o daemon estar realmente pronto (até 90s)
     _esperar_docker(timeout=90)
     time.sleep(2)
 
@@ -88,7 +95,7 @@ def _iniciar(icon):
         creationflags=subprocess.CREATE_NO_WINDOW,
     )
 
-    # Aguarda a API estar realmente pronta (até 60s)
+    # Aguarda a API estar pronta (até 60s)
     for _ in range(60):
         try:
             urllib.request.urlopen("http://localhost:8000/docs", timeout=1)
@@ -96,27 +103,41 @@ def _iniciar(icon):
         except Exception:
             time.sleep(1)
 
-    # 5. Browser + notificação
-    _abrir_browser()
-    icon.notify("Sistema pronto!", "OP Report Manager")
+    # 5. Carrega a interface e exibe a janela nativa
+    _window.load_url(_html_url)
+    _window.show()
+    _icon.notify("Sistema pronto!", "OP Report Manager")
 
 
-def setup(icon):
+def _setup_tray(icon):
     icon.visible = True
-    threading.Thread(target=_iniciar, args=(icon,), daemon=True).start()
+    threading.Thread(target=_iniciar, daemon=True).start()
 
 
-menu = pystray.Menu(
-    pystray.MenuItem("Abrir Browser", _abrir_browser, default=True),
+_menu = pystray.Menu(
+    pystray.MenuItem("Abrir", _mostrar_janela, default=True),
     pystray.Menu.SEPARATOR,
     pystray.MenuItem("Parar Sistema", _parar_sistema),
 )
 
-icon = pystray.Icon(
+_icon = pystray.Icon(
     "op_report_manager",
     _criar_imagem_icone(),
     "OP Report Manager",
-    menu,
+    _menu,
 )
 
-icon.run(setup)
+# pystray roda em thread de fundo — pywebview exige a main thread no Windows
+threading.Thread(target=_icon.run, args=(_setup_tray,), daemon=True).start()
+
+# Janela oculta até a API estar pronta; fechar minimiza para a bandeja
+_window = webview.create_window(
+    "OP Report Manager",
+    "about:blank",
+    width=1280,
+    height=800,
+    hidden=True,
+)
+_window.events.closing += _on_closing
+
+webview.start()

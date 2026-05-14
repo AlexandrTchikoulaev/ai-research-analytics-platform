@@ -7,6 +7,7 @@ langchain-community
 langchain-text-splitters
 pgvector
 pypdf
+pdfplumber
 pycountry
 country_converter
 rapidfuzz
@@ -16,3 +17,4 @@ pyarrow
 pandas
 pystray
 Pillow
+pywebview

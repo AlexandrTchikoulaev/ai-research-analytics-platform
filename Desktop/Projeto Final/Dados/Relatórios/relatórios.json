@@ -20,9 +20,9 @@
         "resumo":"O Índice de Preparação para IA (AIPI) avalia o nível de preparação para IA em 174 países, com base em um conjunto abrangente de indicadores macroestruturais que abrangem a infraestrutura digital, o capital humano e as políticas do mercado de trabalho, a inovação e a integração econômica, bem como a regulamentação e a ética.\n\nOs dados de origem incluem dados oficiais, pesquisas com dados concretos e pesquisas de percepção compiladas por oito instituições: Fraser Institute, Organização Internacional do Trabalho, União Internacional de Telecomunicações, Nações Unidas, Conferência das Nações Unidas sobre Comércio e Desenvolvimento, União Postal Universal, Banco Mundial e Fórum Econômico Mundial.\n\nConforme descrito na documentação do índice e no artigo publicado, o AIPI é a soma de quatro dimensões principais: infraestrutura digital, capital humano, inovação tecnológica e marcos legais. Essas quatro dimensões são provavelmente relevantes para uma adoção tranquila da IA."
     },
     {
-        "file_name":"2024 Environmental Performance Index (EPI)",
+        "file_name":"Environmental Performance Index 2024",
         "source_code":"YCELP, CIESIN",
-        "report_url":"https://epi.yale.edu/",
+        "report_url":"https://epi.yale.edu/downloads/2024-epi-report-20250106.pdf",
         "publication_date":"03/06/2024",
         "areaTematica":"Ambiente",
         "estado":"Bienal",

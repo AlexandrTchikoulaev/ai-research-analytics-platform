@@ -19,13 +19,8 @@ sys.path.insert(0, os.path.normpath(os.path.join(os.path.dirname(__file__), ".."
 from silver_functions import EXTRACT_FUNCTIONS as _EXTRACT_FUNCTIONS
 from silver_function_generator import generate_and_validate as _generate_and_validate
 
-from sql_chat import chatbot_sql
-
-# ── RAG imports ──────────────────────────────────────────
-from langchain_core.prompts import ChatPromptTemplate
-from langchain_community.llms.ollama import Ollama
-from langchain_community.vectorstores import PGVector
-from langchain_community.embeddings.ollama import OllamaEmbeddings
+from chat_data import chatbot_sql
+from chat_reports import query_rag
 
 # ── Configurações ─────────────────────────────────────────
 _DB_BASE = {"host": "localhost", "port": 5433, "user": "projeto_utilizador", "password": "projeto"}
@@ -33,7 +28,6 @@ _DB_BASE = {"host": "localhost", "port": 5433, "user": "projeto_utilizador", "pa
 DB_WAREHOUSE   = {**_DB_BASE, "database": "warehouse_db"}
 DB_OPERATIONAL = {**_DB_BASE, "database": "gestao_db"}
 DB_PIPELINE    = {**_DB_BASE, "database": "gestao_db"}
-DB_VECTOR      = {**_DB_BASE, "database": "vector_db"}
 
 MINIO_CONFIG = {
     "endpoint_url": "http://localhost:9002",
@@ -44,19 +38,6 @@ MINIO_CONFIG = {
 BUCKET_UNSTRUCTURED = "bronze-unstructured"
 BUCKET_RAW = "bronze"
 
-
-PROMPT_TEMPLATE = """
-You are a helpful assistant. Answer the question based only on the following context.
-Always respond in European Portuguese, regardless of the language of the context.
-If the context does not contain enough information to answer, say so in Portuguese.
-
-Context:
-{context}
-
----
-
-Question: {question}
-Answer (in Portuguese):"""
 
 _HERE = os.path.dirname(os.path.abspath(__file__))
 PIPELINE_DADOS_SCRIPT = os.path.normpath(os.path.join(_HERE, "..", "Pipeline", "pipeline_data.py"))
@@ -168,34 +149,6 @@ class ReportPatch(BaseModel):
     palavras_chave: Optional[str] = None
     resumo: Optional[str] = None
 
-
-# ── Helpers RAG ───────────────────────────────────────────
-def get_embedding_function():
-    return OllamaEmbeddings(model="mxbai-embed-large")
-
-
-def query_rag(query_text: str):
-    embedding_function = get_embedding_function()
-    connection_string = (
-        f"postgresql+psycopg2://{DB_VECTOR['user']}:{DB_VECTOR['password']}"
-        f"@{DB_VECTOR['host']}:{DB_VECTOR['port']}/{DB_VECTOR['database']}"
-    )
-    db = PGVector(
-        connection_string=connection_string,
-        embedding_function=embedding_function,
-        collection_name="documents",
-    )
-    results = db.similarity_search_with_score(query_text, k=5)
-    if not results:
-        return {"answer": "Não encontrei informação relevante nos documentos indexados.", "sources": []}
-
-    context_text = "\n\n---\n\n".join([doc.page_content for doc, _score in results])
-    prompt_template = ChatPromptTemplate.from_template(PROMPT_TEMPLATE)
-    prompt = prompt_template.format(context=context_text, question=query_text)
-    model = Ollama(model="qwen2.5:7b")
-    response_text = model.invoke(prompt)
-    sources = [doc.metadata.get("id") for doc, _score in results]
-    return {"answer": response_text, "sources": sources}
 
 
 # ════════════════════════════════════════════════════════════

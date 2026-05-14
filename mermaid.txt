@@ -1,0 +1,60 @@
+Pipeline Dados
+
+---
+config:
+  layout: fixed
+---
+flowchart TB
+ subgraph ingestion["ingestion"]
+        A["Aplicação Web<br>Ingestão de Metadados"]
+        B[("DB Operacional<br>op_data")]
+  end
+ subgraph datalake["datalake"]
+        D1["Bronze Layer<br>MinIO - raw files"]
+        D2["Silver Layer<br>MinIO - cleaned + parquet"]
+  end
+ subgraph datawarehouse["datawarehouse"]
+        D3["Gold Layer<br>PostgreSQL - Data Warehouse"]
+  end
+ subgraph consumo["consumo"]
+        E["Dashboard / Analytics"]
+        F["RAG Chatbot"]
+  end
+ subgraph logs["logs"]
+        L["ETL Logs<br>etl_logs_data"]
+  end
+    A --> B
+    D1 --> D2
+    D3 --> E & F
+    B --> D1
+    D2 --> D3
+    B -. erro .-> L
+    D1 -. erro .-> L
+    D2 -. erro .-> L
+    D3 -. erro .-> L
+    logs --> B
+
+
+Pipeline Relatórios 
+
+flowchart LR
+ subgraph APP["5.1 Ingestão de Relatórios (Aplicação)"]
+        B[("op_report - Base de Dados Operacional")]
+        A1["Formulário de Ingestão"]
+        A2["Ingestão via JSON"]
+  end
+    A1 --> B
+    A2 --> B
+    E["Ingestão Bronze (ingest_unstructured.py)"] --> F[("MinIO - bronze-unstructured")]
+    F --> G{"Validação Bronze (PDF + metadados)"}
+    G -- válidos --> H["Processamento Semântico"]
+    G -- inválidos --> LOG[("etl_logs_pdfs")]
+    H --> I["Extração de Texto (pypdf)"]
+    I --> J["Chunking (500 + overlap 50)"]
+    J --> K["Embeddings (mxbai-embed-large)"]
+    K --> L[("vector_db - pgvector")]
+    L --> M["Retrieval Semântico (top-k=5)"]
+    M --> N["LLM qwen2.5:7b (Ollama)"]
+    N --> O["Resposta Chatbot"]
+    LOG -.-> E & H
+    E --> B
