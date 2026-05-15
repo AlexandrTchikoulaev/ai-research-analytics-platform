@@ -68,16 +68,19 @@ def main():
     except Exception:
         s3.create_bucket(Bucket=BUCKET_RAW)
 
-    # Obter last_run
+    # Obter last_run (NULL na BD é tratado como primeira execução)
     cur_pipe.execute("SELECT last_run FROM etl_data WHERE process_name = %s", (PROCESS_NAME,))
     row = cur_pipe.fetchone()
-    last_run = row[0] if row else datetime(2000, 1, 1)
+    row_val = row[0] if row else None
+    last_run = row_val if row_val is not None else datetime(2000, 1, 1)
 
-    # Blacklist: file_ids já registados com erro nesta fase
+    # Blacklist: file_ids com erro nesta fase desde o último run
+    # Limitar a last_run para permitir retry em runs subsequentes
     cur_pipe.execute("""
         SELECT DISTINCT file_id FROM etl_logs_dados
         WHERE step = 'ingest_raw' AND file_id IS NOT NULL
-    """)
+          AND log_time > %s
+    """, (last_run,))
     blacklist = {r[0] for r in cur_pipe.fetchall()}
 
     # Buscar novos registos

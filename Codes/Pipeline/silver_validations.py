@@ -31,11 +31,11 @@ MINIO_CONFIG = {
 BUCKET_RAW = "bronze"
 
 
-def _log_error_bronze(file_id, message: str):
+def _log_error_bronze(file_id, message: str) -> bool:
     """Escreve um erro de validate_bronze em conexão autocommit independente.
 
-    Garante que o registo é persistido mesmo que a transação principal
-    seja revertida ou que o objeto já tenha sido apagado do bucket Bronze.
+    Retorna True se o log foi persistido, False caso contrário.
+    Só apagar o objeto Bronze após confirmação do log.
     """
     try:
         _conn = psycopg2.connect(**DB_PIPELINE)
@@ -48,8 +48,10 @@ def _log_error_bronze(file_id, message: str):
         )
         _cur.close()
         _conn.close()
+        return True
     except Exception as log_exc:
         print(f"[AVISO] Não foi possível registar erro validate_bronze: {log_exc}")
+        return False
 
 
 def validate():
@@ -117,13 +119,14 @@ def validate():
             if errors:
                 msg = "; ".join(errors)
                 print(f"[INVÁLIDO] {key}: {msg}")
-                # Registar ANTES de apagar: garante que o log existe mesmo que
-                # o delete falhe, e usa autocommit para não depender do commit final.
-                _log_error_bronze(file_id, msg)
-                try:
-                    s3.delete_object(Bucket=BUCKET_RAW, Key=key)
-                except Exception as del_e:
-                    print(f"  Erro ao apagar {key}: {del_e}")
+                logged = _log_error_bronze(file_id, msg)
+                if logged:
+                    try:
+                        s3.delete_object(Bucket=BUCKET_RAW, Key=key)
+                    except Exception as del_e:
+                        print(f"  Erro ao apagar {key}: {del_e}")
+                else:
+                    print(f"  [AVISO] {key} não apagado do Bronze porque o log falhou")
                 err_count += 1
             else:
                 ok_count += 1

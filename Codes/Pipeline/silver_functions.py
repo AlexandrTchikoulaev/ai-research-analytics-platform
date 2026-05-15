@@ -1,10 +1,6 @@
 import pandas as pd
 
-# ══════════════════════════════════════════════════════════════
-# FUNÇÕES DE TRANSFORMAÇÃO — IMF (formato JSON compacto)
-# ══════════════════════════════════════════════════════════════
-
-def funcao_imf_indicadores(data):
+def imf_indicadores(data):
     items = data.get("indicators", {})
     return pd.DataFrame({
         "code": list(items.keys()),
@@ -12,32 +8,11 @@ def funcao_imf_indicadores(data):
     })
 
 
-def funcao_imf_countries(data):
-    items = data.get("countries", {})
-    return pd.DataFrame({
-        "code": list(items.keys()),
-        "name": [v.get("label") for v in items.values()],
-    })
+import pandas as pd
 
-
-def funcao_imf_regions(data):
-    items = data.get("regions", {})
-    return pd.DataFrame({
-        "code": list(items.keys()),
-        "name": [v.get("label") for v in items.values()],
-    })
-
-
-def funcao_imf_groups(data):
-    items = data.get("groups", {})
-    return pd.DataFrame({
-        "code": list(items.keys()),
-        "name": [v.get("label") for v in items.values()],
-    })
-
-
-def funcao_imf_values(data):
+def imf_values(data):
     values = data.get("values", {})
+
     rows = [
         {
             "location_code": loc,
@@ -47,87 +22,42 @@ def funcao_imf_values(data):
             "value_type": "value",
         }
         for ind, locations in values.items()
+        if locations is not None
         for loc, years in locations.items()
+        if years is not None
         for year, val in years.items()
     ]
+
     return pd.DataFrame(rows)
 
 
-# ══════════════════════════════════════════════════════════════
-# FUNÇÕES DE TRANSFORMAÇÃO — HFI (Human Freedom Index)
-# Formato: CSV long com colunas ISO_code, countries, region, year, indicadores...
-# ══════════════════════════════════════════════════════════════
-
-def funcao_hfi_countries(data):
-    df = pd.DataFrame(data) if isinstance(data, list) else data
-    result = df[["ISO_code", "countries"]].drop_duplicates().rename(
-        columns={"ISO_code": "code", "countries": "name"}
-    )
-    return result.dropna(subset=["code", "name"])
-
-
-def funcao_hfi_indicadores(data):
-    df = pd.DataFrame(data) if isinstance(data, list) else data
-    indicator_cols = [
-        c for c in df.columns
-        if c not in ("ISO_code", "countries", "region", "year", "rank")
-    ]
+def hfi_indicadores(_data=None):
     return pd.DataFrame({
-        "code": [f"HFI_{c}" for c in indicator_cols],
-        "name": indicator_cols,
+        "code": ["HF"],
+        "name": ["human freedom index"],
     })
 
 
-def funcao_hfi_values(data):
-    df = pd.DataFrame(data) if isinstance(data, list) else data
-    indicator_cols = [
-        c for c in df.columns
-        if c not in ("ISO_code", "countries", "region", "year", "rank")
-    ]
+def hfi_values(df: pd.DataFrame) -> pd.DataFrame:
 
-    rows = []
-    for _, row in df.iterrows():
-        for ind in indicator_cols:
-            val = row.get(ind)
-            if pd.isna(val):
-                continue
-            rows.append({
-                "location_code": row.get("ISO_code"),
-                "indicator_code": f"HFI_{ind}",
-                "year": int(row.get("year")) if not pd.isna(row.get("year")) else None,
-                "value": float(val),
-                "value_type": "value",
-            })
+    if not isinstance(df, pd.DataFrame):
+        df = pd.DataFrame(df)
 
-    df_out = pd.DataFrame(rows)
-    return df_out.dropna(subset=["location_code", "indicator_code", "year"])
+    # Construção do novo dataframe
+    out = pd.DataFrame({
+        "location_code": df["iso"],
+        "indicator_code": "HF",
+        "year": df["year"],
+        "value": df["hf_score"],
+        "value_type": "value"
+    })
 
-
-# ══════════════════════════════════════════════════════════════
-# FUNÇÕES DE TRANSFORMAÇÃO — EPI (Environmental Performance Index)
-# Formato: CSV com country, iso, year e colunas de indicadores
-# ══════════════════════════════════════════════════════════════
-
-def funcao_epi_countries(data):
-    df = pd.DataFrame(data) if isinstance(data, list) else data
-    
-    iso_col  = next((c for c in df.columns if "iso" in c.lower()), None)
-    name_col = next((c for c in df.columns if "country" in c.lower() or "name" in c.lower()), None)
-    
-    if not iso_col or not name_col:
-        return pd.DataFrame(columns=["code", "name"])
-    
-    return (
-        df[[iso_col, name_col]]
-        .dropna(subset=[name_col])   # <-- só remove se name for nulo
-        .drop_duplicates()
-        .rename(columns={iso_col: "code", name_col: "name"})
-    )
+    return out
 
 
 import pandas as pd
 
-def funcao_epi_indicadores(data):
+def epi_indicadores(data):
     df = pd.DataFrame(data) if isinstance(data, list) else data
 
     skip_cols = {"code", "iso", "country", "name", "region"}
@@ -151,7 +81,7 @@ import pandas as pd
 import re
 import pandas as pd
 
-def funcao_epi_values(data):
+def epi_values(data):
     df = pd.DataFrame(data) if isinstance(data, list) else data
 
     iso_col = next((c for c in df.columns if "iso" in c.lower()), None)
@@ -187,21 +117,18 @@ def funcao_epi_values(data):
 
 
 # ══════════════════════════════════════════════════════════════
-# REGISTO DE FUNÇÕES
+# REGISTO DE FUNÇÕES  (auto-descoberta — todas as funções públicas do módulo)
 # ══════════════════════════════════════════════════════════════
+import inspect as _inspect, sys as _sys
+
+_EXCLUDED = {"clean_dataframe"}
 
 EXTRACT_FUNCTIONS = {
-    # IMF JSON compacto
-    "funcao_imf_indicadores": funcao_imf_indicadores,
-    "funcao_imf_values":      funcao_imf_values,
-
-    # HFI
-    "funcao_hfi_indicadores": funcao_hfi_indicadores,
-    "funcao_hfi_values":      funcao_hfi_values,
-
-    # EPI
-    "funcao_epi_indicadores": funcao_epi_indicadores,
-    "funcao_epi_values":      funcao_epi_values,
+    name: obj
+    for name, obj in _inspect.getmembers(_sys.modules[__name__], _inspect.isfunction)
+    if not name.startswith("_")
+    and name not in _EXCLUDED
+    and obj.__module__ == __name__
 }
 
 

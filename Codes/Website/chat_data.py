@@ -187,25 +187,11 @@ _PT_EN: dict[str, str] = {
     "nova zelândia": "New Zealand", "nova zelandia": "New Zealand",
 }
 
-# Palavras PT que começam com maiúscula mas não são países
-_PT_STOP = {
-    "Qual", "Quais", "Para", "Como", "Quando", "Onde", "Quanto", "Quem",
-    "Por", "Em", "De", "Da", "Do", "No", "Na", "Com", "Sem", "Sobre",
-    "Entre", "Após", "Antes", "Este", "Esta", "Esse", "Essa",
-    "Aquele", "Aquela", "Valor", "Dados", "Indicador", "Ano", "Anos",
-    "País", "Relatório", "Qual", "Mesmo", "Mesma",
-}
-
 def _extract_country(question: str) -> str | None:
     p = question.lower()
     for pt in sorted(_PT_EN, key=len, reverse=True):
         if pt in p:
             return _PT_EN[pt]
-    # Heuristic: first capitalised word that isn't a PT stop word
-    caps = re.findall(r'(?<!\. )\b[A-Z][a-záéíóúâêîôûãõàèìòùç]{2,}\b', question)
-    for cap in caps:
-        if cap not in _PT_STOP:
-            return cap
     return None
 
 
@@ -332,26 +318,44 @@ _T_RANKING = """\
 Output ONLY a valid SQL SELECT query. No explanation, no markdown, no Chinese, no other language.
 {indicator_hint}
 
+View available: vw_indicator_location_year(indicator_name, location_name, value, year)
 Tables available: fact_values(location_sk, indicator_sk, date_id, value),
 dim_location(location_sk, name), dim_indicator(indicator_sk, indicator_name), dim_date(date_id, year).
 
-Template:
-SELECT year, ranking, value FROM (
-    SELECT dl.name AS country, dd.year, fv.value,
-           RANK() OVER (PARTITION BY dd.year ORDER BY fv.value DESC) AS ranking
-    FROM fact_values fv
-    JOIN dim_location  dl ON fv.location_sk  = dl.location_sk
-    JOIN dim_date      dd ON fv.date_id      = dd.date_id
-    JOIN dim_indicator di ON fv.indicator_sk = di.indicator_sk
-    WHERE di.indicator_name ILIKE '%[INDICATOR_NAME]%'
-) sub
-WHERE country ILIKE '%[COUNTRY_IN_ENGLISH]%' AND year = [YEAR]
-ORDER BY ranking ASC LIMIT 1;
+Two cases:
+
+CASE A — No country mentioned (e.g. "qual o país com maior X em Y?"):
+  Use the view to find the top-1 or bottom-1 country overall.
+  For "maior"/"highest": ORDER BY value DESC LIMIT 1.
+  For "menor"/"lowest":  ORDER BY value ASC  LIMIT 1.
+  Template:
+  SELECT location_name, year, value
+  FROM vw_indicator_location_year
+  WHERE indicator_name ILIKE '%[INDICATOR_NAME]%'
+    AND year = [YEAR]
+  ORDER BY value DESC
+  LIMIT 1;
+
+CASE B — A specific country IS mentioned (e.g. "em que posição ficou Portugal em X?"):
+  Return that country's ranking using RANK() OVER.
+  Template:
+  SELECT location_name, year, ranking, value FROM (
+      SELECT dl.name AS location_name, dd.year, fv.value,
+             RANK() OVER (PARTITION BY dd.year ORDER BY fv.value DESC) AS ranking
+      FROM fact_values fv
+      JOIN dim_location  dl ON fv.location_sk  = dl.location_sk
+      JOIN dim_date      dd ON fv.date_id      = dd.date_id
+      JOIN dim_indicator di ON fv.indicator_sk = di.indicator_sk
+      WHERE di.indicator_name ILIKE '%[INDICATOR_NAME]%'
+  ) sub
+  WHERE location_name ILIKE '%[COUNTRY_IN_ENGLISH]%' AND year = [YEAR]
+  ORDER BY ranking ASC LIMIT 1;
 
 Rules:
-- Replace [INDICATOR_NAME] with indicator name from hint.
+- Replace [INDICATOR_NAME] with indicator name from the hint above.
 - Translate country to English for [COUNTRY_IN_ENGLISH].
 - Replace [YEAR] with the 4-digit year.
+- ALWAYS include ORDER BY and LIMIT in your query.
 Question: {question}
 SQL:"""
 
@@ -376,7 +380,11 @@ Rules:
 Question: {question}
 SQL:"""
 
-_RANKING_WORDS = ["lugar", "posição", "posicao", "ranking", "rank", "classificação", "classificacao"]
+_RANKING_WORDS = [
+    "lugar", "posição", "posicao", "ranking", "rank", "classificação", "classificacao",
+    "maior valor", "menor valor", "mais alto", "mais baixo",
+    "país com maior", "país com menor", "nação com maior", "nação com menor",
+]
 
 
 def _pick_template(tier: str, question: str) -> str:
@@ -395,11 +403,15 @@ def _extract_sql(text: str) -> str:
     return m.group(1).strip() if m else text.strip()
 
 
-def _validate_sql(sql: str) -> None:
+def _validate_sql(sql: str, require_limit: bool = False) -> None:
     if not sql.strip().upper().startswith("SELECT"):
         raise ValueError(f"Não é um SELECT: {sql[:80]}")
     if re.search(r"\[.+?\]", sql):
         raise ValueError(f"Placeholders por preencher: {sql[:80]}")
+    if require_limit:
+        u = sql.upper()
+        if "ORDER BY" not in u or "LIMIT" not in u:
+            raise ValueError("Ranking query sem ORDER BY / LIMIT")
 
 def _explain_sql(sql: str) -> None:
     """EXPLAIN catches alias/join errors (e.g. 'd.year' without a dim_date join) before executing."""
@@ -415,41 +427,69 @@ def _explain_sql(sql: str) -> None:
 def _fallback_sql(question: str, tier: str) -> str:
     anos = _YEAR_RE.findall(question)
     year = anos[0] if anos else (str(_cache["max_year"]) if _cache["max_year"] else None)
-    if not year:
-        raise RuntimeError("Não foi possível determinar o ano.")
 
     _, ind_name = _fuzzy_indicator(question)
+    country = _extract_country(question)
+
+    # Detect top-N intent
+    top_m = re.search(r"\btop\s*(\d+)\b", question.lower())
+    top_n = int(top_m.group(1)) if top_m else None
+
+    # Detect "melhores" / "piores"
+    wants_worst = bool(re.search(r"\bpiores?\b|\bmenor\b|\binferior\b|\babaixo\b", question.lower()))
+    order_dir = "ASC" if wants_worst else "DESC"
+
+    # Build condition clauses
+    ind_clause = f"indicator_name ILIKE '%{ind_name}%'" if ind_name else None
+    country_clause = f"location_name ILIKE '%{country}%'" if country else None
+    year_clause = f"year = {year}" if year else None
+
+    wheres = [c for c in [ind_clause, country_clause, year_clause] if c]
+    where_str = ("WHERE " + " AND ".join(wheres)) if wheres else ""
+
     if not ind_name:
         raise RuntimeError("Não foi possível identificar o indicador.")
 
-    country = _extract_country(question)
-    if not country:
-        raise RuntimeError("Não foi possível identificar o país.")
-
-    base_where = (
-        f"WHERE indicator_name ILIKE '%{ind_name}%' "
-        f"AND location_name ILIKE '%{country}%' "
-        f"AND year = {year}"
-    )
-
     if tier in ("existence", "existence_inferred"):
-        return f"SELECT COUNT(*) AS registos_encontrados FROM vw_indicator_location_year {base_where}"
+        if not year:
+            raise RuntimeError("Não foi possível determinar o ano.")
+        if not country:
+            raise RuntimeError("Não foi possível identificar o país.")
+        return f"SELECT COUNT(*) AS registos_encontrados FROM vw_indicator_location_year {where_str}"
 
-    if any(w in question.lower() for w in _RANKING_WORDS):
+    # Top-N ranking query (country optional)
+    if top_n or any(w in question.lower() for w in _RANKING_WORDS):
+        limit = top_n or 1
+        country_filter = f"AND country ILIKE '%{country}%'" if country else ""
+        year_filter = f"AND year = {year}" if year else ""
         return (
-            f"SELECT year, ranking, value FROM ("
-            f"SELECT dl.name AS country, dd.year, fv.value, "
-            f"RANK() OVER (PARTITION BY dd.year ORDER BY fv.value DESC) AS ranking "
+            f"SELECT location_name AS country, year, ranking, value FROM ("
+            f"SELECT dl.name AS location_name, dd.year, fv.value, "
+            f"RANK() OVER (PARTITION BY dd.year ORDER BY fv.value {order_dir}) AS ranking "
             f"FROM fact_values fv "
             f"JOIN dim_location dl ON fv.location_sk = dl.location_sk "
             f"JOIN dim_date dd ON fv.date_id = dd.date_id "
             f"JOIN dim_indicator di ON fv.indicator_sk = di.indicator_sk "
             f"WHERE di.indicator_name ILIKE '%{ind_name}%'"
-            f") sub WHERE country ILIKE '%{country}%' AND year = {year} "
-            f"ORDER BY ranking ASC LIMIT 1"
+            f") sub WHERE ranking <= {limit} {country_filter} {year_filter} "
+            f"ORDER BY year DESC, ranking ASC LIMIT {limit}"
         )
 
-    return f"SELECT year, value FROM vw_indicator_location_year {base_where}"
+    if not year and not country:
+        return (
+            f"SELECT location_name, year, value FROM vw_indicator_location_year "
+            f"WHERE indicator_name ILIKE '%{ind_name}%' "
+            f"ORDER BY year DESC, location_name LIMIT 50"
+        )
+
+    if not country:
+        return (
+            f"SELECT location_name, value FROM vw_indicator_location_year "
+            f"WHERE indicator_name ILIKE '%{ind_name}%' AND year = {year} "
+            f"ORDER BY value DESC LIMIT 20"
+        )
+
+    return f"SELECT location_name, year, value FROM vw_indicator_location_year {where_str}"
 
 
 # ── Generate SQL via Ollama ─────────────────────────────────────────────────
@@ -459,14 +499,15 @@ def _gen_sql(question: str, tier: str) -> str:
     else:
         q = question
 
-    tmpl     = _pick_template(tier, question)
-    hint     = _indicator_hint(question)
-    prompt   = PromptTemplate.from_template(tmpl)
-    response = _get_ollama().invoke(prompt.format(question=q, indicator_hint=hint))
-    sql      = _extract_sql(response)
+    tmpl         = _pick_template(tier, question)
+    is_ranking   = tmpl is _T_RANKING
+    hint         = _indicator_hint(question)
+    prompt       = PromptTemplate.from_template(tmpl)
+    response     = _get_ollama().invoke(prompt.format(question=q, indicator_hint=hint))
+    sql          = _extract_sql(response)
 
     try:
-        _validate_sql(sql)
+        _validate_sql(sql, require_limit=is_ranking)
         _explain_sql(sql)   # catches alias/join errors the model may introduce
         return sql
     except Exception:
@@ -490,15 +531,23 @@ def _execute(sql: str) -> tuple[list, list]:
 def _format_table(cols: list, rows: list) -> str:
     if not rows:
         return "Nenhum resultado encontrado."
-    rows = [tuple("" if v is None else v for v in r) for r in rows]
+
+    def _cell(v, col_name: str) -> str:
+        if v is None:
+            return ""
+        if col_name.lower() in ("value", "valor", "registos_encontrados"):
+            return _fmt_value(v)
+        return str(v)
+
+    formatted = [tuple(_cell(v, c) for v, c in zip(r, cols)) for r in rows]
     widths = [
-        max(len(str(c)), max((len(str(r[i])) for r in rows), default=0))
+        max(len(str(c)), max((len(r[i]) for r in formatted), default=0))
         for i, c in enumerate(cols)
     ]
     def fmt(r: tuple) -> str:
         return "  ".join(str(v).ljust(w) for v, w in zip(r, widths))
     sep = "  ".join("─" * w for w in widths)
-    return "\n".join([fmt(cols), sep] + [fmt(r) for r in rows])
+    return "\n".join([fmt(cols), sep] + [fmt(r) for r in formatted])
 
 
 # ── Natural language response (0 LLM) ──────────────────────────────────────
@@ -521,25 +570,123 @@ _FRASES_NADA = [
 ]
 
 
+def _fmt_value(v) -> str:
+    try:
+        f = float(v)
+        if f == int(f):
+            return f"{int(f):,}".replace(",", " ")
+        return f"{f:,.2f}".replace(",", " ")
+    except (TypeError, ValueError):
+        return str(v) if v is not None else ""
+
+
+def _naturalize_meta(sub: str, cols: list, rows: list) -> str:
+    """Natural language for meta (count/list) queries — no tables."""
+    if not rows:
+        return "Não há dados disponíveis."
+
+    if sub == "count_records":
+        return f"A base de dados contém {_fmt_value(rows[0][0])} registos de valores."
+    if sub == "count_countries":
+        return f"Existem {rows[0][0]} países na base de dados."
+    if sub == "count_indicators":
+        return f"Existem {rows[0][0]} indicadores disponíveis."
+    if sub == "count_reports":
+        return f"Existem {rows[0][0]} relatórios com dados processados."
+
+    if sub == "list_countries":
+        names = [str(r[0]) for r in rows]
+        total = len(names)
+        shown = names[:30]
+        tail  = f", e mais {total - 30}" if total > 30 else ""
+        return f"Os {total} países disponíveis são: {', '.join(shown)}{tail}."
+
+    if sub == "list_indicators":
+        # cols: codigo, nome
+        parts = [f"{r[0]} – {r[1]}" for r in rows]
+        total = len(parts)
+        if total <= 20:
+            return "Os indicadores disponíveis são:\n" + "\n".join(f"• {p}" for p in parts)
+        shown = parts[:20]
+        return (
+            f"Existem {total} indicadores. Os primeiros são:\n"
+            + "\n".join(f"• {p}" for p in shown)
+            + f"\n... e mais {total - 20}."
+        )
+
+    return ""
+
+
 def _naturalize(question: str, tier: str, cols: list, rows: list) -> str:
     if not rows:
-        return random.choice(_FRASES_NADA)
-    if tier.startswith("meta:"):
-        return ""
+        _, ind_name = _fuzzy_indicator(question)
+        country = _extract_country(question)
+        anos = _YEAR_RE.findall(question)
+        hint_parts = []
+        if ind_name:
+            hint_parts.append(f"indicador \"{ind_name}\"")
+        if country:
+            hint_parts.append(f"país \"{country}\"")
+        if anos:
+            hint_parts.append(f"ano {anos[0]}")
+        hint = (", ".join(hint_parts) + ".") if hint_parts else ""
+        base = random.choice(_FRASES_NADA)
+        return f"{base} (Pesquisa: {hint})" if hint else base
 
+    if tier.startswith("meta:"):
+        return _naturalize_meta(tier.split(":")[1], cols, rows)
+
+    _, ind_name = _fuzzy_indicator(question)
+
+    # --- Existence ---
+    if tier in ("existence", "existence_inferred"):
+        indicator = ind_name or "indicador"
+        country   = _extract_country(question) or "o local indicado"
+        anos      = _YEAR_RE.findall(question)
+        year      = anos[0] if anos else str(_cache.get("max_year") or "")
+        return random.choice(_FRASES_EXIST).format(
+            count=rows[0][0], indicator=indicator, country=country, year=year
+        )
+
+    col_lower = [c.lower() for c in cols]
+    has_ranking = "ranking" in col_lower
+
+    # --- Multi-row: build a numbered text list ---
+    if len(rows) > 1:
+        indicator = ind_name or ""
+        lines = []
+        for i, row in enumerate(rows[:25], 1):
+            data = {c: v for c, v in zip(cols, row)}
+            loc   = data.get("location_name") or data.get("country") or data.get("name") or ""
+            val   = _fmt_value(data.get("value"))
+            yr    = data.get("year", "")
+            rnk   = data.get("ranking", "")
+            if has_ranking and rnk:
+                lines.append(f"{rnk}. {loc} ({yr}) — {val}")
+            elif loc and yr:
+                lines.append(f"{loc} ({yr}): {val}")
+            elif loc:
+                lines.append(f"{loc}: {val}")
+            else:
+                lines.append("  ".join(str(v) for v in row if v is not None))
+        suffix = f" (mostrando {len(lines)} de {len(rows)})" if len(rows) > 25 else ""
+        header = f"Resultados para \"{indicator}\"{suffix}:" if indicator else f"Resultados{suffix}:"
+        return header + "\n" + "\n".join(lines)
+
+    # --- Single row ---
     row  = rows[0]
     data = {c: v for c, v in zip(cols, row)}
-    _, ind_name = _fuzzy_indicator(question)
-    indicator   = ind_name or data.get("indicator_name", "indicador")
-    country     = _extract_country(question) or data.get("location_name", "")
-    year        = data.get("year", "")
-    value       = data.get("value", "")
+    indicator = ind_name or data.get("indicator_name") or "indicador"
+    country = (
+        _extract_country(question)
+        or data.get("location_name")
+        or data.get("country")
+        or ""
+    )
+    year  = data.get("year", "")
+    value = _fmt_value(data.get("value"))
 
-    if tier in ("existence", "existence_inferred"):
-        return random.choice(_FRASES_EXIST).format(
-            count=row[0], indicator=indicator, country=country, year=year
-        )
-    if "ranking" in [c.lower() for c in cols]:
+    if has_ranking:
         return random.choice(_FRASES_RANKING).format(
             country=country, ranking=data.get("ranking", ""),
             indicator=indicator, year=year, value=value,
@@ -562,10 +709,7 @@ def chatbot_sql(question: str) -> str:
         else:
             try:
                 cols, rows = _execute(sql)
-                phrase = _naturalize(question, tier, cols, rows)
-                table  = _format_table(cols, rows)
-                parts  = [p for p in [phrase, table] if p]
-                return "\n\n".join(parts)
+                return _naturalize(question, tier, cols, rows)
             except Exception as e:
                 return f"Erro ao executar query: {e}"
 
@@ -579,7 +723,4 @@ def chatbot_sql(question: str) -> str:
     except Exception as e:
         return f"Erro ao executar query: {e}"
 
-    phrase = _naturalize(question, tier, cols, rows)
-    table  = _format_table(cols, rows)
-    parts  = [p for p in [phrase, table] if p]
-    return "\n\n".join(parts)
+    return _naturalize(question, tier, cols, rows)

@@ -12,6 +12,7 @@ import webview
 _script_dir = os.path.dirname(os.path.abspath(__file__))
 _api_process = None
 _window = None
+_parando = False
 
 _python_exe = os.path.join(os.path.dirname(sys.executable), "python.exe")
 _html_url = "file:///" + os.path.join(
@@ -30,7 +31,6 @@ def _criar_imagem_icone():
 
 
 def _on_closing():
-    # Fechar a janela minimiza para a bandeja em vez de encerrar
     _window.hide()
     return False
 
@@ -40,7 +40,8 @@ def _mostrar_janela(icon=None, item=None):
 
 
 def _parar_sistema(icon, item):
-    global _api_process
+    global _api_process, _parando
+    _parando = True
     if _api_process and _api_process.poll() is None:
         _api_process.terminate()
     for c in ["projeto_uc", "projeto_pgadmin", "minio"]:
@@ -48,6 +49,17 @@ def _parar_sistema(icon, item):
                        creationflags=subprocess.CREATE_NO_WINDOW)
     icon.stop()
     _window.destroy()
+
+
+def _monitor_api():
+    """Esconde a janela quando a API encerra via botão desligar no browser."""
+    if _api_process:
+        _api_process.wait()
+    if not _parando:
+        try:
+            _window.hide()
+        except Exception:
+            pass
 
 
 def _esperar_docker(timeout=90):
@@ -63,22 +75,48 @@ def _esperar_docker(timeout=90):
     return False
 
 
+def _esperar_containers(timeout=60):
+    targets = {"projeto_uc", "projeto_pgadmin", "minio"}
+    prontos = set()
+    deadline = time.time() + timeout
+    while time.time() < deadline and prontos < targets:
+        for c in list(targets - prontos):
+            r = subprocess.run(
+                ["docker", "inspect", "--format", "{{.State.Status}}", c],
+                capture_output=True, text=True,
+                creationflags=subprocess.CREATE_NO_WINDOW,
+            )
+            if r.stdout.strip() == "running":
+                prontos.add(c)
+        if prontos < targets:
+            time.sleep(1)
+    return prontos == targets
+
+
 def _iniciar():
     global _api_process
 
-    # 1. Docker Desktop
-    subprocess.Popen(
-        r"C:\Program Files\Docker\Docker\Docker Desktop.exe",
+    # 1. Docker Desktop — só inicia se o Docker Engine não está a correr
+    r = subprocess.run(
+        ["docker", "info"],
+        capture_output=True,
         creationflags=subprocess.CREATE_NO_WINDOW,
     )
-    _esperar_docker(timeout=90)
-    time.sleep(2)
+    if r.returncode != 0:
+        si = subprocess.STARTUPINFO()
+        si.dwFlags |= subprocess.STARTF_USESHOWWINDOW
+        si.wShowWindow = 7
+        subprocess.Popen(
+            r"C:\Program Files\Docker\Docker\Docker Desktop.exe",
+            startupinfo=si,
+        )
+        _esperar_docker(timeout=90)
 
     # 2. Containers
     for c in ["projeto_uc", "projeto_pgadmin", "minio"]:
         subprocess.run(f"docker start {c}", shell=True,
                        creationflags=subprocess.CREATE_NO_WINDOW)
-    time.sleep(5)
+    _esperar_containers(timeout=60)
 
     # 3. MinIO buckets
     setup_path = os.path.join(_script_dir, "Codes", "Setup")
@@ -103,10 +141,14 @@ def _iniciar():
         except Exception:
             time.sleep(1)
 
-    # 5. Carrega a interface e exibe a janela nativa
+    # 5. Carrega a interface e exibe a janela maximizada
     _window.load_url(_html_url)
     _window.show()
+    _window.maximize()
     _icon.notify("Sistema pronto!", "OP Report Manager")
+
+    # Monitoriza o processo da API — esconde a janela se o browser desligar o sistema
+    threading.Thread(target=_monitor_api, daemon=True).start()
 
 
 def _setup_tray(icon):
@@ -127,10 +169,8 @@ _icon = pystray.Icon(
     _menu,
 )
 
-# pystray roda em thread de fundo — pywebview exige a main thread no Windows
 threading.Thread(target=_icon.run, args=(_setup_tray,), daemon=True).start()
 
-# Janela oculta até a API estar pronta; fechar minimiza para a bandeja
 _window = webview.create_window(
     "OP Report Manager",
     "about:blank",

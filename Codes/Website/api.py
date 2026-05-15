@@ -647,6 +647,7 @@ def get_op_data():
         cur.execute("""
             SELECT d.file_id, d.report_id, d.file_url,
                    d.extract_function, r.source_code, d.file_name, d.created_at,
+                   r.file_name AS report_name,
                    CASE
                      WHEN ed.last_run IS NULL      THEN TRUE
                      WHEN d.created_at > ed.last_run THEN TRUE
@@ -985,8 +986,21 @@ def delete_op_report(report_id: int):
 
 @app.get("/extract_functions")
 def get_extract_functions():
+    excluded = {"clean_dataframe"}
+    sf_path = os.path.normpath(os.path.join(os.path.dirname(__file__), "..", "Pipeline", "silver_functions.py"))
+    static_names = []
+    try:
+        with open(sf_path, encoding="utf-8") as f:
+            for line in f:
+                m = re.match(r'^def ([A-Za-z][A-Za-z0-9_]*)\s*\(', line)
+                if m:
+                    name = m.group(1)
+                    if not name.startswith("_") and name not in excluded:
+                        static_names.append(name)
+    except Exception:
+        pass
     auto = _load_auto_store()
-    names = list(_EXTRACT_FUNCTIONS.keys()) + [n for n in auto if n not in _EXTRACT_FUNCTIONS]
+    names = static_names + [n for n in auto if n not in static_names]
     return [{"name": n} for n in names]
 
 
@@ -1410,6 +1424,73 @@ def get_etl_errors_since(tipo: str = "dados", minutes: int = 15):
 # ════════════════════════════════════════════════════════════
 # ENDPOINT — Chat
 # ════════════════════════════════════════════════════════════
+
+@app.get("/op_report/{report_id}/thumbnail")
+def get_report_thumbnail(report_id: int):
+    """Gera thumbnail JPEG da primeira página do PDF (MinIO ou URL externo)."""
+    try:
+        import fitz
+    except ImportError:
+        raise HTTPException(status_code=503, detail="PyMuPDF não instalado.")
+
+    from fastapi.responses import Response
+
+    try:
+        conn = get_operational_connection()
+        cur = conn.cursor(cursor_factory=psycopg2.extras.RealDictCursor)
+        cur.execute("SELECT file_name, report_url FROM op_report WHERE report_id = %s", (report_id,))
+        row = cur.fetchone()
+        cur.close()
+        conn.close()
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
+    if not row:
+        raise HTTPException(status_code=404, detail="Relatório não encontrado.")
+
+    pdf_bytes = None
+
+    # 1. Tentar MinIO
+    try:
+        s3 = get_s3()
+        obj = s3.get_object(Bucket=BUCKET_UNSTRUCTURED, Key=row["file_name"])
+        pdf_bytes = obj["Body"].read()
+    except Exception:
+        pass
+
+    # 2. Fallback: URL externo (download completo — xref do PDF está no fim do ficheiro)
+    if pdf_bytes is None and row.get("report_url"):
+        try:
+            import requests as _req
+            resp = _req.get(row["report_url"], timeout=60)
+            resp.raise_for_status()
+            pdf_bytes = resp.content
+        except Exception:
+            pass
+
+    if pdf_bytes is None or not pdf_bytes.startswith(b"%PDF"):
+        raise HTTPException(status_code=404, detail="PDF não encontrado ou inválido.")
+
+    try:
+        doc = fitz.open(stream=pdf_bytes, filetype="pdf")
+        if len(doc) == 0:
+            doc.close()
+            raise HTTPException(status_code=404, detail="PDF sem páginas.")
+        page = doc[0]
+        pix = page.get_pixmap(matrix=fitz.Matrix(1.5, 1.5), alpha=False)
+        img_bytes = pix.tobytes("jpeg")
+        doc.close()
+    except HTTPException:
+        raise
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Erro ao gerar thumbnail: {e}")
+
+    return Response(
+        content=img_bytes,
+        media_type="image/jpeg",
+        headers={"Cache-Control": "public, max-age=3600"},
+    )
+
 
 @app.post("/chat")
 def chat(body: ChatIn):

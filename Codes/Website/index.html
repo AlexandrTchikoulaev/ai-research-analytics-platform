@@ -695,6 +695,203 @@
     }
     .btn-edit-mini:hover { border-color: var(--border2); color: var(--text-secondary); }
 
+    /* ── Vista em Cartões ── */
+    .btn-view-toggle {
+      background: none;
+      border: 1px solid var(--border);
+      color: var(--text-muted);
+      border-radius: var(--radius);
+      padding: 0.5rem 0.6rem;
+      cursor: pointer;
+      transition: all var(--transition);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      line-height: 0;
+    }
+    .btn-view-toggle:hover { border-color: var(--border2); color: var(--text-secondary); }
+    .btn-view-toggle.active { background: var(--accent); color: var(--surface); border-color: var(--accent); }
+
+    .report-cards-wrapper {
+      padding: 1.2rem 0;
+    }
+
+    .report-cards-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+      gap: 1rem;
+    }
+
+    .report-card {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      overflow: hidden;
+      display: flex;
+      flex-direction: column;
+      transition: border-color var(--transition), box-shadow var(--transition);
+    }
+    .report-card:hover {
+      border-color: var(--border2);
+      box-shadow: 0 2px 12px rgba(0,0,0,0.07);
+    }
+
+    .report-card-thumb {
+      width: 100%;
+      aspect-ratio: 1 / 1.3;
+      background: var(--surface2);
+      overflow: hidden;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      position: relative;
+      border-bottom: 1px solid var(--border);
+    }
+    .report-card-img {
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+      object-position: top;
+      opacity: 0;
+      transition: opacity 0.3s ease;
+    }
+    .report-card-img.loaded { opacity: 1; }
+    .report-card-thumb .thumb-placeholder {
+      position: absolute;
+      inset: 0;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      flex-direction: column;
+      gap: 0.5rem;
+    }
+    .thumb-placeholder .thumb-spinner {
+      width: 20px; height: 20px;
+      border: 2px solid var(--border2);
+      border-top-color: var(--text-muted);
+      border-radius: 50%;
+      animation: spin 0.7s linear infinite;
+      display: none;
+    }
+    .thumb-placeholder.loading .thumb-spinner { display: block; }
+    .thumb-placeholder .thumb-label {
+      font-family: var(--mono);
+      font-size: 0.65rem;
+      color: var(--text-muted);
+      letter-spacing: 0.1em;
+      text-transform: uppercase;
+    }
+    .thumb-placeholder.loading .thumb-label { display: none; }
+
+    .report-card-info {
+      padding: 0.85rem 1rem;
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+      gap: 0.5rem;
+    }
+    .report-card-title {
+      font-weight: 400;
+      font-size: 0.8rem;
+      color: var(--text);
+      line-height: 1.45;
+      display: -webkit-box;
+      -webkit-line-clamp: 2;
+      -webkit-box-orient: vertical;
+      overflow: hidden;
+    }
+    .report-card-meta {
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+      flex-wrap: wrap;
+    }
+    .report-card-date {
+      font-family: var(--mono);
+      font-size: 0.65rem;
+      color: var(--text-muted);
+    }
+    .report-card-fields {
+      display: flex;
+      flex-direction: column;
+      gap: 0.3rem;
+      margin-top: 0.2rem;
+    }
+    .report-card-field {
+      display: flex;
+      gap: 0.4rem;
+      font-family: var(--mono);
+      font-size: 0.7rem;
+      line-height: 1.35;
+      color: var(--text-secondary);
+      align-items: baseline;
+    }
+    .report-card-field-label {
+      font-size: 0.6rem;
+      color: var(--text-muted);
+      text-transform: uppercase;
+      letter-spacing: 0.07em;
+      white-space: nowrap;
+      min-width: 54px;
+    }
+    .report-card-field-value {
+      display: -webkit-box;
+      -webkit-line-clamp: 2;
+      -webkit-box-orient: vertical;
+      overflow: hidden;
+      flex: 1;
+    }
+
+    .report-card-actions {
+      padding: 0.55rem 1rem;
+      border-top: 1px solid var(--border);
+      display: flex;
+      gap: 0.45rem;
+      align-items: center;
+      flex-wrap: wrap;
+    }
+    .report-card-actions a.btn-edit-mini {
+      text-decoration: none;
+      display: inline-block;
+    }
+
+    /* ── Modal detalhe relatório ── */
+    .report-detail-card {
+      max-width: 780px; width: 94%;
+    }
+    .report-detail-body {
+      display: flex; gap: 1.4rem; align-items: flex-start;
+    }
+    .report-detail-thumb-wrap {
+      flex: 0 0 180px;
+      border-radius: 4px; overflow: hidden;
+      border: 1px solid var(--border);
+      background: var(--surface-alt, #f4f4f4);
+      aspect-ratio: 3/4;
+      display: flex; align-items: center; justify-content: center;
+    }
+    .report-detail-thumb-wrap img {
+      width: 100%; height: 100%; object-fit: cover; display: block;
+    }
+    .report-detail-thumb-wrap .no-thumb {
+      font-family: var(--mono); font-size: 0.72rem; color: var(--muted);
+    }
+    .report-detail-info {
+      flex: 1; display: flex; flex-direction: column; gap: 0.85rem; min-width: 0;
+      max-height: 60vh; overflow-y: auto;
+    }
+    .report-detail-field { display: flex; flex-direction: column; gap: 0.2rem; }
+    .report-detail-label {
+      font-family: var(--mono); font-size: 0.7rem; color: var(--muted);
+      text-transform: uppercase; letter-spacing: 0.06em;
+    }
+    .report-detail-value {
+      font-size: 0.84rem; color: var(--fg); line-height: 1.6; white-space: pre-wrap; word-break: break-word;
+    }
+    .report-detail-footer {
+      display: flex; gap: 0.6rem; padding-top: 0.6rem; border-top: 1px solid var(--border);
+    }
+
     .etl-modal-overlay {
       position: fixed; inset: 0;
       background: rgba(0,0,0,0.4);
@@ -922,7 +1119,7 @@
         <label>JSON</label>
         <textarea id="f-batch-json" style="min-height:180px;font-size:0.78rem;" placeholder='[
   {
-    "titulo": "weo_2024.pdf",
+    "título": "weo_2024.pdf",
     "link": "https://...",
     "fonte": "IMF",
     "data de publicação": "2024-01-01",
@@ -1021,10 +1218,6 @@
         </div>
         <input type="hidden" id="d-up-rid"/>
       </div>
-      <div class="form-group full" id="d-file_name-group">
-        <label>nome</label>
-        <input type="text" id="d-file_name" placeholder="nome_ficheiro.json"/>
-      </div>
       <div class="form-group full">
         <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:0.4rem;">
           <label id="dfield-label" style="margin:0;">link</label>
@@ -1040,6 +1233,10 @@
           <input type="file" id="d-up-file" accept=".json,.csv,.xlsx,.xls,.xml,.zip" multiple onchange="updateUploadPreview()"/>
         </div>
       </div>
+      <div class="form-group full" id="d-file_name-group">
+        <label>nome</label>
+        <input type="text" id="d-file_name" placeholder="nome_ficheiro.json"/>
+      </div>
       <div class="form-group full">
         <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:0.4rem;">
           <label style="margin:0;">funções</label>
@@ -1053,6 +1250,11 @@
           <div class="chk-dropdown-menu" id="fn-dropdown-menu" style="display:none;"></div>
         </div>
       </div>
+    </div>
+    <div class="form-actions">
+      <button class="btn-primary" id="btn-data-submit" onclick="submitDataAuto()">Adicionar Ficheiro</button>
+      <button class="btn-ghost" onclick="clearDataForm()">Limpar</button>
+      <span id="upload-summary" style="font-size:0.78rem;color:var(--text-muted);"></span>
     </div>
     <div id="upload-preview" style="display:none;">
       <div class="preview-block">
@@ -1068,11 +1270,6 @@
           <tbody id="preview-rows-body"></tbody>
         </table>
       </div>
-    </div>
-    <div class="form-actions">
-      <button class="btn-primary" id="btn-data-submit" onclick="submitDataAuto()">Adicionar Ficheiro</button>
-      <button class="btn-ghost" onclick="clearDataForm()">Limpar</button>
-      <span id="upload-summary" style="font-size:0.78rem;color:var(--text-muted);"></span>
     </div>
   </div>
 
@@ -1133,10 +1330,16 @@
       <input type="text" id="search-input-report" placeholder="Filtrar registos..." oninput="filterTable('report')"/>
     </div>
     <button class="btn-refresh" onclick="loadTable('report')">Atualizar</button>
+    <button class="btn-view-toggle active" id="btn-view-toggle-report" onclick="toggleReportView()" title="Vista em tabela">
+      <svg width="14" height="14" viewBox="0 0 14 14" fill="none" stroke="currentColor" stroke-width="1.5">
+        <rect x="1" y="1" width="5" height="5" rx="0.5"/><rect x="8" y="1" width="5" height="5" rx="0.5"/>
+        <rect x="1" y="8" width="5" height="5" rx="0.5"/><rect x="8" y="8" width="5" height="5" rx="0.5"/>
+      </svg>
+    </button>
     <div class="record-count" id="record-count-report"></div>
   </div>
 
-  <div class="table-wrapper">
+  <div class="table-wrapper" id="report-table-wrapper" style="display:none;">
     <table>
       <thead>
         <tr>
@@ -1156,6 +1359,10 @@
         <tr><td colspan="10"><div class="state-box"><p>A carregar dados...</p></div></td></tr>
       </tbody>
     </table>
+  </div>
+
+  <div id="report-cards-wrapper" class="report-cards-wrapper">
+    <div id="report-cards-grid" class="report-cards-grid"></div>
   </div>
 
   </div><!-- end tsec-relatorios -->
@@ -1391,8 +1598,10 @@
         <span id="rank-chart-title">Seleciona um indicador e um ano</span>
         <span id="rank-record-count"></span>
       </div>
-      <div id="rank-plotly" style="min-height:460px;">
-        <div class="dash-empty">Seleciona um indicador e um ano e clica em Aplicar.</div>
+      <div style="max-height:520px; overflow-y:auto; overflow-x:hidden;">
+        <div id="rank-plotly" style="min-height:460px;">
+          <div class="dash-empty">Seleciona um indicador e um ano e clica em Aplicar.</div>
+        </div>
       </div>
     </div>
   </div>
@@ -1602,6 +1811,23 @@
   </div>
 </div>
 
+<!-- ══ Modal detalhe relatório (cartão) ══ -->
+<div id="report-detail-modal" class="etl-modal-overlay" style="display:none;" onclick="closeReportDetail(event)">
+  <div class="etl-modal-card report-detail-card" onclick="event.stopPropagation()">
+    <div class="etl-modal-header">
+      <span id="report-detail-title" style="max-width:90%;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;"></span>
+      <button class="btn-ghost" style="padding:0.25rem 0.55rem;font-size:0.85rem;line-height:1;" onclick="closeReportDetail()">×</button>
+    </div>
+    <div class="report-detail-body">
+      <div class="report-detail-thumb-wrap" id="report-detail-thumb">
+        <span class="no-thumb">PDF</span>
+      </div>
+      <div class="report-detail-info" id="report-detail-info"></div>
+    </div>
+    <div class="report-detail-footer" id="report-detail-footer"></div>
+  </div>
+</div>
+
 <!-- ══ Modal editar relatório (Armazenamento) ══ -->
 <div id="report-edit-modal" class="etl-modal-overlay" style="display:none;" onclick="closeReportEditModal(event)">
   <div class="etl-modal-card" onclick="event.stopPropagation()">
@@ -1665,6 +1891,10 @@
   </div>
 </div>
 
+<div id="err-hover-card" style="display:none;position:fixed;z-index:9999;max-width:420px;background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);padding:0.75rem 1rem;box-shadow:0 4px 16px rgba(0,0,0,0.25);pointer-events:none;">
+  <pre id="err-hover-text" style="margin:0;white-space:pre-wrap;word-break:break-all;font-family:var(--mono);font-size:0.8rem;max-height:260px;overflow-y:auto;"></pre>
+</div>
+
 <div id="toast"></div>
 
 <script>
@@ -1684,6 +1914,8 @@
 
   const allRows = { report: [], data: [], etlData: [], etlLogsDados: [], etlLogsPdfs: [] };
   let selectedReportId = null;
+  let reportViewMode = 'cards'; // 'table' | 'cards'
+  const thumbnailCache = {};
 
   // ── NAVEGAÇÃO ──
   function switchInsert(tab) {
@@ -1724,6 +1956,7 @@
   // Carregar funções e timestamps logo no arranque
   loadExtractFunctions();
   loadEtlData();
+  loadTable('report');
 
   function toggleTheme() {
     const html = document.documentElement;
@@ -1735,7 +1968,6 @@
     try {
       await fetch(`${API_BASE}/shutdown`, { method: 'POST' });
     } catch (_) { /* servidor já fechou */ }
-    document.body.innerHTML = '<div style="display:flex;align-items:center;justify-content:center;height:100vh;font-family:monospace;font-size:0.85rem;color:#888;letter-spacing:0.1em;">SISTEMA ENCERRADO</div>';
   }
 
   let toastTimer;
@@ -2059,7 +2291,8 @@
       if (!res.ok) throw new Error(`HTTP ${res.status}`);
       allRows[type] = await res.json();
       if (type === 'data') populateReportIdDropdown();
-      renderTable(type);
+      if (type === 'report' && reportViewMode === 'cards') renderCards();
+      else renderTable(type);
     } catch (e) {
       tbody.innerHTML = `<tr><td colspan="${colSpan}"><div class="state-box"><p>Erro ao carregar: ${escHtml(e.message)}</p></div></td></tr>`;
     }
@@ -2072,7 +2305,7 @@
     sel.innerHTML = '<option value="">\u2014 Todos os relat\u00f3rios \u2014</option>';
     ids.forEach(id => {
       const row = allRows['data'].find(r => r.report_id === id);
-      const label = row && row.file_name ? row.file_name : (row && row.source_code ? row.source_code : '\u2014');
+      const label = row && row.report_name ? row.report_name : (row && row.source_code ? row.source_code : '\u2014');
       sel.innerHTML += `<option value="${id}" ${String(current) === String(id) ? 'selected' : ''}>${label}</option>`;
     });
   }
@@ -2156,7 +2389,8 @@
       document.querySelectorAll('#table-body-report tr.selected').forEach(tr => tr.classList.remove('selected'));
       selectedReportId = null;
     }
-    renderTable(type);
+    if (type === 'report' && reportViewMode === 'cards') renderCards();
+    else renderTable(type);
   }
 
   function selectReportRow(reportId, trEl) {
@@ -2174,6 +2408,176 @@
       document.getElementById('table-body-data').closest('.table-wrapper').scrollIntoView({ behavior: 'smooth', block: 'nearest' });
     }
     renderTable('data');
+  }
+
+  // ── VISTA EM CARTÕES ──
+  function toggleReportView() {
+    reportViewMode = reportViewMode === 'table' ? 'cards' : 'table';
+    const btn = document.getElementById('btn-view-toggle-report');
+    const tableWrapper = document.getElementById('report-table-wrapper');
+    const cardsWrapper = document.getElementById('report-cards-wrapper');
+    const isCards = reportViewMode === 'cards';
+    btn.classList.toggle('active', isCards);
+    btn.title = isCards ? 'Vista em tabela' : 'Vista em cartões';
+    tableWrapper.style.display = isCards ? 'none' : '';
+    cardsWrapper.style.display = isCards ? '' : 'none';
+    if (isCards) renderCards();
+    else renderTable('report');
+  }
+
+  function renderCards() {
+    const q = document.getElementById('search-input-report').value.toLowerCase();
+    const rows = allRows['report'];
+    const filtered = q
+      ? rows.filter(r => Object.values(r).some(v => String(v ?? '').toLowerCase().includes(q)))
+      : rows;
+
+    document.getElementById('record-count-report').innerHTML = `<span>${filtered.length}</span> registos`;
+    const grid = document.getElementById('report-cards-grid');
+    grid.innerHTML = '';
+
+    if (!filtered.length) {
+      grid.innerHTML = '<div class="state-box"><p>Nenhum registo encontrado.</p></div>';
+      return;
+    }
+
+    filtered.forEach(r => {
+      const pubDate = r.publication_date ? new Date(r.publication_date).toLocaleDateString('pt-PT') : '—';
+      const card = document.createElement('div');
+      card.className = 'report-card';
+
+      // Thumbnail
+      const thumbDiv = document.createElement('div');
+      thumbDiv.className = 'report-card-thumb';
+      const img = document.createElement('img');
+      img.className = 'report-card-img';
+      img.alt = '';
+      img.dataset.reportId = r.report_id;
+      const placeholder = document.createElement('div');
+      placeholder.className = 'thumb-placeholder loading';
+      placeholder.innerHTML = `<div class="thumb-spinner"></div><span class="thumb-label">PDF</span>`;
+      thumbDiv.appendChild(img);
+      thumbDiv.appendChild(placeholder);
+
+      // Info
+      const infoDiv = document.createElement('div');
+      infoDiv.className = 'report-card-info';
+      const titleEl = `<div class="report-card-title" title="${escHtml(r.file_name)}">${escHtml(r.file_name)}</div>`;
+      const metaEl = `<div class="report-card-meta"><span class="badge">${escHtml(r.source_code)}</span><span class="report-card-date">${pubDate}</span></div>`;
+      const fields = [];
+      if (r.area_tematica) fields.push(['Área', r.area_tematica]);
+      if (r.estado)        fields.push(['Estado', r.estado]);
+      if (r.palavras_chave) fields.push(['Palavras', truncate(r.palavras_chave, 60)]);
+      if (r.resumo)        fields.push(['Resumo', truncate(r.resumo, 120)]);
+      const fieldsHtml = fields.length
+        ? `<div class="report-card-fields">${fields.map(([l, v]) =>
+            `<div class="report-card-field"><span class="report-card-field-label">${l}</span><span class="report-card-field-value" title="${escHtml(v)}">${escHtml(v)}</span></div>`
+          ).join('')}</div>`
+        : '';
+      infoDiv.innerHTML = titleEl + metaEl + fieldsHtml;
+
+      // Actions
+      const actionsDiv = document.createElement('div');
+      actionsDiv.className = 'report-card-actions';
+      actionsDiv.innerHTML = `
+        ${r.report_url ? `<a href="${escHtml(r.report_url)}" target="_blank" class="btn-edit-mini">abrir</a>` : ''}
+        <button class="btn-edit-mini" onclick="openReportDetail(${r.report_id})">detalhes</button>
+        <button class="btn-edit-mini" onclick="openReportEditModal(${r.report_id}, ${r.url_locked})">editar</button>
+        ${r.can_delete ? `<button class="btn-edit-mini" style="color:var(--red);" onclick="deleteReport(${r.report_id}, this)">apagar</button>` : ''}
+      `;
+
+      card.appendChild(thumbDiv);
+      card.appendChild(infoDiv);
+      card.appendChild(actionsDiv);
+      grid.appendChild(card);
+    });
+
+    lazyLoadThumbnails();
+  }
+
+  function lazyLoadThumbnails() {
+    document.querySelectorAll('#report-cards-grid img[data-report-id]').forEach(img => {
+      const id = img.dataset.reportId;
+
+      if (thumbnailCache[id]) {
+        img.src = thumbnailCache[id];
+        img.classList.add('loaded');
+        img.closest('.report-card-thumb').querySelector('.thumb-placeholder')?.remove();
+        return;
+      }
+
+      fetch(`${API_BASE}/op_report/${id}/thumbnail`, { cache: 'no-store' })
+        .then(res => { if (!res.ok) throw new Error(); return res.blob(); })
+        .then(blob => {
+          const url = URL.createObjectURL(blob);
+          thumbnailCache[id] = url;
+          img.src = url;
+          img.classList.add('loaded');
+          img.closest('.report-card-thumb').querySelector('.thumb-placeholder')?.remove();
+        })
+        .catch(() => {
+          const ph = img.closest('.report-card-thumb')?.querySelector('.thumb-placeholder');
+          if (ph) ph.classList.remove('loading');
+        });
+    });
+  }
+
+  // ── MODAL DETALHE RELATÓRIO ──
+  function openReportDetail(reportId) {
+    const r = allRows['report'].find(x => x.report_id === reportId);
+    if (!r) return;
+
+    document.getElementById('report-detail-title').textContent = r.file_name;
+
+    // Thumbnail
+    const thumbWrap = document.getElementById('report-detail-thumb');
+    const id = String(reportId);
+    if (thumbnailCache[id]) {
+      thumbWrap.innerHTML = `<img src="${thumbnailCache[id]}" alt="">`;
+    } else {
+      thumbWrap.innerHTML = `<span class="no-thumb">PDF</span>`;
+      fetch(`${API_BASE}/op_report/${id}/thumbnail`, { cache: 'no-store' })
+        .then(res => { if (!res.ok) throw new Error(); return res.blob(); })
+        .then(blob => {
+          const url = URL.createObjectURL(blob);
+          thumbnailCache[id] = url;
+          const w = document.getElementById('report-detail-thumb');
+          if (w) w.innerHTML = `<img src="${url}" alt="">`;
+        })
+        .catch(() => {});
+    }
+
+    // Campos
+    const pubDate = r.publication_date ? new Date(r.publication_date).toLocaleDateString('pt-PT') : null;
+    const fieldsData = [
+      ['Fonte', r.source_code],
+      ['Data de Publicação', pubDate],
+      ['Área Temática', r.area_tematica],
+      ['Estado', r.estado],
+      ['Palavras-chave', r.palavras_chave],
+      ['Resumo', r.resumo],
+    ].filter(([, v]) => v);
+
+    document.getElementById('report-detail-info').innerHTML = fieldsData.map(([l, v]) =>
+      `<div class="report-detail-field">
+        <span class="report-detail-label">${escHtml(l)}</span>
+        <span class="report-detail-value">${escHtml(v)}</span>
+      </div>`
+    ).join('');
+
+    // Rodapé
+    document.getElementById('report-detail-footer').innerHTML = `
+      ${r.report_url ? `<a href="${escHtml(r.report_url)}" target="_blank" class="btn-ghost">Abrir PDF</a>` : ''}
+      <button class="btn-ghost" onclick="openReportEditModal(${r.report_id}, ${r.url_locked}); closeReportDetail();">Editar</button>
+    `;
+
+    document.getElementById('report-detail-modal').style.display = 'flex';
+  }
+
+  function closeReportDetail(e) {
+    if (!e || e.target === document.getElementById('report-detail-modal')) {
+      document.getElementById('report-detail-modal').style.display = 'none';
+    }
   }
 
   // ── CHAT ──
@@ -2409,6 +2813,7 @@
         repSel.appendChild(opt);
       });
       if (savedVal) repSel.value = savedVal;
+      if (repSel.value) onDashReportChange();
     } catch (e) {
       showToast(`Erro ao carregar relatórios: ${e.message}`, 'error');
     }
@@ -2587,7 +2992,15 @@
         x: sorted.map(d => d.value),
         y: sorted.map(d => d.location_name),
         marker: { color: barColor, opacity: 0.85 },
-        hovertemplate: '<b>%{y}</b><br>%{x:.2f}<extra></extra>',
+        customdata: sorted.map((_, i) => `${i + 1}º`),
+        hovertemplate: '%{customdata} — <b>%{y}</b><extra></extra>',
+        text: sorted.map(d => {
+          const v = d.value;
+          return Math.abs(v) >= 1000 ? v.toLocaleString('pt-PT', { maximumFractionDigits: 1 }) : v.toFixed(2);
+        }),
+        textposition: 'outside',
+        textfont: { size: 9, color: textColor },
+        cliponaxis: false,
       };
 
       // Altura dinâmica: 26px por barra, mínimo 460px
@@ -2595,7 +3008,7 @@
 
       const layout = {
         height: chartHeight,
-        margin: { t: 20, b: 50, l: 160, r: 30 },
+        margin: { t: 20, b: 50, l: 160, r: 70 },
         paper_bgcolor: 'rgba(0,0,0,0)',
         plot_bgcolor: 'rgba(0,0,0,0)',
         font: { family: "'DM Mono', monospace", size: 11, color: textColor },
@@ -2613,7 +3026,6 @@
         bargap: 0.25,
       };
 
-      document.getElementById('rank-plotly').style.minHeight = chartHeight + 'px';
       Plotly.newPlot('rank-plotly', [trace], layout, { responsive: true, displayModeBar: false });
 
     } catch (e) {
@@ -2769,6 +3181,7 @@
         locations: data.map(d => d.location_name),
         z: data.map(d => d.value),
         colorscale: 'Blues',
+        reversescale: true,
         colorbar: { thickness: 12, len: 0.6 }
       };
 
@@ -2873,6 +3286,20 @@
     if (!e || e.target === document.getElementById('etl-edit-modal')) {
       document.getElementById('etl-edit-modal').style.display = 'none';
     }
+  }
+
+  function showErrCard(e, msg) {
+    const card = document.getElementById('err-hover-card');
+    document.getElementById('err-hover-text').textContent = msg;
+    card.style.display = 'block';
+    const r = e.target.getBoundingClientRect();
+    const top = r.bottom + 6;
+    const left = Math.min(r.left, window.innerWidth - 440);
+    card.style.top = top + 'px';
+    card.style.left = Math.max(8, left) + 'px';
+  }
+  function hideErrCard() {
+    document.getElementById('err-hover-card').style.display = 'none';
   }
 
   async function openDataEditModal(fileId) {
@@ -3110,10 +3537,11 @@
         countEl.innerHTML = '';
         return;
       }
-      const hiddenCols = tipo === 'dados' ? new Set(['id', 'file_id']) : tipo === 'pdfs' ? new Set(['id', 'report_id']) : new Set();
+      const hiddenCols = tipo === 'dados' ? new Set(['id', 'file_id', 'status']) : tipo === 'pdfs' ? new Set(['id', 'report_id', 'status']) : new Set(['status']);
+      const colLabels = { file_name: 'Nome', step: 'Passo', error_message: 'Erro', log_time: 'Tempo' };
       const cols = Object.keys(rows[0]).filter(c => !hiddenCols.has(c));
       const editTh = (tipo === 'dados' || tipo === 'pdfs') ? '<th style="width:7rem;"></th>' : '';
-      theadRow.innerHTML = editTh + cols.map(c => `<th>${escHtml(c)}</th>`).join('');
+      theadRow.innerHTML = editTh + cols.map(c => `<th>${escHtml(colLabels[c] || c)}</th>`).join('');
       renderEtlLogsTable(tipo, rows, cols);
       countEl.innerHTML = `<span>${rows.length}</span> registos`;
     } catch (e) {
@@ -3138,6 +3566,9 @@
         }
         const full = String(val);
         const truncated = truncate(full, 60);
+        if (c === 'error_message' && full.length > 60) {
+          return `<td class="td-wide" onmouseenter="showErrCard(event,${escHtml(JSON.stringify(full))})" onmouseleave="hideErrCard()">${escHtml(truncated)}</td>`;
+        }
         const titleAttr = full.length > 60 ? ` title="${escHtml(full)}"` : '';
         return `<td class="td-wide"${titleAttr}>${escHtml(truncated)}</td>`;
       }).join('');
@@ -3164,7 +3595,7 @@
     const q = document.getElementById(`search-etl-logs-${tipo}`).value.toLowerCase();
     const key = tipo === 'pdfs' ? 'etlLogsPdfs' : 'etlLogsDados';
     const allCols = allRows[key].length ? Object.keys(allRows[key][0]) : [];
-    const hiddenCols = tipo === 'dados' ? new Set(['id', 'file_id']) : tipo === 'pdfs' ? new Set(['id', 'report_id']) : new Set();
+    const hiddenCols = tipo === 'dados' ? new Set(['id', 'file_id', 'status']) : tipo === 'pdfs' ? new Set(['id', 'report_id', 'status']) : new Set(['status']);
     const cols = allCols.filter(c => !hiddenCols.has(c));
     const filtered = q
       ? allRows[key].filter(row => allCols.some(c => String(row[c] ?? '').toLowerCase().includes(q)))
@@ -3283,6 +3714,7 @@
       }
 
       loadEtlData();
+      if (tipo === 'dados') initDashboard();
       setTimeout(() => { btn.textContent = originalText; btn.style.color = ''; btn.disabled = false; }, 4000);
 
     } catch (e) {
@@ -3494,7 +3926,7 @@
     return out;
   }
 
-  const _REPORT_JSON_FIELDS = ['titulo','link','fonte','data de publicação','área temática','estado','palavras-chave','resumo'];
+  const _REPORT_JSON_FIELDS = ['título','link','fonte','data de publicação','área temática','estado','palavras-chave','resumo'];
 
   async function submitBatchReports() {
     const raw = document.getElementById('f-batch-json').value.trim();
@@ -3511,7 +3943,7 @@
     } catch (e) { showToast(`JSON inválido: ${e.message}`, 'error'); return; }
 
     const payload = parsed.map(item => ({
-      file_name:        item['titulo'],
+      file_name:        item['título'],
       report_url:       item['link'],
       source_code:      item['fonte'],
       publication_date: item['data de publicação'],

@@ -18,3 +18,4 @@ pandas
 pystray
 Pillow
 pywebview
+pymupdf
