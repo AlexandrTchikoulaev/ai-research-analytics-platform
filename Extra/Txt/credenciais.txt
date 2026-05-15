@@ -1,0 +1,24 @@
+API             http://localhost:8000        —
+Frontend        http://localhost:8000         (serve o index.html)
+pgAdmin         http://localhost:5051         admin_projeto@teste.com / admin123
+MinIO Console   http://localhost:9003         admin / admin123
+MinIO API       http://localhost:9002         admin / admin123
+
+--- pgAdmin: Add New Server ---
+General > Name:              Projeto Final  (ou qualquer nome)
+
+Connection > Host:           projeto_uc  (dentro da rede Docker)
+              OU se ligar de fora do Docker usar:   localhost
+Connection > Port:           5432  (dentro da rede Docker); 5433  (a partir do host)
+Connection > Username:       projeto_utilizador
+Connection > Password:       projeto
+Connection > Save password:  Yes  (opcional)
+
+--- Bases de Dados ---
+warehouse_db    dim_indicator, dim_location, dim_location_hierarchy, dim_date, dim_report (source_code, source_name embutidos), fact_values, view
+operational_db  op_report, op_data
+pipeline_db     etl_data, etl_logs_dados, etl_logs_pdfs
+vector_db       documents, langchain_pg_embedding
+
+Em pgAdmin, adicionar um Server por base de dados (ou ligar ao servidor e ver todas):
+  Maintenance DB: warehouse_db   (ou operational_db / pipeline_db / vector_db)

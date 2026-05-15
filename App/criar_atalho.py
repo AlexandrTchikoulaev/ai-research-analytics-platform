@@ -8,7 +8,8 @@ import subprocess
 from PIL import Image, ImageDraw
 
 _dir        = os.path.dirname(os.path.abspath(__file__))
-_start      = os.path.join(_dir, "start.py")
+_project    = os.path.dirname(_dir)
+_start      = os.path.join(_project, "start.py")
 _icon       = os.path.join(_dir, "icon.ico")
 _desktop    = os.path.join(os.path.expanduser("~"), "Desktop")
 _atalho     = os.path.join(_desktop, "OP Report Manager.lnk")
@@ -32,7 +33,7 @@ ps = f"""
 $s = (New-Object -ComObject WScript.Shell).CreateShortcut('{_atalho}')
 $s.TargetPath       = '{_pythonw}'
 $s.Arguments        = '"{_start}"'
-$s.WorkingDirectory = '{_dir}'
+$s.WorkingDirectory = '{_project}'
 $s.IconLocation     = '{_icon}'
 $s.Description      = 'Inicia o OP Report Manager'
 $s.Save()

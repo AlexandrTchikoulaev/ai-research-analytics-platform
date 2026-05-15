@@ -1,0 +1,515 @@
+Índice
+
+Índice	3
+1.   Introdução	5
+2.   Âmbito do Projeto	6
+3.   Componentes do Sistema	7
+Chat Bot	7
+Dashboards	7
+Aplicação	8
+4.   Pipeline de Dados Não Estruturados	9
+4.1   Ingestão de Informação na Aplicação	9
+Cuidados no Preenchimento	10
+4.2   Ingestão na Base de Dados Operacional	11
+4.3   Ingestão para a Camada Bronze	11
+4.4   Ingestão na Base de Dados Vetorial	11
+Motivação para Utilização de uma Base de Dados Vetorial	12
+Modelo de Embeddings	12
+Segmentação dos Documentos	12
+Armazenamento e Indexação	13
+Arquitetura RAG e Modelo Generativo	13
+5. Pipeline de Dados Estruturados e Semi Estruturados	14
+5.1   Ingestão de Informação na Aplicação	14
+Modos de Ingestão	14
+Campos do Formulário e Validações	15
+Cuidados no Preenchimento	15
+5.2   Ingestão na Base de Dados Operacional	16
+Papel da Base de Dados Operacional	16
+Estrutura da Tabela	17
+5.3   Fase Bronze	18
+Validação de Dados Operacionais	18
+Ingestão para a Camada Bronze	19
+Validação da Camada Bronze	19
+5.4   Fase Silver	19
+Transformação de Dados	20
+Validação da Camada Silver	20
+5.5   Carregamento para o Data Warehouse	21
+Modelo Dimensional	21
+Processo de Carregamento	21
+Conclusão do Projeto	22
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+1.   Introdução
+
+Este projeto é desenvolvido no âmbito da Unidade Curricular Projeto em Ciência de Dados, integrada no 3.º ano da Licenciatura em Ciência de Dados. Nesta unidade curricular, os alunos organizam-se em grupos e selecionam um tema de projeto entre várias propostas disponibilizadas, que abrangem diferentes áreas como análise de dados, inteligência artificial, desenvolvimento de algoritmos e engenharia de dados.
+Desde o início, o objetivo do grupo era escolher um projeto fortemente orientado para a área de engenharia de dados, privilegiando a construção de uma pipeline completa de dados. Em particular, procurava-se um desafio que envolvesse a recolha de dados provenientes de múltiplas fontes, o seu processamento e transformação, e a sua disponibilização em diferentes formatos e sistemas de apoio à decisão.
+Neste contexto, foi selecionado o projeto “Repositório de Rankings e Relatórios”, que se enquadra diretamente nestes objetivos. O projeto baseia-se na recolha de dados de diversas fontes nacionais e internacionais, incluindo relatórios em formato PDF e dados estruturados e semi-estruturados, disponibilizados em formatos como JSON, CSV ou XLSX, frequentemente associados a indicadores utilizados na construção desses relatórios.
+O principal desafio consiste em transformar estes dados, inicialmente heterogéneos e não tratados, numa base de dados estruturada e consistente. Para tal, é necessário desenvolver uma pipeline de dados que engloba várias etapas, incluindo ingestão, limpeza, validação, transformação e modelação dos dados. Esta pipeline permitirá garantir a qualidade, integridade e organização da informação ao longo de todo o processo.
+Como resultado final, os dados tratados serão disponibilizados em diferentes camadas de consumo, nomeadamente através de dashboards interativos e de um chatbot capaz de responder a questões com base na informação armazenada. Desta forma, o projeto não só responde aos objetivos iniciais do grupo, como também permite aplicar, de forma integrada, conhecimentos adquiridos ao longo do curso nas áreas de engenharia de dados, modelação de dados e sistemas de apoio à decisão.
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+2.   Âmbito do Projeto
+
+Nos últimos anos, diversas organizações internacionais, institutos de investigação e entidades governamentais têm vindo a publicar relatórios que avaliam países e regiões com base em múltiplos indicadores - económicos, sociais, ambientais e políticos. Estes relatórios constituem fontes de informação relevantes para análise e comparação, sendo amplamente utilizados em contextos académicos, institucionais e de apoio à decisão.
+No entanto, a sua utilização prática apresenta algumas limitações. Por um lado, grande parte destes relatórios é disponibilizada em formato PDF, o que dificulta a pesquisa e extração de informação específica. Por outro, embora os dados subjacentes sejam frequentemente disponibilizados em formatos estruturados, encontram-se dispersos por diferentes fontes, sem integração ou normalização, tornando a sua análise conjunta um processo complexo.
+Neste contexto, o projeto tem como objetivo o desenvolvimento de uma plataforma que facilite o acesso, a organização e a exploração destes dados e relatórios. A solução proposta procura não apenas centralizar a informação proveniente de diferentes fontes, mas também torná-la mais acessível e utilizável através de ferramentas interativas.
+
+Como resultado final, a plataforma permite:
+reunir num único sistema relatórios e dados provenientes de múltiplas organizações;
+consultar informação de forma rápida, sem necessidade de análise manual de documentos extensos;
+explorar os dados de forma interativa, através de visualizações dinâmicas e personalizáveis;
+simplificar o processo de ingestão e gestão de novas fontes de informação.
+
+Desta forma, o projeto não se foca na produção de análises ou conclusões sobre os dados, mas sim na construção de uma infraestrutura e de ferramentas que potenciam a sua utilização. O principal contributo reside em transformar um conjunto disperso e de difícil exploração num sistema integrado, acessível e orientado para a consulta eficiente de informação.
+
+
+
+
+
+
+
+
+
+
+
+3.   Componentes do Sistema
+
+Como resultado dos objetivos definidos e dos desafios identificados — nomeadamente a heterogeneidade das fontes, a dificuldade de acesso à informação e a necessidade de centralização — surgem três componentes principais no sistema: a aplicação, os dashboards e o chatbot. Cada uma destas componentes responde a uma necessidade específica dentro da plataforma, contribuindo para transformar dados dispersos e pouco acessíveis numa solução integrada e utilizável.
+De forma sucinta, a aplicação funciona como o ponto central de gestão e interação, permitindo a ingestão e organização dos dados; os dashboards são responsáveis pela exploração visual e análise interativa da informação; e o chatbot facilita a consulta rápida através de linguagem natural. Em conjunto, estas componentes garantem não só o tratamento e estruturação dos dados, mas também a sua disponibilização de forma acessível e eficiente ao utilizador final.
+
+
+Aplicação
+
+A aplicação constitui o ponto de acesso unificado a todo o sistema, funcionando como a camada de interação principal entre o utilizador e as restantes componentes. Em vez de exigir o acesso a diferentes ferramentas ou interfaces, toda a funcionalidade relevante é concentrada num único ambiente, simplificando significativamente a utilização da plataforma.
+Para além de disponibilizar de forma integrada o chatbot e os dashboards interativos, a aplicação oferece também funcionalidades de gestão do próprio sistema. O utilizador pode proceder à ingestão de novos dados através de um processo de registo de fontes e ficheiros, com a mínima necessidade de lidar diretamente com os mecanismos internos de processamento. Adicionalmente, a aplicação disponibiliza uma visão geral dos dados atualmente existentes, permitindo consultar e acompanhar facilmente a informação armazenada.
+Esta abordagem transforma a aplicação não apenas num meio de visualização, mas também numa ferramenta de controlo e manutenção do sistema. Ao centralizar tanto a exploração como a administração dos dados, elimina-se praticamente a necessidade de interação direta com as camadas técnicas subjacentes, tornando a plataforma mais acessível, intuitiva e eficiente para o utilizador final.
+
+A aplicação terá a seguinte estrutura, organizada em diferentes páginas, cada uma com uma funcionalidade específica dentro do sistema:
+
+Página 1 — Inserção de Dados
+Página 2 — Visualização de Dados
+Página 3 — Dashboards
+Página 4 — Chatbot
+Página 5 — Painel de Controlo
+
+
+Página de Inserção
+
+A página de inserção tem como principal objetivo permitir a recolha e registo da informação associada aos relatórios e respetivos dados. Em particular, esta componente foi concebida para suportar a introdução de novos relatórios em formato PDF, bem como dos dados que lhes estão associados, garantindo que toda a informação relevante fica devidamente estruturada desde o momento da ingestão.
+Para além dos próprio ficheiro (ou das suas referências), é necessário recolher metadados adicionais, baseados nos requisitos específicos definidos no âmbito do projeto, nomeadamente pelo orientador, de forma a garantir uma melhor catalogação e futura utilização da informação. 
+
+A recolha destes elementos é realizada através de um formulário de preenchimento.
+
+Formulário de PDFs
+
+O formulário permite a inserção dos principais metadados associados a cada relatório. Os campos disponíveis são os seguintes:
+
+Campo
+Obrigatório
+Descrição
+source_code
+Sim
+Código identificador da fonte (ex: IMF, WB, HFI)
+publication_date
+Sim
+Data de publicação 
+(formatos: DD/MM/AAAA, AAAA-MM-DD, DD-MM-AAAA)
+file_name
+Sim
+Nome único do ficheiro no sistema
+report_url
+–
+URL direto de acesso ao ficheiro PDF
+campo de upload
+–
+Campo para introduzir ficheiro diretamente 
+do armazenamento local
+area_tematica
+Não
+Área temática (ex: economia, ambiente)
+estado
+Não
+Estado do relatório (ex: ativo, arquivado)
+palavras_chave
+Não
+Palavras-chave para catalogação
+resumo
+Não
+Descrição sumária do conteúdo do relatório
+
+
+
+O campo report_url assume um papel central no processo de ingestão, podendo funcionar de duas formas distintas, consoante o contexto de utilização:
+Inserção de URL: quando o relatório se encontra disponível online, o utilizador pode fornecer diretamente o link para o ficheiro PDF. Neste caso, o sistema regista apenas o URL e os restantes metadados, sendo o download do documento efetuado posteriormente pelo pipeline de ingestão.
+Upload de ficheiro: em alternativa, o utilizador pode optar por carregar o ficheiro PDF diretamente a partir do seu sistema local. Neste cenário, o campo deixa de funcionar como um simples input de texto e passa a permitir o upload do ficheiro. O documento é imediatamente armazenado no data lake (no bucket bronze-unstructured do MinIO), não sendo necessário qualquer processo de download posterior.
+Para além do registo individual através do formulário, a aplicação suporta ainda a ingestão em lote por meio de ficheiros JSON. Cada entrada corresponde a um relatório, seguindo a mesma estrutura de campos definida anteriormente. Este mecanismo permite acelerar o processo de povoamento da base de dados, especialmente numa fase inicial.
+Durante a ingestão em lote, são utilizados savepoints na base de dados, garantindo que erros em registos individuais não interrompem o processo global. No final, é apresentado um resumo com o número de registos inseridos e os eventuais erros identificados.
+Adicionalmente, a aplicação implementa validação de duplicados em tempo real. Ao preencher os campos file_name ou report_url, o sistema verifica automaticamente a existência prévia desses valores na base de dados, alertando o utilizador antes da submissão. Ambos os campos possuem restrições de unicidade, assegurando a integridade dos dados e evitando redundâncias no repositório.
+
+Formulário de Dados
+
+
+Campo
+Obrigatório
+Descrição
+nome do relatório
+
+
+
+
+função de extração
+
+
+
+
+link do ficheiro
+
+
+
+
+ficheiro
+
+
+
+
+
+
+
+[Explicar que a função de extração guia o ficheiro depois pela pipeline. É um campo mais técnico.]
+
+[Explicar que há duas opções para apontar para os ficheiros uma pelo link outra pelo campo de upload do ficheiro.]
+
+
+
+
+Página de Visualização de Dados
+
+
+
+Dashboards
+
+Os dashboards interativos conferem ao utilizador um elevado grau de autonomia na exploração e visualização dos dados. Ao contrário dos relatórios estáticos produzidos pelas organizações fontes - que apresentam um conjunto fixo de gráficos e análises definidos pelos seus autores - esta componente permite ao utilizador construir visualizações personalizadas de forma dinâmica e interativa.
+Na prática, o utilizador pode selecionar livremente os indicadores que pretende analisar, as regiões geográficas de interesse, os intervalos temporais e até o tipo de representação gráfica mais adequado. Esta capacidade de configuração permite adaptar a análise a diferentes necessidades, sejam elas exploratórias, comparativas ou orientadas para a tomada de decisão.
+Além disso, a natureza interativa dos dashboards facilita um processo de análise mais intuitivo e contínuo. O utilizador pode ajustar parâmetros em tempo real e observar imediatamente o impacto dessas alterações, promovendo uma exploração mais profunda dos dados sem necessidade de recorrer a ferramentas externas ou a processamento adicional.
+Desta forma, esta componente liberta o utilizador das limitações impostas pelos relatórios pré-existentes, que muitas vezes podem não contemplar todas as perspetivas de análise relevantes para o mesmo. Comparações entre diferentes indicadores, regiões ou períodos - que anteriormente exigiriam extração e tratamento manual dos dados - passam a ser realizadas de forma rápida e acessível, aumentando significativamente a eficiência e o valor analítico da informação disponibilizada.
+
+
+Chat Bot
+
+Com a utilização contínua da aplicação, espera-se um aumento progressivo do número de relatórios em formato PDF armazenados, resultante da recolha sistemática de informação proveniente de diversas fontes. Esta acumulação de dados constitui uma mais-valia significativa, ao permitir a construção de um repositório rico e abrangente de conhecimento.
+No entanto, o crescimento da base de dados levanta também um desafio importante: à medida que o volume de documentos aumenta, torna-se cada vez mais difícil localizar informação específica de forma rápida e eficiente. Na prática, a consulta manual destes relatórios implica abrir múltiplos ficheiros e percorrer um elevado número de páginas, tornando o processo moroso e pouco escalável.
+É neste contexto que surge a integração de um chatbot na aplicação. O seu principal objetivo é facilitar o acesso à informação contida nos relatórios, permitindo aos utilizadores colocar questões diretamente, em vez de realizar pesquisas manuais. Desta forma, o chatbot atua como uma camada intermédia de acesso à informação, tornando a interação com o repositório mais simples, rápida e eficiente.
+
+Painel de Controlo
+
+
+4.   Pipeline de Dados Não Estruturados
+
+O pipeline de dados não estruturados tem como objetivo processar os relatórios em formato PDF, extraindo e indexando o seu conteúdo para suporte ao sistema de chatbot. Esta pipeline é orquestrada pelo módulo pipeline_pdfs.py e compõe-se em duas fases principais: a ingestão dos PDFs para a camada Bronze e a vetorização do conteúdo para uma base de dados vetorial.
+
+4.1   Ingestão de Informação na Aplicação
+
+Antes de qualquer processamento automático, é necessário registar no sistema os relatórios que se pretende ingerir. Esta etapa é realizada manualmente pelo utilizador através da página de inserções da aplicação, que contém o formulário de registo de relatórios.
+
+Cuidados no Preenchimento
+
+Alguns cuidados são importantes para garantir que os registos criados são corretamente processados pelo pipeline.
+O source_code deve ser preenchido de forma consistente ao longo do tempo - a utilização de variações do mesmo código (por exemplo, "IMF" e "Imf") dificulta a agregação e filtragem de relatórios por fonte. Recomenda-se a definição de um conjunto de valores normalizados e a sua utilização rigorosa.
+O file_name deve ser único e descritivo, pois é utilizado como identificador do objeto no MinIO no modo de upload direto. Nomes genéricos ou pouco descritivos podem dificultar a gestão e rastreabilidade dos ficheiros.
+No modo URL, o endereço fornecido em report_url deve corresponder ao URL de download direto do ficheiro PDF - e não a uma página web que contenha o relatório. O pipeline tentará descarregar o conteúdo diretamente desse endereço e verificará que a resposta corresponde a um ficheiro PDF válido. URLs que exijam autenticação, redirecionamentos complexos ou interação com o browser não serão processados com sucesso.
+Na ingestão em lote, é recomendável validar o ficheiro JSON antes de o submeter, garantindo que todos os registos obrigatórios estão preenchidos e que os valores de file_name e report_url não colidem entre si nem com registos já existentes na base de dados.
+
+
+4.2   Ingestão na Base de Dados Operacional
+
+Os relatórios PDF são primeiramente registados na base de dados operacional. A tabela op_report armazena, para cada relatório, o identificador único (report_id), o nome do ficheiro (file_name) e o URL de acesso ao documento (report_url). Este registo constitui a fonte de verdade para o pipeline não estruturado, determinando quais os documentos a processar nas fases seguintes.
+
+A tabela op_report regista os relatórios que constituem as fontes de dados do sistema. Cada relatório é descrito por um conjunto de campos de contextualização: o identificador único (report_id), o nome do ficheiro PDF associado (file_name), um código identificador da fonte de dados (source_code), o URL de acesso ao documento (report_url), a data de publicação (publication_date), a área temática (area_tematica), o estado do relatório (estado), palavras-chave associadas (palavras_chave), um resumo descritivo (resumo) e a data de criação do registo (created_at). Esta riqueza de metadados permite não só identificar e aceder aos relatórios, como também organizá-los e filtrá-los por domínio temático e origem.
+
+
+4.3   Ingestão para a Camada Bronze
+
+O módulo ingest_unstructured.py é responsável pelo download dos relatórios PDF registados na base de dados operacional e pelo seu armazenamento no bucket bronze-unstructured do MinIO. O processo é incremental: são selecionados apenas os relatórios com data de criação posterior ao último timestamp de execução do ETL, registado na tabela etl_data sob o processo etl_pdfs.
+
+Para cada relatório, é realizado um pedido HTTP ao URL definido em op_report. O sistema verifica que a resposta corresponde efetivamente a um ficheiro PDF, validando o cabeçalho %PDF do conteúdo binário e rejeitando respostas que não correspondam ao formato esperado. Os ficheiros válidos são armazenados no bucket MinIO identificados pelo nome do ficheiro (file_name), com o tipo de conteúdo application/pdf.
+
+4.4   Ingestão na Base de Dados Vetorial 
+
+O módulo ingest_vectorialdb.py é responsável pelo processamento dos relatórios em formato PDF armazenados na camada Bronze, com o objetivo de permitir a sua exploração semântica. Este processo inclui a extração de texto, segmentação dos documentos, geração de embeddings e armazenamento numa base de dados vetorial.
+
+A ingestão é realizada de forma incremental. Antes de iniciar o processamento, o sistema verifica os documentos já indexados, consultando a tabela langchain_pg_embedding e identificando as fontes previamente processadas. Apenas os novos documentos são processados, evitando redundância e melhorando a eficiência do pipeline.
+Os PDFs são lidos diretamente do MinIO e processados página a página com recurso à biblioteca pypdf. O conteúdo textual extraído é estruturado e enriquecido com metadados, nomeadamente o nome do ficheiro e o número da página, assegurando rastreabilidade ao longo de todo o processo.
+
+Motivação para Utilização de uma Base de Dados Vetorial
+
+A pesquisa tradicional baseada em palavras-chave apresenta limitações significativas quando aplicada a documentos extensos e complexos. Este tipo de abordagem depende da correspondência exata de termos, não captando relações semânticas entre conceitos.
+Neste projeto, optou-se por uma abordagem baseada em embeddings, onde cada fragmento de texto é representado como um vetor num espaço de alta dimensão. Neste espaço, a proximidade entre vetores reflete similaridade semântica, permitindo recuperar informação relevante mesmo quando a formulação textual difere.
+A base de dados vetorial utilizada é o PostgreSQL com a extensão pgvector, que permite armazenar vetores e realizar pesquisas por similaridade diretamente em SQL. Esta escolha permite integrar a componente vetorial na infraestrutura já existente, evitando a necessidade de sistemas adicionais.
+
+Modelo de Embeddings
+
+A geração de embeddings é realizada com o modelo mxbai-embed-large, executado localmente através do Ollama. Este modelo é otimizado para tarefas de recuperação semântica, capturando relações complexas entre conceitos, como sinónimos e paráfrases.
+A execução local apresenta duas vantagens principais:
+elimina a dependência de serviços externos;
+garante que os dados processados não são transmitidos fora do sistema.
+Os embeddings são gerados para cada fragmento de texto e utilizados como base para a pesquisa semântica no sistema.
+
+Segmentação dos Documentos
+
+Os documentos são segmentados em fragmentos de dimensão controlada, uma vez que os modelos de embeddings não operam eficientemente sobre textos muito extensos.
+O sistema utiliza o RecursiveCharacterTextSplitter do LangChain para dividir o texto em fragmentos de 500 caracteres, com uma sobreposição de 50 caracteres entre fragmentos consecutivos.
+A sobreposição desempenha um papel fundamental, garantindo que o contexto não é perdido nas fronteiras dos fragmentos. Sem este mecanismo, partes relevantes da informação poderiam ser separadas, degradando a qualidade da representação semântica.
+Cada fragmento é identificado de forma única através de um identificador composto pelo nome do ficheiro, número da página e índice do fragmento, assegurando total rastreabilidade.
+
+Armazenamento e Indexação
+
+Os embeddings gerados são armazenados na base de dados db_vectorial através da integração entre o LangChain e o pgvector. Esta integração gere automaticamente as estruturas necessárias, nomeadamente as tabelas de coleções e embeddings.
+O processo de inserção é realizado em lotes de 50 fragmentos, garantindo um equilíbrio entre desempenho e estabilidade do sistema.
+A indexação é também incremental. Antes de processar novos documentos, o sistema verifica quais já se encontram armazenados, evitando duplicação de dados e reduzindo o custo computacional das execuções subsequentes.
+
+Arquitetura RAG e Modelo Generativo
+
+A base de dados vetorial construída nesta etapa suporta um sistema de Retrieval-Augmented Generation (RAG), que combina recuperação de informação com geração de linguagem natural.
+
+O funcionamento do sistema divide-se em duas fases:
+
+Fase de recuperação
+
+A pergunta do utilizador é convertida num embedding e comparada com os embeddings armazenados na base de dados. São recuperados os fragmentos mais semelhantes, com base na proximidade semântica (tipicamente utilizando distância por cosseno).
+
+Fase de geração
+
+Os fragmentos recuperados são utilizados como contexto para um modelo generativo - neste caso, o modelo Mistral, executado localmente através do Ollama. O modelo recebe um prompt estruturado que o instrui a basear a resposta exclusivamente no contexto fornecido.
+
+Esta abordagem permite gerar respostas mais precisas e fundamentadas, reduzindo o risco de geração de informação incorreta.
+A resposta final inclui também referências aos documentos e páginas de origem dos fragmentos utilizados, garantindo transparência e permitindo ao utilizador validar a informação.
+
+5. Pipeline de Dados Estruturados e Semi Estruturados
+
+
+O pipeline de dados do sistema implementa uma arquitetura medallion, composta por três camadas de armazenamento progressivamente mais refinadas - Bronze, Silver e Gold - suportadas por um data lake baseado no MinIO. O fluxo de processamento é orquestrado pelo módulo pipeline_dados.py, que executa sequencialmente sete etapas distintas, garantindo incrementalidade, rastreabilidade e qualidade dos dados em cada fase.
+
+Falta dizer que aqui o principal objetivo é alimentar os dashboards (e o chat bot 2)
+
+
+5.1   Ingestão de Informação na Aplicação
+
+Antes da execução do pipeline de dados estruturados, é necessário registar na base de dados operacional os metadados dos ficheiros de dados a processar. Esta etapa é realizada pelo utilizador através da aplicação web, que disponibiliza um formulário de registo de ficheiros de dados com três modos de ingestão, adaptados a diferentes cenários.
+O resultado desta etapa é a criação de um ou mais registos na tabela op_data, que o pipeline utilizará para identificar os ficheiros a descarregar, validar e transformar nas etapas seguintes. Cada registo criado fica obrigatoriamente associado a um relatório existente em op_report, identificado pelo campo report_id. Este campo é comum e obrigatório nos três modos de ingestão, e o sistema valida a sua existência antes de aceitar qualquer registo.
+
+Modos de Ingestão
+
+Ingestão por URL
+
+O modo URL permite registar um ou mais ficheiros de dados disponíveis online. O utilizador indica o URL de download de cada ficheiro e, opcionalmente, a função de extração a aplicar. Os URLs são adicionados a uma lista na interface antes de serem submetidos em conjunto, o que permite registar vários ficheiros numa única operação sem recorrer ao modo lote. Este modo é adequado quando os ficheiros estão publicamente acessíveis através de URLs diretos e estáveis, como é comum em APIs de organizações internacionais.
+
+Ingestão por Upload de Ficheiro
+
+Quando os ficheiros de dados não estão disponíveis online, o utilizador pode carregá-los diretamente através da aplicação. São aceites os formatos .json, .csv, .xlsx, .xls, .xml e .zip. Neste caso, os ficheiros são imediatamente armazenados no bucket Bronze do MinIO e o campo file_url fica vazio na base de dados - o pipeline reconhece esta situação e não tentará descarregar o ficheiro, uma vez que ele já se encontra disponível.
+
+Este modo disponibiliza ainda dois submodos de associação entre ficheiros e funções de extração. No modo clássico, cada ficheiro é associado a uma função de extração, resultando num registo por ficheiro. No modo de pares, é possível associar um único ficheiro a múltiplas funções de extração, gerando automaticamente um registo em op_data por cada função indicada. Este submodo é útil quando um único ficheiro contém informação de naturezas diferentes que requerem transformações distintas - por exemplo, um ficheiro JSON de uma API que agrega simultaneamente dados de indicadores e dados de valores.
+
+Ingestão em Lote por Ficheiro JSON
+
+Para registar um grande número de ficheiros de forma eficiente, a aplicação suporta a importação em lote através de um ficheiro JSON. Cada elemento do array representa um ficheiro de dados, com os campos file_url (obrigatório) e extract_function (opcional). O formato suporta comentários no estilo // ... (JSONC), o que permite anotar ou desativar temporariamente entradas sem as eliminar do ficheiro. À semelhança do modo lote para relatórios, o processamento utiliza savepoints de base de dados, garantindo que uma falha num registo individual não interrompe a importação dos restantes. No final, é apresentado um resumo com o número de registos inseridos com sucesso e a lista de erros encontrados.
+
+Campos do Formulário e Validações
+
+Campo
+Obrigatório
+Descrição
+report_id
+Sim
+Identificador do relatório de origem. Deve existir na tabela op_report. Validado pelo servidor antes da inserção
+file_url
+Sim (modos URL e lote)
+URL direto de download do ficheiro de dados. Omitido no modo upload, onde o ficheiro é carregado diretamente
+file_name
+Automático (modo upload)
+Nome do ficheiro carregado. Preenchido automaticamente a partir do nome do ficheiro submetido
+extract_function
+Não
+Nome da função de transformação a aplicar na fase Silver. Deve corresponder a uma função registada no módulo transform.py
+
+
+
+Cuidados no Preenchimento
+
+O campo extract_function merece particular atenção. Embora seja opcional no formulário, a sua ausência ou um valor incorreto resultará na rejeição do ficheiro durante a fase de validação do pipeline (validate_opdata), que verifica se a função indicada se encontra registada no sistema. O utilizador deve garantir que o valor corresponde exatamente ao nome de uma função existente no dicionário EXTRACT_FUNCTIONS do módulo transform.py. Nomes incorretos, com erros ortográficos ou referentes a funções não implementadas, impedirão o processamento do ficheiro nas fases seguintes.
+No modo URL, o endereço fornecido deve corresponder ao URL de download direto do ficheiro de dados - e não a uma página que o contenha. O pipeline realizará um pedido HTTP a esse endereço e espera receber o conteúdo do ficheiro diretamente. URLs que exijam autenticação, sessão de browser ou redirecionamentos complexos não serão processados com sucesso.
+No modo de pares, o utilizador deve ter em consideração que cada função de extração indicada gera um registo independente em op_data. Se o mesmo ficheiro for associado a três funções de extração, serão criados três registos distintos, e o pipeline tentará processar o ficheiro três vezes - uma por cada função. Este comportamento é intencional e útil quando o ficheiro contém dados de naturezas distintas, mas deve ser usado com cuidado para evitar registos duplicados ou processamentos desnecessários.
+No modo lote, recomenda-se validar o ficheiro JSON antes da submissão, assegurando que todos os registos contêm o campo file_url e que os valores de extract_function são válidos. Registos sem file_url são automaticamente ignorados e listados como erros no resumo final.
+
+
+
+5.2   Ingestão na Base de Dados Operacional
+
+A primeira etapa consiste na população da base de dados operacional (db_operacional) com os metadados dos ficheiros a processar. Esta base de dados serve como fonte de verdade para todo o pipeline, organizando a informação sobre os dados tabulares e não estruturados em duas tabelas complementares.
+
+Papel da Base de Dados Operacional
+
+A utilização de uma base de dados operacional nesta fase permite separar claramente o registo de dados do seu processamento. Quando um utilizador adiciona uma nova fonte através da aplicação web, apenas os metadados são guardados, sem qualquer transformação imediata dos ficheiros.
+
+Esta abordagem traz várias vantagens:
+Desacoplamento: o registo de dados é independente do pipeline ETL, que pode correr de forma assíncrona
+Rastreabilidade: cada ficheiro tem sempre uma origem identificada
+Controlo de qualidade: os dados podem ser validados antes de serem processados
+Processamento incremental: apenas os ficheiros mais recentes são tratados em cada execução
+
+Desta forma, a base de dados operacional atua como a fonte de verdade do sistema, alimentando todas as etapas seguintes do pipeline.
+
+Estrutura da Tabela
+
+A base de dados operacional organiza a informação em duas tabelas complementares: op_report e op_data.
+
+A tabela op_data contém os metadados individuais de cada ficheiro de dados - nomeadamente o identificador único (file_id), o URL de download (file_url), a função de extração associada (extract_function), o tipo de ficheiro (file_type), a data de criação (created_at) e a referência ao relatório correspondente (report_id).
+
+Esta separação entre metadados de relatórios e metadados de ficheiros permite uma gestão granular dos dados e facilita a rastreabilidade e a auditoria ao longo de todo o pipeline.
+A tabela op_data contém os metadados individuais de cada ficheiro de dados a processar pelo pipeline, estabelecendo uma relação direta com o relatório de origem. Os seus campos são:
+
+
+Campo
+Tipo
+Descrição
+file_id
+SERIAL
+Identificador único do ficheiro, chave primária 
+report_id
+INTEGER
+Referência ao relatório de origem em op_report 
+file_url
+VARCHAR
+URL de download do ficheiro 
+extract_function
+TEXT
+Nome da função de transformação a aplicar na fase Silver 
+created_at
+TIMESTAMP
+Data e hora de registo, usada para controlo incremental do pipeline 
+
+
+
+A relação de chave estrangeira entre op_data e op_report - com propagação de eliminação em cascata - assegura integridade referencial: não podem existir ficheiros de dados sem um relatório de origem válido associado. O campo extract_function desempenha um papel particularmente relevante, pois não se limita a descrever o ficheiro, mas determina diretamente a lógica de processamento que lhe será aplicada na fase de transformação, constituindo uma ligação explícita entre os metadados operacionais e o comportamento do pipeline. 
+
+
+
+5.3   Fase Bronze
+
+Validação de Dados Operacionais
+
+Antes de qualquer ingestão para o data lake, o pipeline executa uma pré-validação sobre os registos da base de dados operacional, implementada no módulo validate_opdata.py. Esta etapa constitui o primeiro mecanismo de controlo de qualidade do sistema, garantindo que apenas ficheiros corretamente definidos e íntegros avançam para as fases subsequentes.
+
+O processo identifica os registos mais recentes da tabela op_data com base no timestamp da última execução da pipeline de dados, assegurando um tratamento incremental. Para cada registo, são aplicadas cinco regras de validação:
+
+Campo created_at
+Verifica se a data de criação está preenchida, garantindo a existência de informação temporal válida;
+
+Campo report_id
+Confirma que o relatório referenciado existe na tabela op_report, assegurando integridade referencial;
+
+Campo file_url
+Valida que o URL de download, quando presente, é formalmente correto (iniciando com http), prevenindo erros durante a fase de descarga;
+
+Campo extract_function
+Verifica que a função de extração associada se encontra registada no dicionário EXTRACT_FUNCTIONS do módulo transform.py, garantindo a existência de lógica de processamento definida;
+
+Campo file_type
+valida o tipo do ficheiro contra um conjunto de categorias predefinidas - indicadores, países, regiões, grupos e valores.
+
+Os ficheiros que não cumpram pelo menos uma destas regras são considerados inválidos e não seguem para a ingestão. O erro é registado na tabela etl_logs_data da base de dados de logs (db_etl_logs), com o identificador do ficheiro e a descrição do problema. Este mecanismo alimenta uma blacklist de ficheiros inválidos que serão automaticamente ignorados nas execuções seguintes do pipeline, evitando reprocessamentos desnecessários.
+
+Ingestão para a Camada Bronze
+
+A fase de ingestão, implementada no módulo ingest_raw.py, é responsável pela transferência incremental dos ficheiros validados para o bucket Bronze do MinIO, preservando os dados no seu formato original.
+
+O processo inicia-se com a ligação às bases de dados operacional e de logs, bem como com a inicialização do cliente S3. É verificada a existência do bucket Bronze, sendo criado caso ainda não exista. O timestamp da última execução é recuperado através da função get_last_run e utilizado para selecionar apenas os registos de op_data com data de criação posterior a esse valor. Em paralelo, são consultados os identificadores de ficheiros previamente marcados como inválidos na tabela etl_logs_data, construindo a blacklist que exclui esses ficheiros do processo.
+
+Para cada ficheiro elegível, o sistema procede ao seu download via pedido HTTP com timeout definido. O formato do ficheiro é determinado automaticamente através de uma combinação de análise da extensão do URL e inspeção do conteúdo, permitindo identificar ficheiros JSON e CSV mesmo quando a extensão não está explícita no endereço.
+
+Após o download, o ficheiro é armazenado no bucket Bronze identificado pelo seu file_id, garantindo unicidade. São associados metadados ao objeto, incluindo report_id, extract_function, file_type e created_at, que asseguram rastreabilidade ao longo do pipeline. Eventuais falhas são registadas na tabela de logs, e o sistema mantém contadores de ficheiros ingeridos com sucesso e com falhas para monitorização da execução.
+
+Validação da Camada Bronze
+
+Após a ingestão, todos os objetos presentes no bucket Bronze são sujeitos a uma nova ronda de validação, implementada no módulo validate_bronze.py. Esta etapa verifica a consistência dos metadados armazenados nos objetos MinIO relativamente aos dados da fonte operacional, garantindo integridade entre o data lake e a base de dados operacional.
+
+Para cada objeto no bucket Bronze, o sistema extrai e valida os metadados associados - nomeadamente report_id, file_type e extract_function - e verifica a sua coerência com os registos correspondentes na tabela op_data. Ficheiros cujos metadados sejam inconsistentes, ausentes ou divergentes da fonte operacional são considerados inválidos, eliminados do bucket Bronze e os respetivos erros registados na tabela de logs, garantindo auditabilidade.
+
+
+5.4   Fase Silver
+
+A fase Silver tem como objetivo a transformação dos dados armazenados na camada Bronze em formatos estruturados, normalizados e analiticamente utilizáveis. Esta etapa é composta por dois módulos: transform.py, responsável pela transformação propriamente dita, e validate_silver.py, responsável pela validação dos dados transformados.
+
+Transformação de Dados
+
+O módulo transform.py percorre os objetos presentes no bucket Bronze e aplica a cada um a função de transformação adequada, determinada dinamicamente com base no campo extract_function presente nos metadados do objeto. Esta arquitetura, baseada num registo de funções (EXTRACT_FUNCTIONS), permite extensibilidade sem modificações estruturais ao pipeline.
+
+As transformações são específicas por fonte de dados. Por exemplo, para os dados provenientes do FMI (Fundo Monetário Internacional), são aplicadas funções que normalizam estruturas JSON hierárquicas em tabelas relacionais, extraindo códigos, nomes e séries temporais. As funções funcao_imf_indicadores, funcao_imf_countries, funcao_imf_regions, funcao_imf_groups e funcao_imf_values tratam os diferentes tipos de entidades. Para outras fontes, como o HFI (Human Freedom Index) e o EPI (Environmental Performance Index), são aplicadas funções específicas que reorganizam os dados em estruturas consistentes, incluindo conversão de formato largo para formato longo (wide-to-long), padronização de campos como location_code, indicator_code e year, e normalização de tipos de dados.
+
+Limpeza de Dados
+
+Após a transformação, cada dataset passa por uma etapa de limpeza (clean_dataframe), onde são removidos valores nulos em campos críticos, eliminadas duplicações e preenchidos valores em falta com base em regras definidas. Os dados resultantes são convertidos para formato Parquet - um formato colunar otimizado para armazenamento analítico - e armazenados no bucket Silver com os metadados originais preservados, garantindo rastreabilidade entre camadas.
+
+Validação da Camada Silver
+
+O módulo validate_silver.py valida estrutural e semanticamente os ficheiros Parquet armazenados no bucket Silver. Para cada ficheiro, são verificados a existência e coerência dos metadados, a consistência com os dados da camada operacional e a conformidade estrutural do dataset.
+
+A validação estrutural inclui a verificação de que o ficheiro não está vazio e que contém todas as colunas obrigatórias definidas para o seu tipo. Os requisitos variam consoante o domínio dos dados:
+
+ficheiros de indicadores, países, regiões e grupos devem conter, no mínimo, os campos code e name;
+ficheiros de valores devem conter location_code, indicator_code, year, value e value_type.
+
+Ficheiros inválidos são eliminados do bucket Silver e os erros registados na tabela de logs. Esta etapa assegura que apenas dados estruturalmente corretos e semanticamente consistentes avançam para a camada Gold.
+
+
+5.5   Carregamento para o Data Warehouse
+
+A fase Gold corresponde ao carregamento dos dados transformados para o Data Warehouse (db_dw), implementado em PostgreSQL segundo um modelo dimensional em estrela (star schema). O módulo load.py orquestra este processo, garantindo incrementalidade, mapeamento de chaves e robustez no carregamento.
+
+Modelo Dimensional
+
+O Data Warehouse é organizado em quatro tabelas de dimensão e uma tabela de factos:
+
+dim_indicator: contém os indicadores económicos e de desenvolvimento referenciados pelos dados;
+dim_location: regista as entidades geográficas - países, regiões e grupos - presentes nos dados;
+dim_date: dimensão temporal com um intervalo fixo de anos, gerada deterministicamente;
+dim_report: carregada a partir da base de dados operacional, estabelece a ligação entre os dados analíticos e a sua origem;
+fact_values: tabela de factos central, que armazena os valores quantitativos associados a cada combinação de localização, indicador e ano.
+
+Processo de Carregamento
+
+O carregamento inicia-se com a identificação do timestamp da última execução, garantindo que apenas os ficheiros da camada Silver adicionados após esse valor são processados. Os objetos Parquet são lidos diretamente do MinIO e convertidos em DataFrames pandas.
+
+O carregamento das dimensões é realizado com mecanismos de idempotência através da cláusula ON CONFLICT DO NOTHING, evitando duplicações em execuções repetidas. A tabela de factos é populada após a resolução do mapeamento entre chaves naturais e chaves substitutas (surrogate keys): location_code → location_id, indicator_code → indicator_id e year → date_id. Apenas os registos em que todas as chaves estrangeiras são resolvidas com sucesso são inseridos. A inserção em massa é realizada via execute_values, garantindo eficiência no carregamento de grandes volumes de dados.
+
+Em caso de erro durante o carregamento, a transação é revertida (rollback), preservando a consistência do Data Warehouse. Todos os erros são registados na tabela etl_logs_data. No final de cada execução, o sistema reporta o número total de registos inseridos na tabela de factos, permitindo a monitorização do volume de dados processados em cada ciclo.
+
+
+Conclusão do Projeto
+
