@@ -328,7 +328,7 @@ PASSO 22 — Executar o script de configuração inicial.
   Abre o terminal NA PASTA DO PROJETO (como explicado no Passo 14)
 
   Escreve o seguinte comando e prime Enter:
-       python Codes\Setup\setup.py
+      python Codes/Setup/setup.py 
 
   O script vai fazer automaticamente (pode demorar 5-15 minutos):
        - Verificar se o Docker está disponível
@@ -365,7 +365,7 @@ PASSO 23 — Criar o ícone no ambiente de trabalho.
   Abre o terminal NA PASTA DO PROJETO (como explicado no Passo 14)
 
   Escreve o seguinte comando e prime Enter:
-       python criar_atalho.py
+      python App/criar_atalho.py
 
   Deve aparecer no terminal:
        Atalho criado: C:\Users\TeuNome\Desktop\OP Report Manager.lnk
@@ -412,7 +412,7 @@ SOLUÇÃO:  Algum serviço no computador está a usar a mesma porta. Reinicia o
 
 PROBLEMA: O website abre mas não carrega dados / aparece em branco
 SOLUÇÃO:  O setup inicial pode não ter corrido corretamente. Tenta correr
-          novamente:  python Codes\Setup\setup.py
+          novamente:  python Codes/Setup/setup.py
 
 ----------
 

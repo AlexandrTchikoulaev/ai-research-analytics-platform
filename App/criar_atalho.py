@@ -11,8 +11,7 @@ _dir        = os.path.dirname(os.path.abspath(__file__))
 _project    = os.path.dirname(_dir)
 _start      = os.path.join(_project, "start.py")
 _icon       = os.path.join(_dir, "icon.ico")
-_desktop    = os.path.join(os.path.expanduser("~"), "Desktop")
-_atalho     = os.path.join(_desktop, "OP Report Manager.lnk")
+_atalho     = os.path.join(_dir, "OP Report Manager.lnk")
 
 # pythonw.exe não abre janela de consola ao fazer duplo clique
 _pythonw = os.path.join(os.path.dirname(sys.executable), "pythonw.exe")
