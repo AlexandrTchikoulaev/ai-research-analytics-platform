@@ -1787,6 +1787,7 @@
     <div style="display:flex;align-items:center;gap:1rem;">
       <span id="etl-data-text" style="font-size:0.73rem;color:var(--text-muted);opacity:0.75;">A carregar...</span>
       <button class="btn-ghost" id="btn-rebuild-thumbs" onclick="rebuildThumbnails()" title="Gera thumbnails em falta para PDFs já no MinIO">Thumbnails</button>
+      <button class="btn-ghost" id="btn-reset-pipeline" onclick="resetPipeline()" title="Apaga todos os dados do pipeline — MinIO, warehouse e logs" style="color:var(--red);border-color:var(--red);opacity:0.7;">Reset Pipeline</button>
       <div class="section-toggle">
         <button class="active" id="etog-relatorios" onclick="switchEtlLog('relatorios')">Relatórios</button>
         <button id="etog-dados" onclick="switchEtlLog('dados')">Dados</button>
@@ -3236,6 +3237,10 @@
         if (saved) {
           document.getElementById('dash-rep-dropdown-label').textContent = saved.file_name;
           onDashReportChange();
+        } else {
+          document.getElementById('dash-report-select').value = '';
+          document.getElementById('dash-rep-dropdown-label').textContent = '— Seleciona um relatório —';
+          onDashReportChange();
         }
       }
     } catch (e) {
@@ -4266,6 +4271,39 @@
     }
   }
 
+  async function resetPipeline() {
+    const ok = confirm(
+      'ATENÇÃO: esta ação apaga TODOS os dados do pipeline — MinIO (bronze/silver), warehouse e logs ETL.\n\nOs ficheiros de origem não são tocados.\n\nTens a certeza?'
+    );
+    if (!ok) return;
+    const btn = document.getElementById('btn-reset-pipeline');
+    btn.disabled = true;
+    btn.textContent = 'A resetar...';
+    try {
+      const res = await fetch(`${API_BASE}/etl/reset`, { method: 'POST' });
+      if (!res.ok) throw new Error(`HTTP ${res.status}`);
+      const reader  = res.body.getReader();
+      const decoder = new TextDecoder();
+      let output = '';
+      while (true) {
+        const { done, value } = await reader.read();
+        if (done) break;
+        output += decoder.decode(value, { stream: true });
+      }
+      const success = output.includes('✓');
+      showToast(
+        success ? 'Pipeline resetado. Podes voltar a correr os pipelines.' : 'Erro ao resetar pipeline.',
+        success ? 'success' : 'error'
+      );
+      if (success) { loadEtlLogsTable('dados'); loadEtlLogsTable('pdfs'); loadEtlData(); }
+    } catch (e) {
+      showToast(`Erro: ${e.message}`, 'error');
+    } finally {
+      btn.disabled = false;
+      btn.textContent = 'Reset Pipeline';
+    }
+  }
+
   // ── PIPELINE RÁPIDO (dashboard / chat) ──
   async function runPipeline(tipo, btnId) {
     const btn = document.getElementById(btnId);
@@ -4666,6 +4704,12 @@
           <span>${_escHtml(r.file_name)}</span>
           <span class="rep-src">${_escHtml(r.source_code || '')}</span>
         </div>`).join('');
+      const currentId = document.getElementById('dash-report-select').value;
+      if (currentId && !reports.find(r => String(r.report_id) === String(currentId))) {
+        document.getElementById('dash-report-select').value = '';
+        document.getElementById('dash-rep-dropdown-label').textContent = '— Seleciona um relatório —';
+        onDashReportChange();
+      }
     } catch (e) { console.error(e); }
   }
 

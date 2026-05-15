@@ -41,8 +41,9 @@ BUCKET_THUMBNAILS = "thumbnails"
 
 
 _HERE = os.path.dirname(os.path.abspath(__file__))
-PIPELINE_DADOS_SCRIPT = os.path.normpath(os.path.join(_HERE, "..", "Pipeline", "pipeline_data.py"))
-PIPELINE_PDFS_SCRIPT  = os.path.normpath(os.path.join(_HERE, "..", "Pipeline Unstructured", "pipeline_reports.py"))
+PIPELINE_DADOS_SCRIPT  = os.path.normpath(os.path.join(_HERE, "..", "Pipeline", "pipeline_data.py"))
+PIPELINE_PDFS_SCRIPT   = os.path.normpath(os.path.join(_HERE, "..", "Pipeline Unstructured", "pipeline_reports.py"))
+RESET_PIPELINE_SCRIPT  = os.path.normpath(os.path.join(_HERE, "..", "..", "Extra", "Codes", "reset_pipeline.py"))
 
 
 # ── Helpers ───────────────────────────────────────────────
@@ -1341,6 +1342,11 @@ def etl_run_dados():
 @app.post("/etl/run/pdfs")
 def etl_run_pdfs():
     return _stream_script(PIPELINE_PDFS_SCRIPT)
+
+
+@app.post("/etl/reset")
+def etl_reset():
+    return _stream_script(RESET_PIPELINE_SCRIPT)
 
 
 @app.get("/etl_logs")
