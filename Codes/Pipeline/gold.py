@@ -14,11 +14,6 @@ DB_OPERATIONAL = {
     "user": "projeto_utilizador", "password": "projeto",
 }
 
-DB_PIPELINE = {
-    "host": "localhost", "port": 5433, "dbname": "gestao_db",
-    "user": "projeto_utilizador", "password": "projeto",
-}
-
 MINIO_CONFIG = {
     "endpoint_url": "http://localhost:9002",
     "aws_access_key_id": "admin",
@@ -201,7 +196,7 @@ def run_etl():
                       aws_access_key_id=MINIO_CONFIG["aws_access_key_id"],
                       aws_secret_access_key=MINIO_CONFIG["aws_secret_access_key"])
 
-    conn_pipe = psycopg2.connect(**DB_PIPELINE)
+    conn_pipe = psycopg2.connect(**DB_OPERATIONAL)
     cur_pipe  = conn_pipe.cursor()
 
     conn_op = psycopg2.connect(**DB_OPERATIONAL)

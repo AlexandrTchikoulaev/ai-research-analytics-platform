@@ -682,10 +682,9 @@ def get_reports():
         conn = get_operational_connection()
         cur = conn.cursor(cursor_factory=psycopg2.extras.RealDictCursor)
 
-        cur.execute("SELECT process_name, last_run FROM etl_data WHERE process_name IN ('etl_pdfs', 'etl_dados')")
-        etl_times = {r["process_name"]: r["last_run"] for r in cur.fetchall()}
-        pdfs_last  = etl_times.get("etl_pdfs")
-        dados_last = etl_times.get("etl_dados")
+        cur.execute("SELECT last_run FROM etl_data WHERE process_name = 'etl_pdfs'")
+        row = cur.fetchone()
+        pdfs_last = row["last_run"] if row else None
 
         cur.execute("""
             SELECT report_id, source_code, file_name, report_url, publication_date,
@@ -697,11 +696,8 @@ def get_reports():
         cur.execute("SELECT DISTINCT report_id FROM etl_logs_pdfs")
         pdf_error_ids = {r["report_id"] for r in cur.fetchall()}
 
-        if dados_last:
-            cur.execute("SELECT DISTINCT report_id FROM op_data WHERE created_at <= %s", (dados_last,))
-            data_processed_ids = {r["report_id"] for r in cur.fetchall()}
-        else:
-            data_processed_ids = set()
+        cur.execute("SELECT DISTINCT report_id FROM op_data WHERE pipeline_status NOT IN ('PENDING', 'FAILED')")
+        data_processed_ids = {r["report_id"] for r in cur.fetchall()}
 
         cur.close()
         conn.close()
@@ -779,7 +775,6 @@ def patch_op_data_simple(file_id: int, data: OpDataSimplePatch):
             UPDATE op_data
             SET file_name        = COALESCE(%s, file_name),
                 extract_function = COALESCE(%s, extract_function),
-                created_at       = CURRENT_TIMESTAMP,
                 pipeline_status  = 'PENDING',
                 pipeline_error   = NULL
             WHERE file_id = %s
@@ -812,11 +807,10 @@ def patch_op_data(file_id: int, data: OpDataPatch):
                 file_url         = %s,
                 file_name        = COALESCE(%s, file_name),
                 extract_function = %s,
-                created_at       = CURRENT_TIMESTAMP,
                 pipeline_status  = 'PENDING',
                 pipeline_error   = NULL
             WHERE file_id = %s
-            RETURNING report_id, file_url, extract_function, created_at
+            RETURNING report_id, file_url, extract_function
         """, (data.report_id, data.file_url or None, data.file_name or None, data.extract_function or None, file_id))
 
         row = cur_op.fetchone()
@@ -825,7 +819,7 @@ def patch_op_data(file_id: int, data: OpDataPatch):
             cur_op.close(); conn_op.close()
             raise HTTPException(status_code=404, detail=f"file_id {file_id} não encontrado.")
 
-        new_report_id, new_file_url, new_extract_function, new_created_at = row
+        new_report_id, new_file_url, new_extract_function = row
         conn_op.commit()
         cur_op.close()
         conn_op.close()
@@ -848,12 +842,9 @@ def patch_op_data(file_id: int, data: OpDataPatch):
         try:
             s3 = get_s3()
             head = s3.head_object(Bucket=BUCKET_RAW, Key=str(file_id))
-            current_meta = head.get("Metadata", {})
-            created_str = new_created_at.isoformat() if hasattr(new_created_at, "isoformat") else str(new_created_at)
             new_meta = {
                 "report_id":        str(new_report_id) if new_report_id is not None else "",
                 "extract_function": new_extract_function or "",
-                "created_at":       created_str,
             }
             s3.copy_object(
                 Bucket=BUCKET_RAW,
@@ -1019,9 +1010,8 @@ def delete_op_report(report_id: int):
             )
 
         cur.execute("""
-            SELECT COUNT(*) FROM op_data od
-            JOIN etl_data ed ON ed.process_name = 'etl_dados'
-            WHERE od.report_id = %s AND od.created_at <= ed.last_run
+            SELECT COUNT(*) FROM op_data
+            WHERE report_id = %s AND pipeline_status NOT IN ('PENDING', 'FAILED')
         """, (report_id,))
         if cur.fetchone()["count"] > 0:
             cur.close(); conn.close()

@@ -26,11 +26,10 @@ MINIO_CONFIG = {
     "aws_secret_access_key": "admin123",
 }
 
-REPORT_PATH = os.path.join(
+REPORTS_DIR = os.path.normpath(os.path.join(
     os.path.dirname(os.path.abspath(__file__)),
-    "..", "..", "Reports",
-    "pipeline_reports_report.txt"
-)
+    "..", "..", "Reports", "PDFs"
+))
 
 SEP  = "=" * 72
 DASH = "-" * 72
@@ -313,8 +312,9 @@ def generate(prev_last_run, run_start: datetime, success: bool):
     if conn_vec:  conn_vec.close()
 
     # ── Escrever ficheiro ─────────────────────────────────────────────────
-    report_path = os.path.abspath(REPORT_PATH)
-    os.makedirs(os.path.dirname(report_path), exist_ok=True)
+    timestamp = run_start.strftime("%Y%m%d_%H%M%S")
+    report_path = os.path.join(REPORTS_DIR, f"pipeline_reports_report_{timestamp}.txt")
+    os.makedirs(REPORTS_DIR, exist_ok=True)
     with open(report_path, "w", encoding="utf-8") as f:
         f.write("\n".join(lines) + "\n")
 

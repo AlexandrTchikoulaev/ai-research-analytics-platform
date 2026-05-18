@@ -1,3 +1,5 @@
 {
-    "python.defaultInterpreterPath": "C:\\Users\\optil\\anaconda3\\envs\\projeto_final\\python.exe"
+    "python.defaultInterpreterPath": "C:\\Users\\optil\\anaconda3\\envs\\projeto_final\\python.exe",
+    "python-envs.defaultEnvManager": "ms-python.python:conda",
+    "python-envs.defaultPackageManager": "ms-python.python:conda"
 }
