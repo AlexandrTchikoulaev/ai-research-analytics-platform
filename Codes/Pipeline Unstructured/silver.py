@@ -40,7 +40,6 @@ BATCH_SIZE = 50
 
 
 def _log_to_etl(file_name: str, step: str, error_message: str, report_id=None):
-    """Best-effort logging to etl_logs_pdfs in gestao_db."""
     try:
         conn = psycopg2.connect(**DB_GESTAO)
         cur = conn.cursor()
@@ -55,21 +54,26 @@ def _log_to_etl(file_name: str, step: str, error_message: str, report_id=None):
         pass
 
 
+def _mark_status(report_id: int, status: str, error: str | None):
+    try:
+        conn = psycopg2.connect(**DB_GESTAO)
+        cur = conn.cursor()
+        cur.execute(
+            "UPDATE op_report SET pipeline_status = %s, pipeline_error = %s WHERE report_id = %s",
+            (status, error, report_id),
+        )
+        conn.commit()
+        cur.close()
+        conn.close()
+    except Exception as e:
+        print(f"[AVISO] Não foi possível atualizar status report_id={report_id}: {e}")
+
+
 def get_embedding_function():
     return OllamaEmbeddings(model="mxbai-embed-large")
 
 
-def _get_bucket_names() -> list[str]:
-    client = Minio(
-        MINIO_SETTINGS["endpoint"],
-        access_key=MINIO_SETTINGS["access_key"],
-        secret_key=MINIO_SETTINGS["secret_key"],
-        secure=MINIO_SETTINGS["secure"],
-    )
-    return [obj.object_name for obj in client.list_objects(MINIO_SETTINGS["bucket"], recursive=True)]
-
-
-def _get_already_indexed(bucket_names: list[str]) -> set:
+def _get_already_indexed(file_names: list[str]) -> set:
     conn = None
     try:
         conn = psycopg2.connect(
@@ -83,14 +87,14 @@ def _get_already_indexed(bucket_names: list[str]) -> set:
         cur.execute("""
             SELECT DISTINCT cmetadata->>'source'
             FROM langchain_pg_embedding
-            WHERE cmetadata->>'source' IS NOT NULL
-        """)
+            WHERE cmetadata->>'source' = ANY(%s)
+        """, (file_names,))
         indexed = {row[0] for row in cur.fetchall()}
         cur.close()
         return indexed
     except Exception as e:
         msg = f"Não foi possível consultar documentos já indexados: {e}"
-        print(f"[AVISO] {msg}. A tentar indexar todos os documentos do bucket.")
+        print(f"[AVISO] {msg}")
         _log_to_etl("silver", "silver", msg)
         return set()
     finally:
@@ -230,29 +234,47 @@ def add_to_pgvector(chunks: list):
 def main():
     print("A correr silver (ingest vectorial)...")
 
-    bucket_names = _get_bucket_names()
-    if not bucket_names:
-        print("Bucket vazio. Sem documentos para indexar.")
+    conn = psycopg2.connect(**DB_GESTAO)
+    cur  = conn.cursor()
+    cur.execute("""
+        SELECT report_id, file_name
+        FROM op_report
+        WHERE pipeline_status = 'BRONZE_OK'
+        ORDER BY report_id
+    """)
+    rows = cur.fetchall()
+    cur.close()
+    conn.close()
+
+    if not rows:
+        print("Sem relatórios BRONZE_OK para indexar.")
         return
 
-    already_indexed = _get_already_indexed(bucket_names)
+    file_names      = [r[1] for r in rows]
+    already_indexed = _get_already_indexed(file_names)
     print(f"Documentos já indexados: {len(already_indexed)}")
 
-    new_names = [name for name in bucket_names if name not in already_indexed]
-    if not new_names:
-        print("Sem novos documentos para indexar.")
-        return
+    for report_id, file_name in rows:
+        if file_name in already_indexed:
+            _mark_status(report_id, "DONE", None)
+            print(f"[SKIP] report_id={report_id}  {file_name}  [já indexado]")
+            continue
 
-    print(f"{len(new_names)} documento(s) novo(s) encontrado(s).")
-    documents = load_new_documents(new_names)
+        try:
+            documents = load_new_documents([file_name])
+            if not documents:
+                raise ValueError("Sem páginas extraídas do PDF")
+            chunks = split_documents(documents)
+            chunks = assign_chunk_ids(chunks)
+            add_to_pgvector(chunks)
+            _mark_status(report_id, "DONE", None)
+            print(f"[OK]   report_id={report_id}  {file_name}")
+        except Exception as e:
+            err_msg = str(e)
+            _mark_status(report_id, "FAILED", err_msg)
+            _log_to_etl(file_name, "silver", err_msg, report_id)
+            print(f"[ERRO] report_id={report_id}  {file_name}: {err_msg}")
 
-    if not documents:
-        print("Sem páginas extraídas para indexar.")
-        return
-
-    chunks = split_documents(documents)
-    chunks = assign_chunk_ids(chunks)
-    add_to_pgvector(chunks)
     print("silver concluído.")
 
 

@@ -53,7 +53,7 @@ def main():
 
     # Lock rows PENDING e marca imediatamente como PROCESSING (liberta o lock de seguida)
     cur.execute("""
-        SELECT file_id, report_id, file_url, extract_function, created_at
+        SELECT file_id, report_id, file_url, extract_function
         FROM op_data
         WHERE pipeline_status = 'PENDING'
         ORDER BY file_id
@@ -77,7 +77,7 @@ def main():
     ok_count = 0
     err_count = 0
 
-    for file_id, report_id, file_url, extract_function, created_at in rows:
+    for file_id, report_id, file_url, extract_function in rows:
 
         # Ficheiro já carregado via upload — já está no MinIO
         if not file_url:
@@ -98,8 +98,6 @@ def main():
             fmt = detect_format(file_url, content)
             key = str(file_id)
 
-            created_str = created_at.isoformat() if hasattr(created_at, "isoformat") else str(created_at)
-
             s3.put_object(
                 Bucket=BUCKET_RAW,
                 Key=key,
@@ -107,7 +105,6 @@ def main():
                 Metadata={
                     "report_id": str(report_id) if report_id is not None else "",
                     "extract_function": extract_function or "",
-                    "created_at": created_str,
                 },
             )
             cur.execute(

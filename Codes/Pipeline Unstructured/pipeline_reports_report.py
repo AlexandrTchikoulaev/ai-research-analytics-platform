@@ -8,10 +8,6 @@ import psycopg2.extras
 import boto3
 from datetime import datetime
 
-DB_PIPELINE = {
-    "host": "localhost", "port": 5433, "dbname": "gestao_db",
-    "user": "projeto_utilizador", "password": "projeto",
-}
 DB_OPERATIONAL = {
     "host": "localhost", "port": 5433, "dbname": "gestao_db",
     "user": "projeto_utilizador", "password": "projeto",
@@ -47,66 +43,54 @@ def _minio_keys(s3, bucket):
     return keys
 
 
-def generate(prev_last_run, run_start: datetime, success: bool):
+def generate(run_start: datetime, success: bool):
     lines = []
     w = lines.append
 
     now_str   = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
     start_str = run_start.strftime("%Y-%m-%d %H:%M:%S")
-    prev_str  = prev_last_run.strftime("%Y-%m-%d %H:%M:%S") if prev_last_run else "nunca executado"
 
-    # ── Conexões ──────────────────────────────────────────────────────────
-    conn_pipe = conn_op = conn_vec = None
-    conn_pipe = psycopg2.connect(**DB_PIPELINE)
-    cur_pipe  = conn_pipe.cursor(cursor_factory=psycopg2.extras.RealDictCursor)
-    conn_op   = psycopg2.connect(**DB_OPERATIONAL)
-    cur_op    = conn_op.cursor(cursor_factory=psycopg2.extras.RealDictCursor)
-    conn_vec  = psycopg2.connect(**DB_VECTOR)
-    cur_vec   = conn_vec.cursor(cursor_factory=psycopg2.extras.RealDictCursor)
+    conn_op  = psycopg2.connect(**DB_OPERATIONAL)
+    cur_op   = conn_op.cursor(cursor_factory=psycopg2.extras.RealDictCursor)
+    conn_vec = psycopg2.connect(**DB_VECTOR)
+    cur_vec  = conn_vec.cursor(cursor_factory=psycopg2.extras.RealDictCursor)
 
     try:
         s3 = boto3.client("s3", **MINIO_CONFIG)
     except Exception:
         s3 = None
 
-    # ── Candidatos (op_report desta run) ──────────────────────────────────
-    if prev_last_run:
-        cur_op.execute("""
-            SELECT report_id, file_name, report_url, source_code, created_at
-            FROM op_report
-            WHERE created_at > %s
-            ORDER BY report_id
-        """, (prev_last_run,))
-    else:
-        cur_op.execute("""
-            SELECT report_id, file_name, report_url, source_code, created_at
-            FROM op_report
-            ORDER BY report_id
-        """)
+    # ── Candidatos (todos os relatórios que passaram pela pipeline) ───────
+    cur_op.execute("""
+        SELECT report_id, file_name, report_url, source_code, pipeline_status, pipeline_error
+        FROM op_report
+        WHERE pipeline_status != 'PENDING'
+        ORDER BY report_id
+    """)
     candidates = cur_op.fetchall()
 
-    # ── Logs desta execução ────────────────────────────────────────────────
-    if prev_last_run is not None:
-        cur_pipe.execute("""
+    # ── Logs filtrados pelos report_ids desta execução ────────────────────
+    cand_ids = [r["report_id"] for r in candidates]
+    if cand_ids:
+        cur_op.execute("""
             SELECT report_id, file_name, step, error_message, log_time
             FROM etl_logs_pdfs
-            WHERE log_time > %s
+            WHERE report_id = ANY(%s)
             ORDER BY log_time ASC
-        """, (prev_last_run,))
+        """, (cand_ids,))
     else:
-        cur_pipe.execute("""
+        cur_op.execute("""
             SELECT report_id, file_name, step, error_message, log_time
             FROM etl_logs_pdfs
-            ORDER BY log_time ASC
+            WHERE FALSE
         """)
-    run_logs = cur_pipe.fetchall()
+    run_logs = cur_op.fetchall()
 
     by_step = {}
     for lg in run_logs:
         by_step.setdefault(lg["step"], []).append(lg)
 
     def errs_by_fname(step):
-        # Use a set for filtering (handles duplicate file_names) and a dict for error messages
         errs = {}
         for lg in by_step.get(step, []):
             errs.setdefault(lg["file_name"], lg["error_message"])
@@ -184,7 +168,6 @@ def generate(prev_last_run, run_start: datetime, success: bool):
     w("RELATÓRIO DA PIPELINE DE PDFs")
     w(f"Gerado em          : {now_str}")
     w(f"Início da execução : {start_str}")
-    w(f"Execução anterior  : {prev_str}")
     w(f"Estado             : {'CONCLUÍDA COM SUCESSO' if success else 'FALHOU'}")
     w(SEP)
     w("")
@@ -192,10 +175,10 @@ def generate(prev_last_run, run_start: datetime, success: bool):
     w(DASH)
     w("RESUMO")
     w(DASH)
-    w(f"[1] validate_op_report       Novos: {s1_total:<4}  Válidos: {s1_valid:<4}  Inválidos: {s1_invalid:<4}  → etl_logs: {s1_invalid}")
+    w(f"[1] validate_op_report       Total: {s1_total:<4}  Válidos: {s1_valid:<4}  Inválidos: {s1_invalid:<4}  → etl_logs: {s1_invalid}")
     w(f"[2] Ingestão Bronze          Processados: {s2_total:<4}  OK: {s2_ok:<4}  Erro: {s2_err:<4}  → etl_logs: {s2_err}")
     w(f"[3] Validação Bronze         Validados: {s3_total:<4}  OK: {s3_valid:<4}  Inválidos: {s3_invalid:<4}  → etl_logs: {s3_invalid}")
-    w(f"[4] Indexação Silver         PDFs desta run: {s4_total:<4}  Indexados: {s4_indexed:<4}  Não indexados: {s4_missing:<4}")
+    w(f"[4] Indexação Silver         PDFs: {s4_total:<4}  Indexados: {s4_indexed:<4}  Não indexados: {s4_missing:<4}")
     w(f"                             Total chunks no vector DB: {total_chunks}  Total documentos: {total_docs}")
     w("")
 
@@ -206,7 +189,7 @@ def generate(prev_last_run, run_start: datetime, success: bool):
     w("1/4 — VALIDACAO op_report")
     w(SEP)
     if not candidates:
-        w("  Sem relatórios novos para validar.")
+        w("  Sem relatórios para validar.")
     else:
         for r in candidates:
             fname   = r["file_name"] or f"report_id={r['report_id']}"
@@ -248,7 +231,7 @@ def generate(prev_last_run, run_start: datetime, success: bool):
     w("3/4 — VALIDACAO Bronze (validate_bronze_unstructured)")
     w(SEP)
     if not bronze_ok_cands:
-        w("  Nenhum PDF Bronze para validar nesta execução.")
+        w("  Nenhum PDF Bronze para validar.")
     else:
         for r in bronze_ok_cands:
             fname = r["file_name"] or f"report_id={r['report_id']}"
@@ -306,12 +289,9 @@ def generate(prev_last_run, run_start: datetime, success: bool):
     w("FIM DO RELATORIO")
     w(SEP)
 
-    # ── Fechar conexões ───────────────────────────────────────────────────
-    if conn_pipe: conn_pipe.close()
-    if conn_op:   conn_op.close()
-    if conn_vec:  conn_vec.close()
+    cur_op.close();  conn_op.close()
+    cur_vec.close(); conn_vec.close()
 
-    # ── Escrever ficheiro ─────────────────────────────────────────────────
     timestamp = run_start.strftime("%Y%m%d_%H%M%S")
     report_path = os.path.join(REPORTS_DIR, f"pipeline_reports_report_{timestamp}.txt")
     os.makedirs(REPORTS_DIR, exist_ok=True)

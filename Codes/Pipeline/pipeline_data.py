@@ -11,7 +11,7 @@ Executa sequencialmente:
 import sys
 import os
 import psycopg2
-from datetime import datetime, timezone
+from datetime import datetime
 
 # Permitir imports diretos dos módulos na mesma pasta
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
@@ -23,21 +23,6 @@ DB_CONFIG = {
     "user": "projeto_utilizador",
     "password": "projeto",
 }
-
-PROCESS_NAME = "etl_dados"
-
-
-def update_timestamp(run_start):
-    conn = psycopg2.connect(**DB_CONFIG)
-    cur = conn.cursor()
-    cur.execute("""
-        UPDATE etl_data SET last_run = %s
-        WHERE process_name = %s
-    """, (run_start, PROCESS_NAME))
-    conn.commit()
-    cur.close()
-    conn.close()
-    print("Timestamp etl_dados atualizado.")
 
 
 def run_step(label: str, fn):
@@ -53,19 +38,6 @@ def run_step(label: str, fn):
         raise
 
 
-def get_prev_last_run():
-    try:
-        conn = psycopg2.connect(**DB_CONFIG)
-        cur = conn.cursor()
-        cur.execute("SELECT last_run FROM etl_data WHERE process_name = %s", (PROCESS_NAME,))
-        row = cur.fetchone()
-        cur.close()
-        conn.close()
-        return row[0] if row else None
-    except Exception:
-        return None
-
-
 def run_pipeline():
     import bronze_validations
     import bronze
@@ -75,8 +47,7 @@ def run_pipeline():
     import gold
     import pipeline_data_report
 
-    run_start     = datetime.now(timezone.utc)
-    prev_last_run = get_prev_last_run()
+    run_start = datetime.now()
 
     # Crash recovery: reset PROCESSING → PENDING (ficheiros que ficaram a meio num crash anterior)
     conn_reset = psycopg2.connect(**DB_CONFIG)
@@ -112,9 +83,8 @@ def run_pipeline():
         print("\n PIPELINE DE DADOS CONCLUÍDO COM SUCESSO")
 
     finally:
-        update_timestamp(run_start)
         try:
-            pipeline_data_report.generate(prev_last_run, run_start, success)
+            pipeline_data_report.generate(run_start, success)
         except Exception as e:
             print(f"[AVISO] Não foi possível gerar o relatório: {e}")
 

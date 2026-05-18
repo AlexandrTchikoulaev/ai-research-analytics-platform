@@ -7,10 +7,6 @@ import psycopg2
 import psycopg2.extras
 from datetime import datetime
 
-DB_PIPELINE = {
-    "host": "localhost", "port": 5433, "dbname": "gestao_db",
-    "user": "projeto_utilizador", "password": "projeto",
-}
 DB_OPERATIONAL = {
     "host": "localhost", "port": 5433, "dbname": "gestao_db",
     "user": "projeto_utilizador", "password": "projeto",
@@ -29,59 +25,46 @@ SEP  = "=" * 72
 DASH = "-" * 72
 
 
-def generate(prev_last_run, run_start: datetime, success: bool):
+def generate(run_start: datetime, success: bool):
     lines = []
     w = lines.append
 
     now_str   = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
     start_str = run_start.strftime("%Y-%m-%d %H:%M:%S")
-    prev_str  = prev_last_run.strftime("%Y-%m-%d %H:%M:%S") if prev_last_run else "nunca executado"
 
-    conn_pipe = psycopg2.connect(**DB_PIPELINE)
-    cur_pipe  = conn_pipe.cursor(cursor_factory=psycopg2.extras.RealDictCursor)
-    conn_op   = psycopg2.connect(**DB_OPERATIONAL)
-    cur_op    = conn_op.cursor(cursor_factory=psycopg2.extras.RealDictCursor)
-    conn_dw   = psycopg2.connect(**DB_WAREHOUSE)
-    cur_dw    = conn_dw.cursor(cursor_factory=psycopg2.extras.RealDictCursor)
+    conn_op = psycopg2.connect(**DB_OPERATIONAL)
+    cur_op  = conn_op.cursor(cursor_factory=psycopg2.extras.RealDictCursor)
+    conn_dw = psycopg2.connect(**DB_WAREHOUSE)
+    cur_dw  = conn_dw.cursor(cursor_factory=psycopg2.extras.RealDictCursor)
 
-    # ── Candidatos (ficheiros novos desde a última run) ────────────────────
-    if prev_last_run:
-        cur_op.execute("""
-            SELECT d.file_id, d.report_id, d.file_url, d.extract_function,
-                   d.created_at, d.pipeline_status, d.pipeline_error,
-                   r.file_name AS report_name, r.source_code
-            FROM op_data d
-            LEFT JOIN op_report r ON r.report_id = d.report_id
-            WHERE d.created_at > %s OR d.updated_at > %s
-            ORDER BY d.file_id
-        """, (prev_last_run, prev_last_run))
-    else:
-        cur_op.execute("""
-            SELECT d.file_id, d.report_id, d.file_url, d.extract_function,
-                   d.created_at, d.pipeline_status, d.pipeline_error,
-                   r.file_name AS report_name, r.source_code
-            FROM op_data d
-            LEFT JOIN op_report r ON r.report_id = d.report_id
-            WHERE d.pipeline_status != 'PENDING'
-            ORDER BY d.file_id
-        """)
+    # ── Candidatos (todos os ficheiros que passaram pela pipeline) ────────
+    cur_op.execute("""
+        SELECT d.file_id, d.report_id, d.file_url, d.extract_function,
+               d.pipeline_status, d.pipeline_error,
+               r.file_name AS report_name, r.source_code
+        FROM op_data d
+        LEFT JOIN op_report r ON r.report_id = d.report_id
+        WHERE d.pipeline_status != 'PENDING'
+        ORDER BY d.file_id
+    """)
     candidates = cur_op.fetchall()
 
-    # ── Logs desta execução ────────────────────────────────────────────────
-    if prev_last_run is not None:
-        cur_pipe.execute("""
+    # ── Logs filtrados pelos file_ids desta execução ──────────────────────
+    cand_file_ids = [r["file_id"] for r in candidates]
+    if cand_file_ids:
+        cur_op.execute("""
             SELECT file_id, file_name, step, error_message, log_time
             FROM etl_logs_dados
-            WHERE log_time > %s
+            WHERE file_id::text = ANY(%s)
             ORDER BY log_time ASC
-        """, (prev_last_run,))
+        """, ([str(fid) for fid in cand_file_ids],))
     else:
-        cur_pipe.execute("""
+        cur_op.execute("""
             SELECT file_id, file_name, step, error_message, log_time
             FROM etl_logs_dados
-            ORDER BY log_time ASC
+            WHERE FALSE
         """)
-    run_logs = cur_pipe.fetchall()
+    run_logs = cur_op.fetchall()
 
     by_step = {}
     for lg in run_logs:
@@ -103,7 +86,6 @@ def generate(prev_last_run, run_start: datetime, success: bool):
     silver_errs    = errs("validate_silver")
     load_errs_list = by_step.get("load", []) + by_step.get("load_mapping", [])
 
-    # status_map: {file_id: pipeline_status}
     status_map = {r["file_id"]: r["pipeline_status"] for r in candidates}
     error_map  = {r["file_id"]: r["pipeline_error"]  for r in candidates}
 
@@ -149,18 +131,6 @@ def generate(prev_last_run, run_start: datetime, success: bool):
     except Exception:
         dim_indicator_total = "—"
 
-    # ══════════════════════════════════════════════════════════════════════
-    # CABEÇALHO
-    # ══════════════════════════════════════════════════════════════════════
-    w(SEP)
-    w("RELATÓRIO DA PIPELINE DE DADOS")
-    w(f"Gerado em          : {now_str}")
-    w(f"Início da execução : {start_str}")
-    w(f"Execução anterior  : {prev_str}")
-    w(f"Estado             : {'CONCLUÍDA COM SUCESSO' if success else 'FALHOU'}")
-    w(SEP)
-    w("")
-
     # ── Contagens para o RESUMO baseadas em pipeline_status ───────────────
     s1_total   = len(candidates)
     s1_invalid = len(invalid_opdata)
@@ -188,13 +158,24 @@ def generate(prev_last_run, run_start: datetime, success: bool):
     s5_invalid = len(silver_errs)
     s5_valid   = s4_ok - s5_invalid
 
-    s6_done  = sum(1 for r in candidates if r["pipeline_status"] == "DONE")
-    s6_errs  = len(load_errs_list)
+    s6_done = sum(1 for r in candidates if r["pipeline_status"] == "DONE")
+    s6_errs = len(load_errs_list)
+
+    # ══════════════════════════════════════════════════════════════════════
+    # CABEÇALHO
+    # ══════════════════════════════════════════════════════════════════════
+    w(SEP)
+    w("RELATÓRIO DA PIPELINE DE DADOS")
+    w(f"Gerado em          : {now_str}")
+    w(f"Início da execução : {start_str}")
+    w(f"Estado             : {'CONCLUÍDA COM SUCESSO' if success else 'FALHOU'}")
+    w(SEP)
+    w("")
 
     w(DASH)
     w("RESUMO")
     w(DASH)
-    w(f"[1] validate_opdata      Novos: {s1_total:<4}  Válidos: {s1_valid:<4}  Inválidos: {s1_invalid:<4}  → etl_logs: {s1_invalid}")
+    w(f"[1] validate_opdata      Total: {s1_total:<4}  Válidos: {s1_valid:<4}  Inválidos: {s1_invalid:<4}  → etl_logs: {s1_invalid}")
     w(f"[2] Ingestão Bronze      Processados: {s1_valid:<4}  OK: {s2_ok:<4}  Erro: {s2_url_err:<4}  → etl_logs: {s2_url_err}")
     w(f"[3] Validação Bronze     Validados: {s2_ok:<4}  OK: {s3_valid:<4}  Inválidos: {s3_invalid:<4}  → etl_logs: {s3_invalid}")
     w(f"[4] Transformação Silver OK (SILVER_OK/DONE): {s4_ok:<4}  Erro: {s4_err:<4}  → etl_logs: {len(transform_errs)}")
@@ -210,7 +191,7 @@ def generate(prev_last_run, run_start: datetime, success: bool):
     w("1/6 — VALIDACAO op_data")
     w(SEP)
     if not candidates:
-        w("  Sem ficheiros novos para validar.")
+        w("  Sem ficheiros para validar.")
     else:
         for r in candidates:
             fid   = r["file_id"]
@@ -257,7 +238,7 @@ def generate(prev_last_run, run_start: datetime, success: bool):
                if r["file_id"] not in invalid_opdata
                and r["file_id"] not in ingest_errs]
     if not checked:
-        w("  Nenhum objecto Bronze para validar nesta execucao.")
+        w("  Nenhum objecto Bronze para validar.")
     else:
         for r in checked:
             fid = r["file_id"]
@@ -365,9 +346,8 @@ def generate(prev_last_run, run_start: datetime, success: bool):
     w("FIM DO RELATORIO")
     w(SEP)
 
-    cur_pipe.close(); conn_pipe.close()
-    cur_op.close();   conn_op.close()
-    cur_dw.close();   conn_dw.close()
+    cur_op.close(); conn_op.close()
+    cur_dw.close(); conn_dw.close()
 
     timestamp = run_start.strftime("%Y%m%d_%H%M%S")
     report_path = os.path.join(REPORTS_DIR, f"pipeline_data_report_{timestamp}.txt")

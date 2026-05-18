@@ -13,7 +13,7 @@ def main():
     # -------------------------
     # Delete Tables
     # -------------------------
-    for table in ["etl_logs_dados", "etl_logs_pdfs", "etl_data", "op_report", "op_data"]:
+    for table in ["etl_logs_dados", "etl_logs_pdfs", "op_report", "op_data"]:
         cur.execute(f"DROP TABLE IF EXISTS {table} CASCADE;")
         print(f"Tabela {table} apagada")
     conn.commit()
@@ -32,7 +32,8 @@ def main():
         estado           VARCHAR(50),
         palavras_chave   TEXT,
         resumo           TEXT,
-        created_at       TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+        pipeline_status  TEXT NOT NULL DEFAULT 'PENDING',
+        pipeline_error   TEXT
     );
     """)
 
@@ -46,53 +47,11 @@ def main():
         file_url         TEXT,
         file_name        VARCHAR,
         extract_function TEXT,
-        created_at       TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-        updated_at       TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
         pipeline_status  TEXT NOT NULL DEFAULT 'PENDING',
         pipeline_error   TEXT,
         CONSTRAINT fk_report
             FOREIGN KEY(report_id) REFERENCES op_report(report_id) ON DELETE CASCADE
     );
-    """)
-
-    # -------------------------
-    # Trigger: atualizar updated_at em op_data
-    # -------------------------
-    cur.execute("""
-    CREATE OR REPLACE FUNCTION update_op_data_updated_at()
-    RETURNS TRIGGER AS $$
-    BEGIN
-        NEW.updated_at = CURRENT_TIMESTAMP;
-        RETURN NEW;
-    END;
-    $$ LANGUAGE plpgsql;
-    """)
-
-    cur.execute("DROP TRIGGER IF EXISTS trg_op_data_updated_at ON op_data;")
-
-    cur.execute("""
-    CREATE TRIGGER trg_op_data_updated_at
-    BEFORE UPDATE ON op_data
-    FOR EACH ROW EXECUTE FUNCTION update_op_data_updated_at();
-    """)
-
-    # -------------------------
-    # etl_data (controlo de timestamps)
-    # -------------------------
-    cur.execute("""
-    CREATE TABLE IF NOT EXISTS etl_data (
-        process_name VARCHAR PRIMARY KEY,
-        last_run     TIMESTAMP
-    );
-    """)
-
-    cur.execute("""
-    INSERT INTO etl_data (process_name, last_run) VALUES ('etl_dados', '2000-01-01')
-    ON CONFLICT (process_name) DO NOTHING;
-    """)
-    cur.execute("""
-    INSERT INTO etl_data (process_name, last_run) VALUES ('etl_pdfs', '2000-01-01')
-    ON CONFLICT (process_name) DO NOTHING;
     """)
 
     # -------------------------

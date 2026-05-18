@@ -1,20 +1,11 @@
 """
-Valida os PDFs presentes no bucket bronze-unstructured.
-Verifica metadados e integridade do conteúdo PDF.
-Remove objetos inválidos e regista erros em etl_logs_pdfs.
+Valida os PDFs no bucket bronze-unstructured correspondentes a relatórios BRONZE_OK.
+Remove objectos inválidos, actualiza pipeline_status e regista erros em etl_logs_pdfs.
 """
 import psycopg2
 import boto3
 
-DB_OPERATIONAL = {
-    "host": "localhost",
-    "port": 5433,
-    "dbname": "gestao_db",
-    "user": "projeto_utilizador",
-    "password": "projeto",
-}
-
-DB_PIPELINE = {
+DB_CONFIG = {
     "host": "localhost",
     "port": 5433,
     "dbname": "gestao_db",
@@ -32,106 +23,59 @@ BUCKET_UNSTRUCTURED = "bronze-unstructured"
 
 
 def validate():
-    conn_op = conn_pipe = None
-    try:
-        conn_op   = psycopg2.connect(**DB_OPERATIONAL)
-        cur_op    = conn_op.cursor()
-        conn_pipe = psycopg2.connect(**DB_PIPELINE)
-        cur_pipe  = conn_pipe.cursor()
-        s3 = boto3.client("s3", **MINIO_CONFIG)
+    conn = psycopg2.connect(**DB_CONFIG)
+    cur  = conn.cursor()
+    s3   = boto3.client("s3", **MINIO_CONFIG)
 
-        # Pre-fetch all valid report_ids to avoid N+1 queries inside the loop
-        cur_op.execute("SELECT report_id FROM op_report")
-        valid_report_ids = {row[0] for row in cur_op.fetchall()}
+    cur.execute("""
+        SELECT report_id, file_name
+        FROM op_report
+        WHERE pipeline_status = 'BRONZE_OK'
+    """)
+    rows = cur.fetchall()
 
-        paginator = s3.get_paginator("list_objects_v2")
-        pages = paginator.paginate(Bucket=BUCKET_UNSTRUCTURED)
+    ok_count  = 0
+    err_count = 0
 
-        ok_count = 0
-        err_count = 0
+    for report_id, file_name in rows:
+        errors = []
 
-        for page in pages:
-            for obj in page.get("Contents", []):
-                key = obj["Key"]
-                errors = []
-                report_id = None
+        try:
+            response = s3.get_object(
+                Bucket=BUCKET_UNSTRUCTURED,
+                Key=file_name,
+                Range="bytes=0-3",
+            )
+            header = response["Body"].read()
+            if header != b"%PDF":
+                errors.append(f"Conteúdo não é um PDF válido (header: {header})")
+        except Exception as e:
+            errors.append(f"Não foi possível ler o PDF: {e}")
 
-                try:
-                    head = s3.head_object(Bucket=BUCKET_UNSTRUCTURED, Key=key)
-                    metadata = head.get("Metadata", {})
-                except Exception as e:
-                    msg = f"Não foi possível ler metadata: {e}"
-                    print(f"[ERRO] {key}: {msg}")
-                    cur_pipe.execute(
-                        "INSERT INTO etl_logs_pdfs (report_id, file_name, step, error_message) VALUES (%s, %s, %s, %s)",
-                        (None, key, "validate_bronze_unstructured",msg),
-                    )
-                    err_count += 1
-                    continue
-
-                report_id_str = metadata.get("report_id", "")
-                file_name = metadata.get("file_name", "")
-
-                try:
-                    report_id = int(report_id_str)
-                except (ValueError, TypeError):
-                    errors.append(f"report_id inválido na metadata: '{report_id_str}'")
-
-                if not file_name:
-                    errors.append("file_name em falta na metadata")
-
-                if report_id is not None and report_id not in valid_report_ids:
-                    errors.append(f"report_id={report_id} não existe em op_report")
-
-                if not errors:
-                    try:
-                        response = s3.get_object(
-                            Bucket=BUCKET_UNSTRUCTURED,
-                            Key=key,
-                            Range="bytes=0-3",
-                        )
-                        header = response["Body"].read()
-                        if header != b"%PDF":
-                            errors.append(f"Conteúdo não é um PDF válido (header: {header})")
-                    except Exception as e:
-                        errors.append(f"Erro ao verificar conteúdo: {e}")
-
-                if errors:
-                    msg = "; ".join(errors)
-                    print(f"[INVÁLIDO] {key}: {msg}")
-                    try:
-                        s3.delete_object(Bucket=BUCKET_UNSTRUCTURED, Key=key)
-                    except Exception as del_e:
-                        msg += f"; falha ao apagar do bucket: {del_e}"
-                        print(f"  Erro ao apagar {key}: {del_e}")
-
-                    cur_pipe.execute(
-                        "INSERT INTO etl_logs_pdfs (report_id, file_name, step, error_message) VALUES (%s, %s, %s, %s)",
-                        (report_id, key, "validate_bronze_unstructured",msg),
-                    )
-                    err_count += 1
-                else:
-                    ok_count += 1
-
-        conn_pipe.commit()
-        print(f"validate_bronze_unstructured — {ok_count} válidos, {err_count} inválidos/removidos")
-
-    except Exception as e:
-        if conn_pipe:
+        if errors:
+            msg = "; ".join(errors)
+            print(f"[INVÁLIDO] report_id={report_id}  {file_name}: {msg}")
+            cur.execute(
+                "UPDATE op_report SET pipeline_status = 'FAILED', pipeline_error = %s WHERE report_id = %s",
+                (msg, report_id)
+            )
+            cur.execute(
+                "INSERT INTO etl_logs_pdfs (report_id, file_name, step, error_message) VALUES (%s, %s, %s, %s)",
+                (report_id, file_name, "validate_bronze_unstructured", msg),
+            )
+            conn.commit()
             try:
-                conn_pipe.cursor().execute(
-                    "INSERT INTO etl_logs_pdfs (report_id, file_name, step, error_message) VALUES (%s, %s, %s, %s)",
-                    (None, "N/A", "validate_bronze_unstructured",str(e)),
-                )
-                conn_pipe.commit()
-            except Exception:
-                pass
-        raise
-    finally:
-        if conn_pipe:
-            conn_pipe.close()
-        if conn_op:
-            conn_op.close()
+                s3.delete_object(Bucket=BUCKET_UNSTRUCTURED, Key=file_name)
+            except Exception as del_e:
+                print(f"  Erro ao apagar {file_name}: {del_e}")
+            err_count += 1
+        else:
+            ok_count += 1
+
+    conn.commit()
+    cur.close()
+    conn.close()
+    print(f"validate_bronze_unstructured — {ok_count} válidos, {err_count} inválidos/removidos")
 
 
 if __name__ == "__main__":

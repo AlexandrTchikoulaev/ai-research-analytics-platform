@@ -361,7 +361,7 @@ def verify_setup():
     checks = [
         (DB_WAREHOUSE,    "warehouse_db",    ["dim_indicator", "dim_location", "dim_location_hierarchy", "dim_date", "dim_report", "fact_values"]),
         (DB_GESTAO,  "gestao_db",  ["op_report", "op_data"]),
-        (DB_GESTAO,     "gestao_db",     ["etl_data", "etl_logs_dados", "etl_logs_pdfs"]),
+        (DB_GESTAO,     "gestao_db",     ["etl_logs_dados", "etl_logs_pdfs"]),
         (DB_VECTOR,       "vector_db",       ["documents"]),
     ]
 

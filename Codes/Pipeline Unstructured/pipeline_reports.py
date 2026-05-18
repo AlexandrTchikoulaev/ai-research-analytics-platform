@@ -21,27 +21,6 @@ DB_CONFIG = {
     "password": "projeto",
 }
 
-PROCESS_NAME = "etl_pdfs"
-
-
-def update_timestamp():
-    conn = None
-    try:
-        conn = psycopg2.connect(**DB_CONFIG)
-        cur = conn.cursor()
-        cur.execute(
-            "UPDATE etl_data SET last_run = CURRENT_TIMESTAMP WHERE process_name = %s",
-            (PROCESS_NAME,),
-        )
-        conn.commit()
-        cur.close()
-        print("Timestamp etl_pdfs atualizado.")
-    except Exception as e:
-        print(f"[AVISO] Falha ao atualizar timestamp: {e}")
-    finally:
-        if conn:
-            conn.close()
-
 
 def run_step(label: str, fn):
     print(f"\n{'='*50}")
@@ -56,20 +35,6 @@ def run_step(label: str, fn):
         raise
 
 
-def get_prev_last_run():
-    try:
-        conn = psycopg2.connect(**DB_CONFIG)
-        cur = conn.cursor()
-        cur.execute("SELECT last_run FROM etl_data WHERE process_name = %s", (PROCESS_NAME,))
-        row = cur.fetchone()
-        cur.close()
-        conn.close()
-        return row[0] if row else None
-    except Exception as e:
-        print(f"[AVISO] Não foi possível obter last_run: {e}. A pipeline processará todos os registos.")
-        return None
-
-
 def run_pipeline():
     import bronze_validations as validate_op_report
     import bronze
@@ -77,26 +42,31 @@ def run_pipeline():
     import silver
     import pipeline_reports_report as report_pipeline_pdfs
 
-    run_start     = datetime.now()
-    prev_last_run = get_prev_last_run()
+    run_start = datetime.now()
+
+    # Crash recovery: reset PROCESSING → PENDING (relatórios que ficaram a meio num crash anterior)
+    conn_reset = psycopg2.connect(**DB_CONFIG)
+    cur_reset  = conn_reset.cursor()
+    cur_reset.execute("UPDATE op_report SET pipeline_status = 'PENDING' WHERE pipeline_status = 'PROCESSING'")
+    conn_reset.commit()
+    cur_reset.close(); conn_reset.close()
 
     print("\n PIPELINE DE PDFs INICIADO")
     print(f" {run_start.strftime('%Y-%m-%d %H:%M:%S')}\n")
 
     success = False
     try:
-        valid_ids, _ = run_step("1/4 — validate_op_report", validate_op_report.validate)
-        run_step("2/4 — bronze",                       lambda: bronze.main(valid_ids))
+        run_step("1/4 — validate_op_report",        validate_op_report.validate)
+        run_step("2/4 — bronze",                     bronze.main)
         run_step("3/4 — validate_bronze_unstructured", validate_bronze_unstructured.validate)
-        run_step("4/4 — silver",                       silver.main)
+        run_step("4/4 — silver",                     silver.main)
 
         success = True
         print("\n PIPELINE DE PDFs CONCLUÍDO COM SUCESSO")
 
     finally:
-        update_timestamp()
         try:
-            report_pipeline_pdfs.generate(prev_last_run, run_start, success)
+            report_pipeline_pdfs.generate(run_start, success)
         except Exception as e:
             print(f"[AVISO] Não foi possível gerar o relatório: {e}")
 

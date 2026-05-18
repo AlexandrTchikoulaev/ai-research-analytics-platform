@@ -410,9 +410,9 @@ async def upload_op_data(
         cur.execute("""
             INSERT INTO op_data (report_id, file_url, file_name, extract_function)
             VALUES (%s, NULL, %s, %s)
-            RETURNING file_id, created_at;
+            RETURNING file_id;
         """, (report_id, original_name, extract_function or None))
-        file_id, created_at = cur.fetchone()
+        file_id = cur.fetchone()[0]
         conn.commit()
     except Exception as e:
         conn.rollback()
@@ -426,7 +426,6 @@ async def upload_op_data(
     # Guardar no MinIO com file_id como key
     s3 = get_s3()
     ensure_bucket(s3, BUCKET_RAW)
-    created_str = created_at.isoformat() if hasattr(created_at, "isoformat") else str(created_at)
     try:
         s3.put_object(
             Bucket=BUCKET_RAW,
@@ -435,7 +434,6 @@ async def upload_op_data(
             Metadata={
                 "report_id": str(report_id),
                 "extract_function": extract_function or "",
-                "created_at": created_str,
             },
         )
     except Exception as e:
@@ -480,10 +478,9 @@ async def upload_op_data_pairs(
                 cur.execute("""
                     INSERT INTO op_data (report_id, file_url, file_name, extract_function)
                     VALUES (%s, NULL, %s, %s)
-                    RETURNING file_id, created_at;
+                    RETURNING file_id;
                 """, (report_id, file_name, fn))
-                file_id, created_at = cur.fetchone()
-                created_str = created_at.isoformat() if hasattr(created_at, "isoformat") else str(created_at)
+                file_id = cur.fetchone()[0]
                 s3.put_object(
                     Bucket=BUCKET_RAW,
                     Key=str(file_id),
@@ -491,7 +488,6 @@ async def upload_op_data_pairs(
                     Metadata={
                         "report_id": str(report_id),
                         "extract_function": fn,
-                        "created_at": created_str,
                     },
                 )
                 created_ids.append(file_id)
@@ -682,19 +678,12 @@ def get_reports():
         conn = get_operational_connection()
         cur = conn.cursor(cursor_factory=psycopg2.extras.RealDictCursor)
 
-        cur.execute("SELECT last_run FROM etl_data WHERE process_name = 'etl_pdfs'")
-        row = cur.fetchone()
-        pdfs_last = row["last_run"] if row else None
-
         cur.execute("""
             SELECT report_id, source_code, file_name, report_url, publication_date,
-                   area_tematica, estado, palavras_chave, resumo, created_at
+                   area_tematica, estado, palavras_chave, resumo, pipeline_status
             FROM op_report ORDER BY report_id DESC;
         """)
         reports = cur.fetchall()
-
-        cur.execute("SELECT DISTINCT report_id FROM etl_logs_pdfs")
-        pdf_error_ids = {r["report_id"] for r in cur.fetchall()}
 
         cur.execute("SELECT DISTINCT report_id FROM op_data WHERE pipeline_status NOT IN ('PENDING', 'FAILED')")
         data_processed_ids = {r["report_id"] for r in cur.fetchall()}
@@ -705,10 +694,10 @@ def get_reports():
         result = []
         for r in reports:
             row = dict(r)
-            pdf_done  = bool(pdfs_last and r["created_at"] and r["created_at"] <= pdfs_last)
+            pdf_done  = r["pipeline_status"] not in ("PENDING", "FAILED")
             data_done = r["report_id"] in data_processed_ids
             row["can_delete"] = not pdf_done and not data_done
-            row["url_locked"] = pdf_done and r["report_id"] not in pdf_error_ids
+            row["url_locked"] = r["pipeline_status"] in ("BRONZE_OK", "DONE")
             result.append(row)
 
         return result
@@ -723,7 +712,7 @@ def get_op_data():
         cur = conn.cursor(cursor_factory=psycopg2.extras.RealDictCursor)
         cur.execute("""
             SELECT d.file_id, d.report_id, d.file_url,
-                   d.extract_function, r.source_code, d.file_name, d.created_at,
+                   d.extract_function, r.source_code, d.file_name,
                    r.file_name AS report_name,
                    CASE
                      WHEN d.pipeline_status IN ('PENDING', 'FAILED') THEN TRUE
@@ -767,7 +756,7 @@ def get_op_data_by_id(file_id: int):
 
 @app.patch("/op_data/{file_id}/edit")
 def patch_op_data_simple(file_id: int, data: OpDataSimplePatch):
-    """Edita apenas nome e função de extração; repõe created_at para reprocessamento."""
+    """Edita apenas nome e função de extração; repõe status para reprocessamento."""
     try:
         conn = get_operational_connection()
         cur = conn.cursor()
@@ -796,7 +785,7 @@ def patch_op_data_simple(file_id: int, data: OpDataSimplePatch):
 
 @app.patch("/op_data/{file_id}")
 def patch_op_data(file_id: int, data: OpDataPatch):
-    """Edita os campos de um ficheiro em op_data e repõe created_at para ser reprocessado na próxima pipeline."""
+    """Edita os campos de um ficheiro em op_data e repõe status para ser reprocessado na próxima pipeline."""
     try:
         conn_op = get_operational_connection()
         cur_op = conn_op.cursor()
@@ -886,7 +875,7 @@ def get_op_report_by_id(report_id: int):
 
 @app.patch("/op_report/{report_id}")
 def patch_op_report(report_id: int, data: ReportPatch):
-    """Edita campos de op_report, repõe created_at e limpa erros para reprocessamento."""
+    """Edita campos de op_report, repõe status e limpa erros para reprocessamento."""
     try:
         conn_op = get_operational_connection()
         cur_op = conn_op.cursor()
@@ -900,7 +889,8 @@ def patch_op_report(report_id: int, data: ReportPatch):
                 estado           = COALESCE(%s, estado),
                 palavras_chave   = COALESCE(%s, palavras_chave),
                 resumo           = COALESCE(%s, resumo),
-                created_at       = CURRENT_TIMESTAMP
+                pipeline_status  = 'PENDING',
+                pipeline_error   = NULL
             WHERE report_id = %s
             RETURNING file_name
         """, (
@@ -994,15 +984,13 @@ def delete_op_report(report_id: int):
         conn = get_operational_connection()
         cur = conn.cursor(cursor_factory=psycopg2.extras.RealDictCursor)
 
-        cur.execute("SELECT created_at, file_name FROM op_report WHERE report_id = %s", (report_id,))
+        cur.execute("SELECT pipeline_status, file_name FROM op_report WHERE report_id = %s", (report_id,))
         report = cur.fetchone()
         if not report:
             cur.close(); conn.close()
             raise HTTPException(status_code=404, detail="Relatório não encontrado.")
 
-        cur.execute("SELECT last_run FROM etl_data WHERE process_name = 'etl_pdfs'")
-        etl_pdfs = cur.fetchone()
-        if etl_pdfs and etl_pdfs["last_run"] and report["created_at"] <= etl_pdfs["last_run"]:
+        if report["pipeline_status"] not in ("PENDING", "FAILED"):
             cur.close(); conn.close()
             raise HTTPException(
                 status_code=409,
@@ -1435,20 +1423,6 @@ def get_etl_logs():
             SELECT id, NULL AS file_id, report_id, file_name, step, error_message, log_time, 'pdfs' AS pipeline FROM etl_logs_pdfs
             ORDER BY log_time DESC LIMIT 500
         """)
-        rows = cur.fetchall()
-        cur.close()
-        conn.close()
-        return [dict(r) for r in rows]
-    except Exception as e:
-        raise HTTPException(status_code=500, detail=str(e))
-
-
-@app.get("/etl_data")
-def get_etl_data():
-    try:
-        conn = get_pipeline_connection()
-        cur = conn.cursor(cursor_factory=psycopg2.extras.RealDictCursor)
-        cur.execute("SELECT * FROM etl_data ORDER BY process_name")
         rows = cur.fetchall()
         cur.close()
         conn.close()

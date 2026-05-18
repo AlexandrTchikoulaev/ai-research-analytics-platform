@@ -82,7 +82,7 @@ def transformar():
         s3.create_bucket(Bucket=BUCKET_SILVER)
 
     cur.execute("""
-        SELECT file_id, extract_function, report_id, created_at
+        SELECT file_id, extract_function, report_id
         FROM op_data
         WHERE pipeline_status = 'BRONZE_OK'
         ORDER BY file_id
@@ -105,7 +105,7 @@ def transformar():
     ok_count  = 0
     err_count = 0
 
-    for file_id, extract_function, report_id, created_at in rows:
+    for file_id, extract_function, report_id in rows:
         key = str(file_id)
 
         if not extract_function or extract_function not in EXTRACT_FUNCTIONS:
@@ -141,15 +141,12 @@ def transformar():
             if not parquet_bytes:
                 raise ValueError("Parquet gerado está vazio (0 bytes)")
 
-            created_str = created_at.isoformat() if hasattr(created_at, "isoformat") else str(created_at)
-
             s3.put_object(
                 Bucket=BUCKET_SILVER,
                 Key=f"{key}.parquet",
                 Body=parquet_bytes,
                 Metadata={
-                    "report_id":  str(report_id) if report_id is not None else "",
-                    "created_at": created_str,
+                    "report_id": str(report_id) if report_id is not None else "",
                 },
             )
 
