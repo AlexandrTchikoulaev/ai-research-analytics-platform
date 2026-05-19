@@ -1,10 +1,10 @@
 """
 reset_pipeline.py
 Limpa todos os dados da pipeline sem apagar a estrutura das tabelas.
-  - warehouse_db  : TRUNCATE todas as tabelas do DW
-  - operational_db: TRUNCATE op_data e op_report (CASCADE)
-  - pipeline_db   : TRUNCATE logs; reset etl_data.last_run -> NULL
-  - MinIO         : elimina todos os objetos dos buckets bronze/silver
+  - warehouse_db  : TRUNCATE fact_values, dim_report, dim_indicator
+  - gestao_db     : TRUNCATE op_data, op_report (CASCADE), etl_logs_dados, etl_logs_pdfs
+  - vector_db     : DELETE langchain_pg_embedding e langchain_pg_collection
+  - MinIO         : elimina todos os objetos dos buckets bronze/silver/bronze-unstructured/thumbnails
 """
 import psycopg2
 import boto3
@@ -22,7 +22,7 @@ MINIO = {
     "aws_secret_access_key": "admin123",
 }
 
-BUCKETS = ["bronze", "silver", "bronze-unstructured"]
+BUCKETS = ["bronze", "silver", "bronze-unstructured", "thumbnails"]
 
 
 def _connect(dbname: str):
@@ -46,17 +46,20 @@ def truncate_tables(dbname: str, tables: list[str]):
         conn.close()
 
 
-def reset_etl_timestamps():
-    conn = _connect("gestao_db")
+def clear_vector_db():
+    conn = _connect("vector_db")
     cur = conn.cursor()
     try:
-        cur.execute("UPDATE etl_data SET last_run = NULL;")
-        rows = cur.rowcount
+        cur.execute("DELETE FROM langchain_pg_embedding;")
+        emb = cur.rowcount
+        cur.execute("DELETE FROM langchain_pg_collection;")
+        col = cur.rowcount
         conn.commit()
-        print(f"  OK  pipeline_db.etl_data — {rows} processo(s) resetado(s)")
+        print(f"  OK  vector_db.langchain_pg_embedding — {emb} chunk(s) eliminado(s)")
+        print(f"  OK  vector_db.langchain_pg_collection — {col} coleção(ões) eliminada(s)")
     except Exception as e:
         conn.rollback()
-        print(f"  ERRO: {e}")
+        print(f"  ERRO em vector_db: {e}")
     finally:
         cur.close()
         conn.close()
@@ -74,8 +77,6 @@ def clear_minio():
                     s3.delete_objects(Bucket=bucket, Delete={"Objects": objs})
                     deleted += len(objs)
             print(f"  OK  bucket '{bucket}': {deleted} objeto(s) eliminado(s)")
-        except s3.exceptions.NoSuchBucket:
-            print(f"  SKIP bucket '{bucket}': não existe")
         except Exception as e:
             print(f"  ERRO bucket '{bucket}': {e}")
 
@@ -94,14 +95,13 @@ if __name__ == "__main__":
     ])
 
     print("\n[2/4] Operational DB (gestao_db)...")
-    # op_data tem FK para op_report — CASCADE trata isso automaticamente
     truncate_tables("gestao_db", ["op_data", "op_report"])
-
-    print("\n[3/4] Pipeline DB — logs e timestamps (gestao_db)...")
     truncate_tables("gestao_db", ["etl_logs_dados", "etl_logs_pdfs"])
-    reset_etl_timestamps()
 
-    print("\n[4/4] MinIO — buckets Bronze e Silver...")
+    print("\n[3/4] Vector DB (vector_db)...")
+    clear_vector_db()
+
+    print("\n[4/4] MinIO — buckets...")
     clear_minio()
 
     print("\n" + "=" * 60)

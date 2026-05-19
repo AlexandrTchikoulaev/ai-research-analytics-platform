@@ -41,10 +41,10 @@ def validate():
         elif not report_url.startswith("http"):
             errors.append(f"report_url inválido (não começa com http): {report_url}")
 
-        if area_tematica not in VALID_AREAS_TEMATICAS:
+        if area_tematica and area_tematica not in VALID_AREAS_TEMATICAS:
             errors.append(f"area_tematica inválida: '{area_tematica}'. Valores aceites: {sorted(VALID_AREAS_TEMATICAS)}")
 
-        if estado not in VALID_ESTADOS:
+        if estado and estado not in VALID_ESTADOS:
             errors.append(f"estado inválido: '{estado}'. Valores aceites: {sorted(VALID_ESTADOS)}")
 
         if errors:

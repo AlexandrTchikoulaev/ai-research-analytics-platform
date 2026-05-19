@@ -45,6 +45,34 @@ PIPELINE_DADOS_SCRIPT  = os.path.normpath(os.path.join(_HERE, "..", "Pipeline", 
 PIPELINE_PDFS_SCRIPT   = os.path.normpath(os.path.join(_HERE, "..", "Pipeline Unstructured", "pipeline_reports.py"))
 RESET_PIPELINE_SCRIPT  = os.path.normpath(os.path.join(_HERE, "..", "..", "Extra", "Codes", "reset_pipeline.py"))
 
+# A pipeline de PDFs precisa do ambiente projeto_final (pdfplumber, langchain, etc.)
+# Procura python.exe nos locais mais comuns de instalação conda/venv
+def _find_pdfs_python() -> str:
+    candidates = [
+        # Mesmo dir do executável atual (já no projeto_final)
+        sys.executable,
+        # Subambiente projeto_final a partir do base conda
+        os.path.join(os.path.dirname(sys.executable), "envs", "projeto_final", "python.exe"),
+        # Subambiente a partir de Scripts/ (se sys.executable for Scripts/python.exe)
+        os.path.join(os.path.dirname(sys.executable), "..", "envs", "projeto_final", "python.exe"),
+        # Caminho absoluto conhecido
+        r"C:\Users\optil\anaconda3\envs\projeto_final\python.exe",
+    ]
+    for path in candidates:
+        path = os.path.normpath(path)
+        if not os.path.exists(path):
+            continue
+        try:
+            import subprocess as _sp
+            result = _sp.run([path, "-c", "import pdfplumber"], capture_output=True, timeout=10)
+            if result.returncode == 0:
+                return path
+        except Exception:
+            continue
+    return sys.executable
+
+_PDFS_PYTHON = _find_pdfs_python()
+
 # ── Estado da pipeline de dados ───────────────────────────
 _dados_state_lock = threading.Lock()
 _dados_running    = False
@@ -84,6 +112,59 @@ def notify_pipeline_dados():
             return
         _dados_running = True
     threading.Thread(target=_run_dados_loop, daemon=True).start()
+
+
+# ── Estado da pipeline de PDFs ────────────────────────────
+_pdfs_state_lock = threading.Lock()
+_pdfs_running    = False
+_pdfs_pending    = False
+
+
+_PDFS_ERROR_LOG = os.path.normpath(os.path.join(
+    _HERE, "..", "..", "Reports", "PDFs", "pipeline_pdfs_stderr.log"
+))
+
+
+def _run_pdfs_loop():
+    """Worker em background: corre pipeline_reports.py; repete se ficou execução pendente."""
+    global _pdfs_running, _pdfs_pending
+    script_dir = os.path.dirname(PIPELINE_PDFS_SCRIPT)
+    while True:
+        try:
+            os.makedirs(os.path.dirname(_PDFS_ERROR_LOG), exist_ok=True)
+            with open(_PDFS_ERROR_LOG, "a", encoding="utf-8") as log_f:
+                log_f.write(f"[INFO] A usar Python: {_PDFS_PYTHON}\n")
+                subprocess.run(
+                    [_PDFS_PYTHON, PIPELINE_PDFS_SCRIPT],
+                    cwd=script_dir,
+                    stdout=log_f,
+                    stderr=log_f,
+                    creationflags=subprocess.CREATE_NO_WINDOW,
+                )
+        except Exception as e:
+            try:
+                with open(_PDFS_ERROR_LOG, "a", encoding="utf-8") as log_f:
+                    log_f.write(f"[ERRO ao lançar subprocess] {e}\n")
+            except Exception:
+                pass
+        with _pdfs_state_lock:
+            if _pdfs_pending:
+                _pdfs_pending = False
+            else:
+                _pdfs_running = False
+                break
+
+
+def notify_pipeline_pdfs():
+    """Dispara a pipeline de PDFs em background após uma inserção.
+    Se já estiver a correr, marca como pendente para reexecutar ao terminar."""
+    global _pdfs_running, _pdfs_pending
+    with _pdfs_state_lock:
+        if _pdfs_running:
+            _pdfs_pending = True
+            return
+        _pdfs_running = True
+    threading.Thread(target=_run_pdfs_loop, daemon=True).start()
 
 
 # ── Helpers ───────────────────────────────────────────────
@@ -245,6 +326,7 @@ def add_report(report: ReportIn):
         conn.commit()
         cur.close()
         conn.close()
+        notify_pipeline_pdfs()
         return {"report_id": report_id, "message": "Relatório inserido com sucesso."}
     except Exception as e:
         if getattr(e, 'pgcode', None) == '23505':
@@ -308,6 +390,7 @@ async def upload_report(
     if img:
         _cache_thumbnail(s3, report_id, img)
 
+    notify_pipeline_pdfs()
     return {"report_id": report_id, "message": "PDF carregado e relatório registado com sucesso."}
 
 
@@ -349,6 +432,8 @@ async def batch_reports(payload: list[dict]):
     conn.commit()
     cur.close()
     conn.close()
+    if inserted > 0:
+        notify_pipeline_pdfs()
     return {"inserted": inserted, "errors": errors}
 
 
@@ -1400,6 +1485,12 @@ def etl_run_dados():
 def etl_status_dados():
     with _dados_state_lock:
         return {"running": _dados_running, "pending": _dados_pending}
+
+
+@app.get("/etl/status/pdfs")
+def etl_status_pdfs():
+    with _pdfs_state_lock:
+        return {"running": _pdfs_running, "pending": _pdfs_pending}
 
 
 @app.post("/etl/run/pdfs")
