@@ -937,6 +937,109 @@ def patch_op_data(file_id: int, data: OpDataPatch):
         raise HTTPException(status_code=500, detail=str(e))
 
 
+# Steps que acontecem depois de o ficheiro já estar no MinIO bronze
+_BRONZE_DONE_STEPS = {"validate_bronze", "transform", "validate_silver", "load"}
+
+
+@app.post("/op_data/{file_id}/retry")
+def retry_op_data(file_id: int):
+    """Repõe um ficheiro FAILED para reprocessamento e aciona o pipeline."""
+    try:
+        conn = get_operational_connection()
+        cur = conn.cursor(cursor_factory=psycopg2.extras.RealDictCursor)
+
+        cur.execute(
+            "SELECT pipeline_status, file_url FROM op_data WHERE file_id = %s",
+            (file_id,)
+        )
+        row = cur.fetchone()
+        if not row:
+            cur.close(); conn.close()
+            raise HTTPException(status_code=404, detail=f"file_id {file_id} não encontrado.")
+        if row["pipeline_status"] not in ("FAILED", "PENDING"):
+            cur.close(); conn.close()
+            raise HTTPException(
+                status_code=409,
+                detail=f"Ficheiro não está em estado FAILED (status atual: {row['pipeline_status']})."
+            )
+
+        # Determinar o step onde falhou para saber de onde recomeçar
+        cur.execute(
+            "SELECT step FROM etl_logs_dados WHERE file_id = %s ORDER BY log_time DESC LIMIT 1",
+            (str(file_id),)
+        )
+        log_row = cur.fetchone()
+        failed_step = log_row["step"] if log_row else None
+
+        # Se já passou pelo bronze, retoma daí; senão recomeça do início
+        if failed_step in _BRONZE_DONE_STEPS or (not row["file_url"] and failed_step):
+            reset_status = "BRONZE_OK"
+        else:
+            reset_status = "PENDING"
+
+        cur.execute(
+            "UPDATE op_data SET pipeline_status = %s, pipeline_error = NULL WHERE file_id = %s",
+            (reset_status, file_id)
+        )
+        cur.execute("DELETE FROM etl_logs_dados WHERE file_id = %s", (str(file_id),))
+        conn.commit()
+        cur.close(); conn.close()
+    except HTTPException:
+        raise
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
+    notify_pipeline_dados()
+    return {"file_id": file_id, "reset_to": reset_status, "message": "Retry iniciado."}
+
+
+@app.post("/op_data/retry_failed")
+def retry_all_failed():
+    """Repõe todos os ficheiros FAILED para reprocessamento e aciona o pipeline."""
+    try:
+        conn = get_operational_connection()
+        cur = conn.cursor(cursor_factory=psycopg2.extras.RealDictCursor)
+
+        cur.execute(
+            "SELECT file_id, file_url FROM op_data WHERE pipeline_status = 'FAILED'"
+        )
+        failed = cur.fetchall()
+        if not failed:
+            cur.close(); conn.close()
+            return {"retried": 0, "message": "Nenhum ficheiro em FAILED."}
+
+        # Para cada ficheiro, determinar o step mais recente
+        resets = []
+        for r in failed:
+            fid = r["file_id"]
+            cur.execute(
+                "SELECT step FROM etl_logs_dados WHERE file_id = %s ORDER BY log_time DESC LIMIT 1",
+                (str(fid),)
+            )
+            log_row = cur.fetchone()
+            failed_step = log_row["step"] if log_row else None
+            if failed_step in _BRONZE_DONE_STEPS or (not r["file_url"] and failed_step):
+                reset_status = "BRONZE_OK"
+            else:
+                reset_status = "PENDING"
+            resets.append((reset_status, fid))
+
+        for reset_status, fid in resets:
+            cur.execute(
+                "UPDATE op_data SET pipeline_status = %s, pipeline_error = NULL WHERE file_id = %s",
+                (reset_status, fid)
+            )
+            cur.execute("DELETE FROM etl_logs_dados WHERE file_id = %s", (str(fid),))
+
+        conn.commit()
+        cur.close(); conn.close()
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
+    notify_pipeline_dados()
+    return {"retried": len(resets), "message": f"{len(resets)} ficheiro(s) repostos e pipeline acionada."}
+
+
 @app.get("/op_report/{report_id}")
 def get_op_report_by_id(report_id: int):
     try:

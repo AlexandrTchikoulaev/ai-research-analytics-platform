@@ -28,12 +28,30 @@ def imf(data):
 
 import pandas as pd
 
-def hfi(file_path: str) -> pd.DataFrame:
-    """
-    Lê o CSV do Human Freedom e devolve um DataFrame normalizado.
-    """
+def hfi(data) -> pd.DataFrame:
+    df = data if isinstance(data, pd.DataFrame) else pd.DataFrame(data)
+    df.columns = df.columns.str.lower().str.strip()
 
-    df = pd.read_csv(file_path)
+    if "iso" not in df.columns:
+        # Caso 1: dois cabeçalhos — códigos de máquina na primeira linha de dados
+        new_cols = [str(v).lower().strip() for v in df.iloc[0]]
+        if "iso" in new_cols and "year" in new_cols:
+            df.columns = new_cols
+            df = df.iloc[1:].reset_index(drop=True)
+        # Caso 2: primeiras colunas sem cabeçalho (unnamed: 0 = year, unnamed: 1 = iso)
+        elif "human freedom" in df.columns:
+            unnamed = [c for c in df.columns if c.startswith("unnamed:")]
+            if len(unnamed) >= 2:
+                df = df.rename(columns={unnamed[0]: "year", unnamed[1]: "iso"})
+            if "human freedom" in df.columns:
+                df = df.rename(columns={"human freedom": "hf_score"})
+
+    missing = [c for c in ["iso", "year", "hf_score"] if c not in df.columns]
+    if missing:
+        raise ValueError(
+            f"Colunas em falta: {missing} | "
+            f"Colunas disponíveis ({len(df.columns)}): {list(df.columns[:15])}"
+        )
 
     result = df[["iso", "year", "hf_score"]].copy()
 
@@ -46,7 +64,9 @@ def hfi(file_path: str) -> pd.DataFrame:
     result["indicator_code"] = "hf"
     result["indicator_name"] = "Human Freedom"
 
-    # Reordenar colunas
+    result["year"]  = pd.to_numeric(result["year"],  errors="coerce").astype("Int64")
+    result["value"] = pd.to_numeric(result["value"], errors="coerce")
+
     result = result[[
         "location_code",
         "indicator_code",
@@ -55,7 +75,7 @@ def hfi(file_path: str) -> pd.DataFrame:
         "value"
     ]]
 
-    return result
+    return result.dropna(subset=["location_code", "year", "value"])
 
 
 # ------------------------------------------------------------------
@@ -112,6 +132,36 @@ def hfi_values(df: pd.DataFrame) -> pd.DataFrame:
     })
 
     return out
+
+
+import re as _re
+
+def epi(data) -> pd.DataFrame:
+    df = data if isinstance(data, pd.DataFrame) else pd.DataFrame(data)
+
+    # Colunas de valor: INDICADOR.raw.ANO
+    value_cols = [c for c in df.columns if _re.match(r'^.+\.raw\.\d{4}$', c, _re.IGNORECASE)]
+    if not value_cols:
+        raise ValueError(f"Nenhuma coluna INDICADOR.raw.ANO encontrada. Colunas: {list(df.columns[:10])}")
+
+    indicator_code = value_cols[0].split(".")[0].upper()
+
+    iso_col = next((c for c in df.columns if c.lower() == "iso"), None)
+    if iso_col is None:
+        raise ValueError("Coluna 'iso' não encontrada.")
+
+    melted = df[[iso_col] + value_cols].melt(id_vars=iso_col, var_name="_col", value_name="value")
+    melted["year"]           = melted["_col"].str.extract(r'(\d{4})$').astype(int)
+    melted["value"]          = pd.to_numeric(melted["value"], errors="coerce")
+    melted["location_code"]  = melted[iso_col]
+    melted["indicator_code"] = indicator_code
+    melted["indicator_name"] = indicator_code
+
+    return (
+        melted[["location_code", "indicator_code", "indicator_name", "year", "value"]]
+        .dropna(subset=["location_code", "year", "value"])
+        .reset_index(drop=True)
+    )
 
 
 import pandas as pd

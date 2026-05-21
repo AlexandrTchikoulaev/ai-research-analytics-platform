@@ -1543,8 +1543,6 @@
       <h1>ChatBot</h1>
     </div>
     <div style="display:flex;align-items:center;gap:1rem;">
-      <span id="chat-data-text" style="font-size:0.73rem;color:var(--text-muted);opacity:0.75;"></span>
-      <button class="btn-ghost" id="btn-update-pdfs" onclick="runPipeline('pdfs', 'btn-update-pdfs')">Atualizar PDFs</button>
       <div class="section-toggle">
         <button class="active" id="ctog-relatorios" onclick="switchChat('relatorios')">Relatórios</button>
         <button id="ctog-dados" onclick="switchChat('dados')">Dados</button>
@@ -1614,10 +1612,6 @@
         <div class="chk-dropdown-menu" id="dash-rep-dropdown-menu" style="display:none;"></div>
       </div>
       <input type="hidden" id="dash-report-select"/>
-    </div>
-    <div style="display:flex;align-items:center;gap:1rem;">
-      <span id="dash-data-text" style="font-size:0.73rem;color:var(--text-muted);opacity:0.75;"></span>
-      <button class="btn-ghost" id="btn-update-dash" onclick="runPipeline('dados', 'btn-update-dash')">Atualizar dados</button>
     </div>
   </div>
 
@@ -1785,7 +1779,6 @@
       <h1>Ficheiros Inválidos</h1>
     </div>
     <div style="display:flex;align-items:center;gap:1rem;">
-      <span id="etl-data-text" style="font-size:0.73rem;color:var(--text-muted);opacity:0.75;">A carregar...</span>
       <button class="btn-ghost" id="btn-rebuild-thumbs" onclick="rebuildThumbnails()" title="Gera thumbnails em falta para PDFs já no MinIO">Thumbnails</button>
       <button class="btn-ghost" id="btn-reset-pipeline" onclick="resetPipeline()" title="Apaga todos os dados do pipeline — MinIO, warehouse e logs" style="color:var(--red);border-color:var(--red);opacity:0.7;">Reset Pipeline</button>
       <div class="section-toggle">
@@ -2287,7 +2280,11 @@
   </div>
 </div>
 
-<div id="err-hover-card" style="display:none;position:fixed;z-index:9999;max-width:420px;background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);padding:0.75rem 1rem;box-shadow:0 4px 16px rgba(0,0,0,0.25);pointer-events:none;">
+<div id="err-hover-card" style="display:none;position:fixed;z-index:9999;max-width:420px;background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);padding:0.75rem 1rem;box-shadow:0 4px 16px rgba(0,0,0,0.25);" onmouseenter="clearTimeout(_errHideTimer)" onmouseleave="hideErrCard()">
+  <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:0.4rem;">
+    <span style="font-size:0.7rem;color:var(--text-muted)">Erro</span>
+    <button onclick="copyErrCard()" style="font-size:0.7rem;padding:2px 8px;cursor:pointer;border:1px solid var(--border);border-radius:4px;background:var(--surface);">copiar</button>
+  </div>
   <pre id="err-hover-text" style="margin:0;white-space:pre-wrap;word-break:break-all;font-family:var(--mono);font-size:0.8rem;max-height:260px;overflow-y:auto;"></pre>
 </div>
 
@@ -2308,11 +2305,10 @@
   const ENDPOINT_TIMESERIES     = `${API_BASE}/dashboard/timeseries`;
   const ENDPOINT_DASH_REPORTS   = `${API_BASE}/dashboard/reports`;
   const ENDPOINT_ETL_LOGS     = `${API_BASE}/etl_logs`;
-  const ENDPOINT_ETL_DATA     = `${API_BASE}/etl_data`;
   const ENDPOINT_ETL_LOGS_DADOS = `${API_BASE}/etl_logs/dados`;
   const ENDPOINT_ETL_LOGS_PDFS  = `${API_BASE}/etl_logs/pdfs`;
 
-  const allRows = { report: [], data: [], etlData: [], etlLogsDados: [], etlLogsPdfs: [] };
+  const allRows = { report: [], data: [], etlLogsDados: [], etlLogsPdfs: [] };
   let selectedReportId = null;
   let reportViewMode = 'cards'; // 'table' | 'cards'
   const thumbnailCache = {};
@@ -2352,7 +2348,6 @@
     }
     if (name === 'insert') { loadExtractFunctions(); loadReportDropdown(); }
     if (name === 'chat') {
-      loadEtlData();
       const isRel = document.getElementById('ctog-relatorios').classList.contains('active');
       const box = document.getElementById(isRel ? 'chat-messages' : 'chat-messages-dados');
       if (box) requestAnimationFrame(() => { box.scrollTop = box.scrollHeight; });
@@ -2361,18 +2356,14 @@
       const contentVisible = document.getElementById('dash-content').style.display !== 'none';
       if (!contentVisible) initDashboard();
       else _refreshDashReportMenu();
-      loadEtlData();
     }
     if (name === 'etl') {
-      loadEtlData();
       const activeEtlTab = document.getElementById('etog-dados').classList.contains('active') ? 'dados' : 'pdfs';
       loadEtlLogsTable(activeEtlTab);
     }
   }
 
-  // Carregar funções e timestamps logo no arranque
   loadExtractFunctions();
-  loadEtlData();
   loadTable('report');
 
   function toggleTheme() {
@@ -2432,19 +2423,7 @@
   // ── PIPELINE DE DADOS — indicador de estado ──
   let _dadosPollId = null;
 
-  function _setPipelineDadosRunning(running) {
-    const btnDash = document.getElementById('btn-update-dash');
-    if (btnDash) {
-      if (running) {
-        btnDash.dataset.origText = btnDash.dataset.origText || btnDash.textContent;
-        btnDash.textContent = 'A processar...';
-        btnDash.disabled = true;
-      } else {
-        btnDash.textContent = btnDash.dataset.origText || 'Atualizar dados';
-        btnDash.disabled = false;
-      }
-    }
-  }
+  function _setPipelineDadosRunning(running) {}
 
   function _watchDadosPipeline() {
     if (_dadosPollId !== null) return;
@@ -3094,14 +3073,6 @@
     document.getElementById('chat-sec-dados').style.display      = isRel ? 'none' : '';
     document.getElementById('ctog-relatorios').classList.toggle('active', isRel);
     document.getElementById('ctog-dados').classList.toggle('active', !isRel);
-    const btn = document.getElementById('btn-update-pdfs');
-    if (isRel) {
-      btn.textContent = 'Atualizar PDFs';
-      btn.onclick = () => runPipeline('pdfs', 'btn-update-pdfs');
-    } else {
-      btn.textContent = 'Atualizar dados';
-      btn.onclick = () => runPipeline('dados', 'btn-update-pdfs');
-    }
     updateChatDataText();
   }
 
@@ -3894,36 +3865,9 @@
     document.getElementById('etl-section-dados').style.display = isRel ? 'none' : '';
     document.getElementById('etog-relatorios').classList.toggle('active', isRel);
     document.getElementById('etog-dados').classList.toggle('active', !isRel);
-    updateEtlDataText(tipo);
     loadEtlLogsTable(isRel ? 'pdfs' : 'dados');
   }
 
-  function _getLastRunDate(processName) {
-    const row = allRows.etlData && allRows.etlData.find(r => r.process_name === processName);
-    return (row && row.last_run) ? row.last_run.replace('T', ' ').slice(0, 19) : '—';
-  }
-
-  function updateEtlDataText(tipo) {
-    const el = document.getElementById('etl-data-text');
-    const processName = tipo === 'relatorios' ? 'etl_pdfs' : 'etl_dados';
-    const label = tipo === 'relatorios' ? 'última atualização de relatórios' : 'última atualização de dados';
-    el.textContent = `${label}: ${_getLastRunDate(processName)}`;
-  }
-
-  function updateChatDataText() {
-    const el = document.getElementById('chat-data-text');
-    if (!el) return;
-    const isRel = document.getElementById('ctog-relatorios')?.classList.contains('active');
-    const processName = isRel ? 'etl_pdfs' : 'etl_dados';
-    const label = isRel ? 'última atualização de relatórios' : 'última atualização de dados';
-    el.textContent = `${label}: ${_getLastRunDate(processName)}`;
-  }
-
-  function updateDashDataText() {
-    const el = document.getElementById('dash-data-text');
-    if (!el) return;
-    el.textContent = `última atualização de dados: ${_getLastRunDate('etl_dados')}`;
-  }
 
   let _etlEditFnsLoaded = false;
   async function _loadEtlEditFunctions() {
@@ -3970,18 +3914,24 @@
     }
   }
 
+  let _errHideTimer = null;
   function showErrCard(e, msg) {
+    clearTimeout(_errHideTimer);
     const card = document.getElementById('err-hover-card');
     document.getElementById('err-hover-text').textContent = msg;
     card.style.display = 'block';
     const r = e.target.getBoundingClientRect();
-    const top = r.bottom + 6;
-    const left = Math.min(r.left, window.innerWidth - 440);
-    card.style.top = top + 'px';
-    card.style.left = Math.max(8, left) + 'px';
+    card.style.top  = (r.bottom + 6) + 'px';
+    card.style.left = Math.max(8, Math.min(r.left, window.innerWidth - 440)) + 'px';
   }
   function hideErrCard() {
-    document.getElementById('err-hover-card').style.display = 'none';
+    _errHideTimer = setTimeout(() => {
+      document.getElementById('err-hover-card').style.display = 'none';
+    }, 120);
+  }
+  function copyErrCard() {
+    const txt = document.getElementById('err-hover-text').textContent;
+    navigator.clipboard.writeText(txt).then(() => showToast('Copiado!', 'success'));
   }
 
   async function openDataEditModal(fileId) {
@@ -4187,19 +4137,6 @@
     }
   }
 
-  async function loadEtlData() {
-    try {
-      const res = await fetch(ENDPOINT_ETL_DATA);
-      if (!res.ok) throw new Error(`HTTP ${res.status}`);
-      allRows.etlData = await res.json();
-    } catch (e) {
-      // mantém dados anteriores se já estiverem carregados
-    }
-    const activeEtlTab = document.getElementById('etog-relatorios').classList.contains('active') ? 'relatorios' : 'dados';
-    updateEtlDataText(activeEtlTab);
-    updateChatDataText();
-    updateDashDataText();
-  }
 
   async function loadEtlLogsTable(tipo) {
     const endpoint = tipo === 'pdfs' ? ENDPOINT_ETL_LOGS_PDFS : ENDPOINT_ETL_LOGS_DADOS;
@@ -4248,8 +4185,8 @@
         }
         const full = String(val);
         const truncated = truncate(full, 60);
-        if (c === 'error_message' && full.length > 60) {
-          return `<td class="td-wide" onmouseenter="showErrCard(event,${escHtml(JSON.stringify(full))})" onmouseleave="hideErrCard()">${escHtml(truncated)}</td>`;
+        if (c === 'error_message') {
+          return `<td class="td-wide" style="cursor:pointer;" title="Clica para copiar" onmouseenter="showErrCard(event,${escHtml(JSON.stringify(full))})" onmouseleave="hideErrCard()" onclick="navigator.clipboard.writeText(${escHtml(JSON.stringify(full))}).then(()=>showToast('Copiado!','success'))">${escHtml(truncated)}</td>`;
         }
         const titleAttr = full.length > 60 ? ` title="${escHtml(full)}"` : '';
         return `<td class="td-wide"${titleAttr}>${escHtml(truncated)}</td>`;
@@ -4383,7 +4320,7 @@
         success ? 'Pipeline resetado. Podes voltar a correr os pipelines.' : 'Erro ao resetar pipeline.',
         success ? 'success' : 'error'
       );
-      if (success) { loadEtlLogsTable('dados'); loadEtlLogsTable('pdfs'); loadEtlData(); }
+      if (success) { loadEtlLogsTable('dados'); loadEtlLogsTable('pdfs'); }
     } catch (e) {
       showToast(`Erro: ${e.message}`, 'error');
     } finally {
@@ -4447,7 +4384,6 @@
         showToast('Pipeline concluído com sucesso.', 'success');
       }
 
-      loadEtlData();
       if (tipo === 'dados') initDashboard();
       setTimeout(() => { btn.textContent = originalText; btn.style.color = ''; btn.disabled = false; }, 4000);
 
