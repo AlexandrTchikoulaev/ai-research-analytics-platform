@@ -28,40 +28,18 @@ OLLAMA_TIMEOUT = 300  # segundos
 
 # ── System prompts especializados (exemplos inline, curtos) ───────────────────
 
-_SYSTEM_INDICATOR = """\
-You are a data engineer. Generate a Python function that extracts a list of indicators.
-
-Output DataFrame must have EXACTLY 2 columns: code (str), name (str).
-
-Rules:
-- Function argument is `data` (dict if JSON, DataFrame if CSV/Excel)
-- pandas is available as `pd` — do NOT import anything
-- If no name available, use code as name
-- Return ONLY the function code, no markdown, no comments
-
-JSON example:
-def f(data):
-    items = data.get("indicators", {})
-    return pd.DataFrame({"code": list(items.keys()), "name": [v.get("label") for v in items.values()]})
-
-CSV/Excel example:
-def f(data):
-    skip = {"ISO_code", "countries", "region", "year", "rank"}
-    cols = [c for c in data.columns if c not in skip]
-    return pd.DataFrame({"code": cols, "name": cols})
-"""
-
-_SYSTEM_VALUE = """\
+_SYSTEM_COMBINED = """\
 You are a data engineer. Generate a Python function that extracts data values.
 
-Output DataFrame must have EXACTLY 4 columns:
-  location_code (str), indicator_code (str), year (int), value (float)
+Output DataFrame must have EXACTLY 5 columns:
+  location_code (str), indicator_code (str), indicator_name (str), year (int), value (float)
 
 Rules:
 - Function argument is `data` (dict if JSON, DataFrame if CSV/Excel)
 - pandas is available as `pd` — do NOT import anything
 - Drop rows where location_code, indicator_code, year or value are None/NaN
 - year must be int. In JSON all keys are strings — use int(year) directly, never isinstance checks
+- If no indicator name is available, use indicator_code as indicator_name
 - CRITICAL: any value in the JSON may be null at any nesting level. Always guard nested .items() calls:
     for ind, locs in data.get("values", {}).items() if isinstance(locs, dict)
     for loc, yrs in locs.items() if isinstance(yrs, dict)
@@ -69,15 +47,16 @@ Rules:
 
 JSON example:
 def f(data):
-    rows = [{"location_code": loc, "indicator_code": ind, "year": int(yr), "value": float(v) if v is not None else None} for ind, locs in data.get("values", {}).items() if isinstance(locs, dict) for loc, yrs in locs.items() if isinstance(yrs, dict) for yr, v in yrs.items()]
+    inds = data.get("indicators", {})
+    rows = [{"location_code": loc, "indicator_code": ind, "indicator_name": inds.get(ind, {}).get("label", ind), "year": int(yr), "value": float(v) if v is not None else None} for ind, locs in data.get("values", {}).items() if isinstance(locs, dict) for loc, yrs in locs.items() if isinstance(yrs, dict) for yr, v in yrs.items()]
     return pd.DataFrame(rows).dropna(subset=["location_code","indicator_code","year","value"])
 
 CSV/Excel example:
 def f(data):
     skip = {"ISO_code", "countries", "region", "year", "rank"}
     ind_cols = [c for c in data.columns if c not in skip]
-    rows = [{"location_code": r["ISO_code"], "indicator_code": c, "year": int(r["year"]), "value": float(r[c])} for _, r in data.iterrows() for c in ind_cols if not pd.isna(r[c])]
-    return pd.DataFrame(rows).dropna(subset=["location_code","indicator_code","year"])
+    rows = [{"location_code": r["ISO_code"], "indicator_code": c, "indicator_name": c, "year": int(r["year"]), "value": float(r[c])} for _, r in data.iterrows() for c in ind_cols if not pd.isna(r[c])]
+    return pd.DataFrame(rows).dropna(subset=["location_code","indicator_code","year","value"])
 """
 
 # ── Helpers internos ──────────────────────────────────────────────────────────
@@ -245,14 +224,10 @@ def _call_ollama(system_prompt: str, user_prompt: str, temperature: float = 0.1)
 
 # ── Validador ─────────────────────────────────────────────────────────────────
 
-_REQUIRED_COLS = {
-    "indicator": {"code", "name"},
-    "value":     {"location_code", "indicator_code", "year", "value"},
-    "combined":  {"location_code", "indicator_code", "indicator_name", "year", "value"},
-}
+_REQUIRED_COLS = {"location_code", "indicator_code", "indicator_name", "year", "value"}
 
 
-def _validate(code: str, parsed_data, file_type: str, function_name: str) -> dict:
+def _validate(code: str, parsed_data, function_name: str) -> dict:
     namespace = {"pd": pd}
     try:
         exec(compile(code, "<generated>", "exec"), namespace)
@@ -273,7 +248,7 @@ def _validate(code: str, parsed_data, file_type: str, function_name: str) -> dic
     if df.empty:
         return {"valid": False, "error": "A função devolveu um DataFrame vazio.", "preview": None}
 
-    missing = _REQUIRED_COLS[file_type] - set(df.columns)
+    missing = _REQUIRED_COLS - set(df.columns)
     if missing:
         return {"valid": False, "error": f"Colunas em falta no output: {sorted(missing)}", "preview": None}
 
@@ -283,31 +258,22 @@ def _validate(code: str, parsed_data, file_type: str, function_name: str) -> dic
 
 # ── API pública ───────────────────────────────────────────────────────────────
 
-def generate_and_validate(content: bytes, file_type: str) -> dict:
+def generate_and_validate(content: bytes) -> dict:
     """
     Gera e valida automaticamente uma função de transformação silver.
 
     Args:
-        content:   bytes do ficheiro de dados
-        file_type: "indicator" ou "value"
+        content: bytes do ficheiro de dados
 
     Returns:
         dict com as chaves:
           function_name, code, fmt, generated, valid, error, preview
     """
-    if file_type not in ("indicator", "value"):
-        return {
-            "function_name": None, "code": None, "fmt": None,
-            "generated": False, "valid": False,
-            "error": f"file_type inválido: '{file_type}'. Use 'indicator' ou 'value'.",
-            "preview": None,
-        }
-
     fmt           = _detect_format(content)
-    function_name = _make_function_name(fmt, file_type, content)
+    function_name = _make_function_name(fmt, "value", content)
 
     try:
-        sample_str, parsed_data = _build_sample(content, fmt, file_type)
+        sample_str, parsed_data = _build_sample(content, fmt, "value")
     except Exception as e:
         return {
             "function_name": function_name, "code": None, "fmt": fmt,
@@ -316,12 +282,9 @@ def generate_and_validate(content: bytes, file_type: str) -> dict:
             "preview": None,
         }
 
-    system_prompt = _SYSTEM_INDICATOR if file_type == "indicator" else _SYSTEM_VALUE
-
     def _base_user_prompt():
         return (
-            f'Generate a transformation function of type "{file_type}" '
-            f"for the following {fmt.upper()} file.\n\n"
+            f"Generate a transformation function for the following {fmt.upper()} file.\n\n"
             f"FILE SAMPLE:\n{sample_str}\n\n"
             f"FUNCTION NAME: {function_name}\n\n"
             f"Return ONLY the Python function code. No markdown, no explanations."
@@ -330,7 +293,7 @@ def generate_and_validate(content: bytes, file_type: str) -> dict:
     code = None
     last_error = None
 
-    for attempt in range(1, 4):  # máximo 3 tentativas
+    for attempt in range(1, 4):
         if attempt == 1:
             user_prompt = _base_user_prompt()
             temperature = 0.1
@@ -343,10 +306,10 @@ def generate_and_validate(content: bytes, file_type: str) -> dict:
                 f"  {hint}\n"
                 f"Rewrite the function from scratch fixing this issue."
             )
-            temperature = 0.3  # mais variação para não repetir o mesmo código
+            temperature = 0.3
 
         try:
-            raw  = _call_ollama(system_prompt, user_prompt, temperature=temperature)
+            raw  = _call_ollama(_SYSTEM_COMBINED, user_prompt, temperature=temperature)
             code = _patch_items_guards(_extract_code(raw))
         except Exception as e:
             return {
@@ -356,7 +319,7 @@ def generate_and_validate(content: bytes, file_type: str) -> dict:
                 "preview": None,
             }
 
-        validation = _validate(code, parsed_data, file_type, function_name)
+        validation = _validate(code, parsed_data, function_name)
         if validation["valid"]:
             break
         last_error = validation["error"]
@@ -377,16 +340,16 @@ def generate_and_validate(content: bytes, file_type: str) -> dict:
 if __name__ == "__main__":
     import sys
 
-    if len(sys.argv) < 3:
-        print("Uso: python silver_function_generator.py <ficheiro> <indicator|value>")
+    if len(sys.argv) < 2:
+        print("Uso: python silver_function_generator.py <ficheiro>")
         sys.exit(1)
 
-    path, ftype = sys.argv[1], sys.argv[2]
+    path = sys.argv[1]
     with open(path, "rb") as f:
         data = f.read()
 
-    print(f"A gerar função para '{path}' (tipo: {ftype})...")
-    result = generate_and_validate(data, ftype)
+    print(f"A gerar função para '{path}'...")
+    result = generate_and_validate(data)
 
     print(f"\nFORMATO DETETADO : {result['fmt']}")
     print(f"NOME DA FUNÇÃO   : {result['function_name']}")

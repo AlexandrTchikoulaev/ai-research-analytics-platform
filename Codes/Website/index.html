@@ -1373,19 +1373,6 @@
         <label>nome</label>
         <input type="text" id="d-file_name" placeholder="nome_ficheiro.json"/>
       </div>
-      <div class="form-group full">
-        <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:0.4rem;">
-          <label style="margin:0;">funções</label>
-          <button type="button" class="btn-ghost" onclick="openGenerateModal()" style="font-size:0.72rem;padding:0.18rem 0.55rem;letter-spacing:0.06em;">Gerar</button>
-        </div>
-        <div class="chk-dropdown" id="fn-dropdown">
-          <button type="button" class="chk-dropdown-toggle" id="fn-dropdown-toggle" onclick="toggleFnDropdown()">
-            <span id="fn-dropdown-label">— Seleciona —</span>
-            <span>▾</span>
-          </button>
-          <div class="chk-dropdown-menu" id="fn-dropdown-menu" style="display:none;"></div>
-        </div>
-      </div>
     </div>
     <div class="form-actions">
       <button class="btn-primary" id="btn-data-submit" onclick="submitDataAuto()">Adicionar Ficheiro</button>
@@ -1400,7 +1387,6 @@
             <tr>
               <th style="text-align:left;padding:0.25rem 0.5rem;border-bottom:1px solid var(--border);color:var(--text-muted);font-weight:400;">#</th>
               <th style="text-align:left;padding:0.25rem 0.5rem;border-bottom:1px solid var(--border);color:var(--text-muted);font-weight:400;">Ficheiro</th>
-              <th style="text-align:left;padding:0.25rem 0.5rem;border-bottom:1px solid var(--border);color:var(--text-muted);font-weight:400;">Função</th>
             </tr>
           </thead>
           <tbody id="preview-rows-body"></tbody>
@@ -1432,8 +1418,8 @@
     <div class="form-group full" style="margin-bottom:1rem;">
       <label>JSON</label>
       <textarea id="d-batch-json" style="min-height:180px;font-size:0.78rem;" placeholder='[
-  { "link": "https://api.imf.org/indicadores", "função": "funcao_imf_indicadores" },
-  { "link": "https://api.imf.org/valores", "função": "funcao_imf_values" }
+  { "link": "https://api.imf.org/indicadores" },
+  { "link": "https://api.imf.org/valores" }
 ]'></textarea>
     </div>
     <div class="form-actions">
@@ -1784,6 +1770,7 @@
       <div class="section-toggle">
         <button class="active" id="etog-relatorios" onclick="switchEtlLog('relatorios')">Relatórios</button>
         <button id="etog-dados" onclick="switchEtlLog('dados')">Dados</button>
+        <button id="etog-mapeamentos" onclick="switchEtlLog('mapeamentos')">Mapeamentos</button>
       </div>
     </div>
   </div>
@@ -1829,6 +1816,41 @@
         </thead>
         <tbody id="table-body-etl-logs-pdfs">
           <tr><td colspan="7"><div class="state-box"><p>A carregar dados...</p></div></td></tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+
+  <!-- Secção Mapeamentos -->
+  <div id="etl-section-mapeamentos" style="display:none;">
+    <div class="form-card" style="margin-bottom:1.5rem;">
+      <div class="form-grid" style="grid-template-columns:1fr 1fr auto;align-items:end;gap:0.75rem;">
+        <div class="form-group" style="margin:0;">
+          <label>source code</label>
+          <select id="map-source_code" style="width:100%;">
+            <option value="">— Seleciona —</option>
+          </select>
+        </div>
+        <div class="form-group" style="margin:0;">
+          <label>função</label>
+          <select id="map-extract_function" style="width:100%;">
+            <option value="">— Seleciona —</option>
+          </select>
+        </div>
+        <button class="btn-primary" onclick="saveFunctionMapping()" style="white-space:nowrap;">Guardar</button>
+      </div>
+    </div>
+    <div class="table-wrapper">
+      <table>
+        <thead>
+          <tr>
+            <th>Source Code</th>
+            <th>Função</th>
+            <th style="width:60px;"></th>
+          </tr>
+        </thead>
+        <tbody id="table-body-mapeamentos">
+          <tr><td colspan="3"><div class="state-box"><p>A carregar...</p></div></td></tr>
         </tbody>
       </table>
     </div>
@@ -2346,7 +2368,7 @@
       const activeTab = document.getElementById('tsec-dados').style.display === 'none' ? 'report' : 'data';
       loadTable(activeTab);
     }
-    if (name === 'insert') { loadExtractFunctions(); loadReportDropdown(); }
+    if (name === 'insert') { loadReportDropdown(); }
     if (name === 'chat') {
       const isRel = document.getElementById('ctog-relatorios').classList.contains('active');
       const box = document.getElementById(isRel ? 'chat-messages' : 'chat-messages-dados');
@@ -2529,12 +2551,6 @@
   }
 
   document.addEventListener('click', function(e) {
-    const fnDd = document.getElementById('fn-dropdown');
-    if (fnDd && !fnDd.contains(e.target)) {
-      document.getElementById('fn-dropdown-menu').style.display = 'none';
-      const t = document.getElementById('fn-dropdown-toggle');
-      if (t) t.classList.remove('open');
-    }
     const repDd = document.getElementById('rep-dropdown');
     if (repDd && !repDd.contains(e.target)) {
       document.getElementById('rep-dropdown-menu').style.display = 'none';
@@ -2651,12 +2667,9 @@
   async function acceptGeneratedFunction() {
     if (!_generatedFnName) return;
     const name = _generatedFnName;
-    await loadExtractFunctions();
-    const cb = document.querySelector(`#fn-dropdown-menu input[type="checkbox"][value="${CSS.escape(name)}"]`);
-    if (cb) { cb.checked = true; }
-    updateFnDropdownLabel();
     document.getElementById('gen-fn-modal').style.display = 'none';
-    showToast(`Função "${name}" selecionada.`);
+    showToast(`Função "${name}" gerada e guardada. Pode associá-la a um source code no Painel de Controlo → Mapeamentos.`);
+    _generatedFnName = null;
   }
 
   function getSelectedFns() {
@@ -2672,37 +2685,29 @@
   }
 
   function updateUploadPreview() {
-    const fns   = getSelectedFns();
-    const files = Array.from(document.getElementById('d-up-file').files).map(f => f.name);
+    const files   = Array.from((document.getElementById('d-up-file') || {files: []}).files).map(f => f.name);
     const summary = document.getElementById('upload-summary');
     const preview = document.getElementById('upload-preview');
-
-    const tbody    = document.getElementById('preview-rows-body');
-    const table    = document.getElementById('preview-rows-table');
+    const tbody   = document.getElementById('preview-rows-body');
+    const table   = document.getElementById('preview-rows-table');
     const rowLabel = document.getElementById('preview-rows-label');
 
-    if (fns.length && files.length) {
-      const rows = [];
-      files.forEach(file => fns.forEach(fn => rows.push({ file, fn })));
-      tbody.innerHTML = rows.map((r, i) => `
+    if (files.length) {
+      tbody.innerHTML = files.map((file, i) => `
         <tr>
           <td style="padding:0.25rem 0.5rem;color:var(--text-muted);">${i + 1}</td>
-          <td style="padding:0.25rem 0.5rem;">${r.file}</td>
-          <td style="padding:0.25rem 0.5rem;">${r.fn}</td>
+          <td style="padding:0.25rem 0.5rem;">${file}</td>
         </tr>`).join('');
       table.style.display = 'table';
       rowLabel.style.display = 'block';
       preview.style.display = 'block';
-      summary.textContent = `${fns.length} ${fns.length !== 1 ? 'funções' : 'função'} · ${files.length} ficheiro${files.length !== 1 ? 's' : ''} · ${rows.length} linha${rows.length !== 1 ? 's' : ''}`;
+      summary.textContent = `${files.length} ficheiro${files.length !== 1 ? 's' : ''}`;
     } else {
       table.style.display = 'none';
       rowLabel.style.display = 'none';
       tbody.innerHTML = '';
       preview.style.display = 'none';
-      const parts = [];
-      if (fns.length) parts.push(`${fns.length} ${fns.length !== 1 ? 'funções' : 'função'}`);
-      if (files.length) parts.push(`${files.length} ficheiro${files.length !== 1 ? 's' : ''}`);
-      summary.textContent = parts.join(' · ');
+      summary.textContent = '';
     }
   }
 
@@ -2729,9 +2734,7 @@
     if (nameEl) nameEl.value = '';
     document.getElementById('d-up-rid').value = '';
     document.getElementById('rep-dropdown-label').textContent = '— Clica para carregar —';
-    document.querySelectorAll('#fn-dropdown-menu input[type="checkbox"]').forEach(c => c.checked = false);
-    updateFnDropdownLabel();
-    _generatedFnName = null;
+    updateUploadPreview();
   }
 
   async function submitOpData() {
@@ -3860,12 +3863,94 @@
 
   // ── ETL ──
   function switchEtlLog(tipo) {
-    const isRel = tipo === 'relatorios';
-    document.getElementById('etl-section-pdfs').style.display  = isRel ? '' : 'none';
-    document.getElementById('etl-section-dados').style.display = isRel ? 'none' : '';
+    const isMaps = tipo === 'mapeamentos';
+    const isRel  = tipo === 'relatorios';
+    document.getElementById('etl-section-pdfs').style.display        = isRel  ? '' : 'none';
+    document.getElementById('etl-section-dados').style.display       = (!isRel && !isMaps) ? '' : 'none';
+    document.getElementById('etl-section-mapeamentos').style.display = isMaps ? '' : 'none';
     document.getElementById('etog-relatorios').classList.toggle('active', isRel);
-    document.getElementById('etog-dados').classList.toggle('active', !isRel);
-    loadEtlLogsTable(isRel ? 'pdfs' : 'dados');
+    document.getElementById('etog-dados').classList.toggle('active', !isRel && !isMaps);
+    document.getElementById('etog-mapeamentos').classList.toggle('active', isMaps);
+    if (isMaps) loadMappings();
+    else loadEtlLogsTable(isRel ? 'pdfs' : 'dados');
+  }
+
+  // ── MAPEAMENTOS ──
+  async function loadMappings() {
+    const tbody = document.getElementById('table-body-mapeamentos');
+    tbody.innerHTML = '<tr><td colspan="3"><div class="state-box"><div class="spinner"></div><p>A carregar...</p></div></td></tr>';
+    try {
+      const [mapsRes, fnsRes, srcsRes] = await Promise.all([
+        fetch(`${API_BASE}/function_mappings`),
+        fetch(`${API_BASE}/extract_functions`),
+        fetch(`${API_BASE}/source_codes`),
+      ]);
+      const maps = await mapsRes.json();
+      const fns  = await fnsRes.json();
+      const srcs = await srcsRes.json();
+
+      // Preencher dropdowns do formulário
+      const srcSel = document.getElementById('map-source_code');
+      const fnSel  = document.getElementById('map-extract_function');
+      srcSel.innerHTML = '<option value="">— Seleciona —</option>' +
+        srcs.map(s => `<option value="${escHtml(s)}">${escHtml(s)}</option>`).join('');
+      fnSel.innerHTML = '<option value="">— Seleciona —</option>' +
+        fns.map(f => `<option value="${escHtml(f.name)}">${escHtml(f.name)}</option>`).join('');
+
+      // Preencher selects com valor atual do mapeamento existente
+      const mapped = Object.fromEntries(maps.map(m => [m.source_code, m.extract_function]));
+      if (maps.length === 0) {
+        tbody.innerHTML = '<tr><td colspan="3"><div class="state-box"><p>Sem mapeamentos definidos.</p></div></td></tr>';
+        return;
+      }
+      tbody.innerHTML = maps.map(m => `
+        <tr>
+          <td><span class="badge">${escHtml(m.source_code)}</span></td>
+          <td style="font-family:var(--mono);font-size:0.8rem;">${escHtml(m.extract_function)}</td>
+          <td style="text-align:center;">
+            <button class="btn-ghost" style="font-size:0.72rem;padding:0.15rem 0.45rem;color:var(--red);border-color:var(--red);"
+              onclick="deleteFunctionMapping('${escHtml(m.source_code)}', this)">Apagar</button>
+          </td>
+        </tr>`).join('');
+    } catch (e) {
+      tbody.innerHTML = `<tr><td colspan="3"><div class="state-box"><p>Erro: ${escHtml(e.message)}</p></div></td></tr>`;
+    }
+  }
+
+  async function saveFunctionMapping() {
+    const source_code      = document.getElementById('map-source_code').value;
+    const extract_function = document.getElementById('map-extract_function').value;
+    if (!source_code || !extract_function) {
+      showToast('Seleciona um source code e uma função.', 'error'); return;
+    }
+    try {
+      const res = await fetch(`${API_BASE}/function_mappings`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ source_code, extract_function }),
+      });
+      if (!res.ok) throw new Error((await res.json()).detail || `HTTP ${res.status}`);
+      showToast(`Mapeamento '${source_code}' → '${extract_function}' guardado.`);
+      document.getElementById('map-source_code').value = '';
+      document.getElementById('map-extract_function').value = '';
+      loadMappings();
+    } catch (e) {
+      showToast(e.message, 'error');
+    }
+  }
+
+  async function deleteFunctionMapping(source_code, btn) {
+    if (!confirm(`Apagar mapeamento para '${source_code}'?`)) return;
+    btn.disabled = true;
+    try {
+      const res = await fetch(`${API_BASE}/function_mappings/${encodeURIComponent(source_code)}`, { method: 'DELETE' });
+      if (!res.ok) throw new Error((await res.json()).detail || `HTTP ${res.status}`);
+      showToast(`Mapeamento '${source_code}' apagado.`);
+      loadMappings();
+    } catch (e) {
+      showToast(e.message, 'error');
+      btn.disabled = false;
+    }
   }
 
 
@@ -4466,7 +4551,6 @@
     const report_id = document.getElementById('d-up-rid').value;
     const file_url  = document.getElementById('d-file_url').value.trim();
     const file_name = document.getElementById('d-file_name').value.trim();
-    const fns = getSelectedFns();
     if (!report_id) { showToast('O campo relatório é obrigatório.', 'error'); return; }
     if (!file_url) { showToast('O campo URL é obrigatório.', 'error'); return; }
     try { const _u = new URL(file_url); if (!['http:', 'https:'].includes(_u.protocol)) throw 0; }
@@ -4475,17 +4559,14 @@
     btn.disabled = true; btn.textContent = 'A inserir...';
     _showLeftIndicator('A armazenar dados');
     try {
-      const fnList = fns.length ? fns : [''];
-      for (const extract_function of fnList) {
-        const res = await fetch(ENDPOINT_OP_DATA, {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ report_id: parseInt(report_id), file_url, file_name, extract_function })
-        });
-        if (!res.ok) {
-          const err = await res.json().catch(() => ({ detail: `HTTP ${res.status}` }));
-          throw new Error(err.detail || `HTTP ${res.status}`);
-        }
+      const res = await fetch(ENDPOINT_OP_DATA, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ report_id: parseInt(report_id), file_url, file_name })
+      });
+      if (!res.ok) {
+        const err = await res.json().catch(() => ({ detail: `HTTP ${res.status}` }));
+        throw new Error(err.detail || `HTTP ${res.status}`);
       }
       _hideLeftIndicator();
       showToast('Dados Armazenados');
@@ -4773,30 +4854,27 @@
 
   // ── SUBMIT: DADOS UPLOAD ──
   async function submitDataUpload() {
-    const fileInput   = document.getElementById('d-up-file');
-    const reportId    = document.getElementById('d-up-rid').value;
-    const selectedFns = getSelectedFns();
-    if (!fileInput.files.length || !reportId || !selectedFns.length) {
-      showToast('Seleciona pelo menos um ficheiro, um relatório e uma função.', 'error'); return;
+    const fileInput = document.getElementById('d-up-file');
+    const reportId  = document.getElementById('d-up-rid').value;
+    if (!fileInput.files.length || !reportId) {
+      showToast('Seleciona pelo menos um ficheiro e um relatório.', 'error'); return;
     }
-    const fd = new FormData();
-    Array.from(fileInput.files).forEach(f => fd.append('files', f));
-    fd.append('report_id', reportId);
-    fd.append('extract_functions', selectedFns.join(','));
-
     const btn = document.getElementById('btn-data-submit');
     btn.disabled = true; btn.textContent = 'A carregar...';
     _showLeftIndicator('A armazenar dados');
     try {
-      const res = await fetch(`${API_BASE}/op_data/pairs`, { method: 'POST', body: fd });
-      if (!res.ok) throw new Error((await res.json()).detail || `HTTP ${res.status}`);
-      const data = await res.json();
+      for (const file of Array.from(fileInput.files)) {
+        const fd = new FormData();
+        fd.append('file', file);
+        fd.append('report_id', reportId);
+        const res = await fetch(`${API_BASE}/op_data/upload`, { method: 'POST', body: fd });
+        if (!res.ok) throw new Error((await res.json()).detail || `HTTP ${res.status}`);
+      }
       _hideLeftIndicator();
       showToast('Dados Armazenados');
       _watchDadosPipeline();
       fileInput.value = '';
-      document.querySelectorAll('#fn-dropdown-menu input[type="checkbox"]').forEach(c => c.checked = false);
-      updateFnDropdownLabel();
+      updateUploadPreview();
     } catch (e) { _hideLeftIndicator(); showToast(e.message, 'error'); }
     finally { btn.disabled = false; btn.textContent = 'Carregar Ficheiro(s)'; }
   }
@@ -4812,16 +4890,13 @@
       parsed = JSON.parse(sanitizeJson(raw));
       if (!Array.isArray(parsed)) throw new Error('O JSON deve ser um array.');
       for (let i = 0; i < parsed.length; i++) {
-        const keys = Object.keys(parsed[i]);
-        const valid = keys.length === 2 && keys.includes('link') && keys.includes('função');
-        if (!valid) throw new Error(`Item ${i + 1}: cada entrada deve ter exactamente os campos "link" e "função".`);
+        if (!parsed[i].link) throw new Error(`Item ${i + 1}: campo "link" é obrigatório.`);
       }
     } catch (e) { showToast(`JSON inválido: ${e.message}`, 'error'); return; }
 
     const payload = parsed.map(item => ({
       report_id: parseInt(reportId),
       file_url: item.link,
-      extract_function: item['função']
     }));
 
     const btn = document.getElementById('btn-dbatch');

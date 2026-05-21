@@ -21,9 +21,7 @@ MINIO_CONFIG = {
 
 BUCKET_SILVER = "silver"
 
-_INDICATOR_COLS = {"code", "name"}
-_VALUE_COLS     = {"location_code", "indicator_code", "year", "value"}
-_COMBINED_COLS  = {"location_code", "indicator_code", "indicator_name", "year", "value"}
+_REQUIRED_COLS = {"location_code", "indicator_code", "indicator_name", "year", "value"}
 
 
 def validate():
@@ -53,15 +51,9 @@ def validate():
             if df.empty:
                 errors.append("Ficheiro Parquet está vazio")
             else:
-                cols = set(df.columns)
-                if cols == _INDICATOR_COLS:
-                    pass
-                elif cols == _VALUE_COLS:
-                    pass
-                elif cols == _COMBINED_COLS:
-                    pass
-                else:
-                    errors.append(f"Estrutura de colunas não reconhecida: {sorted(cols)}")
+                missing = _REQUIRED_COLS - set(df.columns)
+                if missing:
+                    errors.append(f"Colunas em falta: {sorted(missing)}")
 
         if errors:
             msg = "; ".join(errors)

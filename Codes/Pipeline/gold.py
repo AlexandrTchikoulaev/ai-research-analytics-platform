@@ -53,17 +53,14 @@ def load_dimensions(s3, report_map, cur_op, cur_dw, conn_dw, cur_pipe, conn_pipe
             log_etl("load", "DataFrame vazio", file_id=nome_base)
             continue
 
-        cols = set(df.columns)
-        if cols == {"code", "name"}:
-            ind_pairs = [(row["code"], row["name"]) for _, row in df.iterrows()]
-        elif cols == {"location_code", "indicator_code", "indicator_name", "year", "value"}:
-            ind_pairs = (
-                df[["indicator_code", "indicator_name"]]
-                .drop_duplicates()
-                .values.tolist()
-            )
-        else:
+        if not {"location_code", "indicator_code", "indicator_name", "year", "value"}.issubset(df.columns):
             continue
+
+        ind_pairs = (
+            df[["indicator_code", "indicator_name"]]
+            .drop_duplicates()
+            .values.tolist()
+        )
 
         source_system = report_source_map.get(report_id)
         if not source_system:
@@ -131,11 +128,7 @@ def load_facts(s3, report_map, cur_op, cur_dw, conn_dw, conn_pipe, log_etl):
             log_etl("load", "DataFrame vazio", file_id=nome_base)
             continue
 
-        cols = set(df.columns)
-        if cols not in (
-            {"location_code", "indicator_code", "year", "value"},
-            {"location_code", "indicator_code", "indicator_name", "year", "value"},
-        ):
+        if not {"location_code", "indicator_code", "indicator_name", "year", "value"}.issubset(df.columns):
             continue
         source_system = report_source_map.get(report_id)
         if not source_system:

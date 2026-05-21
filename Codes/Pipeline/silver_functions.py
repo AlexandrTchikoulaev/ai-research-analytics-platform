@@ -142,12 +142,6 @@ EXTRACT_FUNCTIONS.update(_auto)
 
 def clean_dataframe(df: pd.DataFrame) -> pd.DataFrame:
     df = df.drop_duplicates()
-    if "code" in df.columns:
-        df = df.dropna(subset=["code"])
-        if "name" in df.columns:
-            df["name"] = df["name"].fillna(df["code"])
-    if "location_code" in df.columns:
-        df = df.dropna(subset=["location_code", "indicator_code", "year", "value"])
-        if "indicator_name" in df.columns:
-            df["indicator_name"] = df["indicator_name"].fillna(df["indicator_code"])
+    df = df.dropna(subset=["location_code", "indicator_code", "year", "value"])
+    df["indicator_name"] = df["indicator_name"].fillna(df["indicator_code"])
     return df.reset_index(drop=True)

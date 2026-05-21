@@ -82,11 +82,12 @@ def transformar():
         s3.create_bucket(Bucket=BUCKET_SILVER)
 
     cur.execute("""
-        SELECT file_id, extract_function, report_id
-        FROM op_data
-        WHERE pipeline_status = 'BRONZE_OK'
-        ORDER BY file_id
-        FOR UPDATE SKIP LOCKED
+        SELECT d.file_id, d.report_id, r.source_code
+        FROM op_data d
+        JOIN op_report r ON r.report_id = d.report_id
+        WHERE d.pipeline_status = 'BRONZE_OK'
+        ORDER BY d.file_id
+        FOR UPDATE OF d SKIP LOCKED
     """)
     rows = cur.fetchall()
 
@@ -102,14 +103,31 @@ def transformar():
     )
     conn.commit()
 
+    # Carregar todos os mapeamentos uma vez
+    cur.execute("SELECT source_code, extract_function FROM source_function_mapping")
+    mapping = {r[0]: r[1] for r in cur.fetchall()}
+
     ok_count  = 0
     err_count = 0
 
-    for file_id, extract_function, report_id in rows:
+    for file_id, report_id, source_code in rows:
         key = str(file_id)
 
-        if not extract_function or extract_function not in EXTRACT_FUNCTIONS:
-            err_msg = f"extract_function inválida ou desconhecida: '{extract_function}'"
+        extract_function = mapping.get(source_code)
+        if not extract_function:
+            err_msg = f"Não existe mapeamento de função para a fonte '{source_code}'"
+            cur.execute(
+                "UPDATE op_data SET pipeline_status = 'FAILED', pipeline_error = %s WHERE file_id = %s",
+                (err_msg, file_id)
+            )
+            _log_error(cur, conn, file_id, "transform", err_msg)
+            conn.commit()
+            print(f"[ERRO] file_id={file_id}: {err_msg}")
+            err_count += 1
+            continue
+
+        if extract_function not in EXTRACT_FUNCTIONS:
+            err_msg = f"Função '{extract_function}' (mapeada para '{source_code}') não encontrada em EXTRACT_FUNCTIONS"
             cur.execute(
                 "UPDATE op_data SET pipeline_status = 'FAILED', pipeline_error = %s WHERE file_id = %s",
                 (err_msg, file_id)

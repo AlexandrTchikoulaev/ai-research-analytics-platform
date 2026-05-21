@@ -252,6 +252,24 @@ app.add_middleware(
 )
 
 
+@app.on_event("startup")
+def _create_mapping_table():
+    try:
+        conn = get_operational_connection()
+        cur = conn.cursor()
+        cur.execute("""
+            CREATE TABLE IF NOT EXISTS source_function_mapping (
+                source_code      TEXT PRIMARY KEY,
+                extract_function TEXT NOT NULL
+            )
+        """)
+        conn.commit()
+        cur.close()
+        conn.close()
+    except Exception:
+        pass
+
+
 # ── Schemas ───────────────────────────────────────────────
 class ReportIn(BaseModel):
     source_code: str
@@ -270,7 +288,6 @@ class ChatIn(BaseModel):
 
 class GenerateFunctionUrlIn(BaseModel):
     url: str
-    file_type: str
 
 
 class OpDataIn(BaseModel):
@@ -664,14 +681,10 @@ def _save_to_auto_store(name: str, code: str):
 @app.post("/generate_function")
 async def generate_function(
     file: UploadFile = File(...),
-    file_type: str = Form(...),
 ):
     """Gera automaticamente uma função de transformação silver via Ollama."""
-    if file_type not in ("indicator", "value"):
-        raise HTTPException(status_code=400, detail="file_type deve ser 'indicator' ou 'value'.")
-
     content = await file.read()
-    result = _generate_and_validate(content, file_type)
+    result = _generate_and_validate(content)
 
     if result["generated"] and result["valid"]:
         try:
@@ -693,8 +706,6 @@ async def generate_function(
 @app.post("/generate_function_url")
 async def generate_function_url(body: GenerateFunctionUrlIn):
     """Gera automaticamente uma função de transformação a partir de um URL."""
-    if body.file_type not in ("indicator", "value"):
-        raise HTTPException(status_code=400, detail="file_type deve ser 'indicator' ou 'value'.")
     if not body.url.strip():
         raise HTTPException(status_code=400, detail="URL é obrigatório.")
 
@@ -705,12 +716,12 @@ async def generate_function_url(body: GenerateFunctionUrlIn):
         content = b""
         for chunk in resp.iter_content(chunk_size=8192):
             content += chunk
-            if len(content) >= 512 * 1024:  # limite 500 KB para a amostra
+            if len(content) >= 512 * 1024:
                 break
     except Exception as e:
         raise HTTPException(status_code=400, detail=f"Erro ao descarregar URL: {e}")
 
-    result = _generate_and_validate(content, body.file_type)
+    result = _generate_and_validate(content)
 
     if result["generated"] and result["valid"]:
         try:
@@ -1241,6 +1252,79 @@ def get_extract_functions():
     auto = _load_auto_store()
     names = static_names + [n for n in auto if n not in static_names]
     return [{"name": n} for n in names]
+
+
+# ════════════════════════════════════════════════════════════
+# ENDPOINTS — Mapeamento source_code → extract_function
+# ════════════════════════════════════════════════════════════
+
+class FunctionMappingIn(BaseModel):
+    source_code: str
+    extract_function: str
+
+
+@app.get("/function_mappings")
+def get_function_mappings():
+    try:
+        conn = get_operational_connection()
+        cur = conn.cursor(cursor_factory=psycopg2.extras.RealDictCursor)
+        cur.execute("SELECT source_code, extract_function FROM source_function_mapping ORDER BY source_code")
+        rows = cur.fetchall()
+        cur.close(); conn.close()
+        return [dict(r) for r in rows]
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
+
+@app.post("/function_mappings", status_code=201)
+def upsert_function_mapping(data: FunctionMappingIn):
+    if not data.source_code.strip() or not data.extract_function.strip():
+        raise HTTPException(status_code=400, detail="source_code e extract_function são obrigatórios.")
+    try:
+        conn = get_operational_connection()
+        cur = conn.cursor()
+        cur.execute("""
+            INSERT INTO source_function_mapping (source_code, extract_function)
+            VALUES (%s, %s)
+            ON CONFLICT (source_code) DO UPDATE SET extract_function = EXCLUDED.extract_function
+        """, (data.source_code.strip(), data.extract_function.strip()))
+        conn.commit()
+        cur.close(); conn.close()
+        return {"message": f"Mapeamento '{data.source_code}' → '{data.extract_function}' guardado."}
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
+
+@app.delete("/function_mappings/{source_code}")
+def delete_function_mapping(source_code: str):
+    try:
+        conn = get_operational_connection()
+        cur = conn.cursor()
+        cur.execute("DELETE FROM source_function_mapping WHERE source_code = %s", (source_code,))
+        if cur.rowcount == 0:
+            conn.rollback(); cur.close(); conn.close()
+            raise HTTPException(status_code=404, detail=f"Mapeamento para '{source_code}' não encontrado.")
+        conn.commit()
+        cur.close(); conn.close()
+        return {"deleted": source_code}
+    except HTTPException:
+        raise
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
+
+@app.get("/source_codes")
+def get_source_codes():
+    """Lista os source_codes distintos registados em op_report."""
+    try:
+        conn = get_operational_connection()
+        cur = conn.cursor()
+        cur.execute("SELECT DISTINCT source_code FROM op_report WHERE source_code IS NOT NULL AND source_code <> '' ORDER BY source_code")
+        rows = cur.fetchall()
+        cur.close(); conn.close()
+        return [r[0] for r in rows]
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
 
 
 @app.get("/sources")
