@@ -1,8 +1,5 @@
+import re as _re
 import pandas as pd
-
-# ------------------------------------------------------------------
-#       FUNÇÕES GERAIS
-# ------------------------------------------------------------------
 
 
 def imf(data):
@@ -26,7 +23,6 @@ def imf(data):
 
     return pd.DataFrame(rows)
 
-import pandas as pd
 
 def hfi(data) -> pd.DataFrame:
     df = data if isinstance(data, pd.DataFrame) else pd.DataFrame(data)
@@ -54,92 +50,21 @@ def hfi(data) -> pd.DataFrame:
         )
 
     result = df[["iso", "year", "hf_score"]].copy()
-
-    result = result.rename(columns={
-        "iso": "location_code",
-        "year": "year",
-        "hf_score": "value"
-    })
-
+    result = result.rename(columns={"iso": "location_code", "hf_score": "value"})
     result["indicator_code"] = "hf"
     result["indicator_name"] = "Human Freedom"
-
     result["year"]  = pd.to_numeric(result["year"],  errors="coerce").astype("Int64")
     result["value"] = pd.to_numeric(result["value"], errors="coerce")
 
-    result = result[[
-        "location_code",
-        "indicator_code",
-        "indicator_name",
-        "year",
-        "value"
-    ]]
+    return (
+        result[["location_code", "indicator_code", "indicator_name", "year", "value"]]
+        .dropna(subset=["location_code", "year", "value"])
+    )
 
-    return result.dropna(subset=["location_code", "year", "value"])
-
-
-# ------------------------------------------------------------------
-# ------------------------------------------------------------------
-
-def imf_indicadores(data):
-    items = data.get("indicators", {})
-    return pd.DataFrame({
-        "code": list(items.keys()),
-        "name": [v.get("label") for v in items.values()],
-    })
-
-
-import pandas as pd
-
-def imf_values(data):
-    values = data.get("values", {})
-
-    rows = [
-        {
-            "location_code": loc,
-            "indicator_code": ind,
-            "year": int(year),
-            "value": float(val) if val is not None else None,
-        }
-        for ind, locations in values.items()
-        if locations is not None
-        for loc, years in locations.items()
-        if years is not None
-        for year, val in years.items()
-    ]
-
-    return pd.DataFrame(rows)
-
-
-def hfi_indicadores(_data=None):
-    return pd.DataFrame({
-        "code": ["HF"],
-        "name": ["human freedom index"],
-    })
-
-
-def hfi_values(df: pd.DataFrame) -> pd.DataFrame:
-
-    if not isinstance(df, pd.DataFrame):
-        df = pd.DataFrame(df)
-
-    # Construção do novo dataframe
-    out = pd.DataFrame({
-        "location_code": df["iso"],
-        "indicator_code": "HF",
-        "year": df["year"],
-        "value": df["hf_score"],
-    })
-
-    return out
-
-
-import re as _re
 
 def epi(data) -> pd.DataFrame:
     df = data if isinstance(data, pd.DataFrame) else pd.DataFrame(data)
 
-    # Colunas de valor: INDICADOR.raw.ANO
     value_cols = [c for c in df.columns if _re.match(r'^.+\.raw\.\d{4}$', c, _re.IGNORECASE)]
     if not value_cols:
         raise ValueError(f"Nenhuma coluna INDICADOR.raw.ANO encontrada. Colunas: {list(df.columns[:10])}")
@@ -164,68 +89,8 @@ def epi(data) -> pd.DataFrame:
     )
 
 
-import pandas as pd
-
-def epi_indicadores(data):
-    df = pd.DataFrame(data) if isinstance(data, list) else data
-
-    skip_cols = {"code", "iso", "country", "name", "region"}
-
-    indicator_cols = [c for c in df.columns if c not in skip_cols]
-
-    # extrair indicador (antes de .raw.)
-    indicators = {
-        c.split(".raw.")[0] for c in indicator_cols if ".raw." in c
-    }
-
-    return pd.DataFrame({
-        "code": [f"{ind}" for ind in indicators],
-        "name": [None] * len(indicators)
-    })
-
-
-import re
-import pandas as pd
-
-import re
-import pandas as pd
-
-def epi_values(data):
-    df = pd.DataFrame(data) if isinstance(data, list) else data
-
-    iso_col = next((c for c in df.columns if "iso" in c.lower()), None)
-    
-    skip_cols = {iso_col}
-    skip_cols.update(c for c in df.columns if "country" in c.lower() or "name" in c.lower())
-
-    indicator_cols = [c for c in df.columns if c not in skip_cols]
-
-    rows = []
-
-    for _, row in df.iterrows():
-        for col in indicator_cols:
-            val = row[col]
-            if pd.isna(val):
-                continue
-
-            match = re.search(r'(\d{4})$', col)
-            year = int(match.group(1)) if match else None
-
-            # extrair indicador correto
-            indicator = col.split(".raw.")[0]
-
-            rows.append({
-                "location_code": row[iso_col],
-                "indicator_code": f"{indicator}",
-                "year": year,
-                "value": float(val),
-            })
-
-    return pd.DataFrame(rows).dropna(subset=["location_code", "year"])
-
-
 # ══════════════════════════════════════════════════════════════
-# REGISTO DE FUNÇÕES  (auto-descoberta — todas as funções públicas do módulo)
+# REGISTO DE FUNÇÕES
 # ══════════════════════════════════════════════════════════════
 import inspect as _inspect, sys as _sys
 
@@ -241,7 +106,7 @@ EXTRACT_FUNCTIONS = {
 
 
 # ══════════════════════════════════════════════════════════════
-# AUTO-GENERATED FUNCTIONS (carregadas de silver_functions_auto.json)
+# AUTO-GENERATED FUNCTIONS
 # ══════════════════════════════════════════════════════════════
 
 def _load_auto_functions() -> dict:
@@ -269,7 +134,6 @@ def _load_auto_functions() -> dict:
 
 _auto = _load_auto_functions()
 EXTRACT_FUNCTIONS.update(_auto)
-
 
 
 # ══════════════════════════════════════════════════════════════
