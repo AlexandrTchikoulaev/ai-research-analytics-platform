@@ -1,5 +1,66 @@
 import pandas as pd
 
+# ------------------------------------------------------------------
+#       FUNÇÕES GERAIS
+# ------------------------------------------------------------------
+
+
+def imf(data):
+    indicators = data.get("indicators", {})
+    values = data.get("values", {})
+
+    rows = [
+        {
+            "location_code": location_code,
+            "indicator_code": indicator_code,
+            "indicator_name": indicators.get(indicator_code, {}).get("label"),
+            "year": int(year),
+            "value": float(value) if value is not None else None,
+        }
+        for indicator_code, countries_data in values.items()
+        if countries_data is not None
+        for location_code, years_data in countries_data.items()
+        if years_data is not None
+        for year, value in years_data.items()
+    ]
+
+    return pd.DataFrame(rows)
+
+import pandas as pd
+
+def hfi(file_path: str) -> pd.DataFrame:
+    """
+    Lê o CSV do Human Freedom e devolve um DataFrame normalizado.
+    """
+
+    df = pd.read_csv(file_path)
+
+    result = df[["iso", "year", "hf_score"]].copy()
+
+    result = result.rename(columns={
+        "iso": "location_code",
+        "year": "year",
+        "hf_score": "value"
+    })
+
+    result["indicator_code"] = "hf"
+    result["indicator_name"] = "Human Freedom"
+
+    # Reordenar colunas
+    result = result[[
+        "location_code",
+        "indicator_code",
+        "indicator_name",
+        "year",
+        "value"
+    ]]
+
+    return result
+
+
+# ------------------------------------------------------------------
+# ------------------------------------------------------------------
+
 def imf_indicadores(data):
     items = data.get("indicators", {})
     return pd.DataFrame({
@@ -19,7 +80,6 @@ def imf_values(data):
             "indicator_code": ind,
             "year": int(year),
             "value": float(val) if val is not None else None,
-            "value_type": "value",
         }
         for ind, locations in values.items()
         if locations is not None
@@ -49,7 +109,6 @@ def hfi_values(df: pd.DataFrame) -> pd.DataFrame:
         "indicator_code": "HF",
         "year": df["year"],
         "value": df["hf_score"],
-        "value_type": "value"
     })
 
     return out
@@ -110,7 +169,6 @@ def epi_values(data):
                 "indicator_code": f"{indicator}",
                 "year": year,
                 "value": float(val),
-                "value_type": "value",
             })
 
     return pd.DataFrame(rows).dropna(subset=["location_code", "year"])
@@ -176,4 +234,6 @@ def clean_dataframe(df: pd.DataFrame) -> pd.DataFrame:
             df["name"] = df["name"].fillna(df["code"])
     if "location_code" in df.columns:
         df = df.dropna(subset=["location_code", "indicator_code", "year", "value"])
+        if "indicator_name" in df.columns:
+            df["indicator_name"] = df["indicator_name"].fillna(df["indicator_code"])
     return df.reset_index(drop=True)

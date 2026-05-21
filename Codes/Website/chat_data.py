@@ -364,7 +364,7 @@ Output ONLY a valid PostgreSQL SELECT query. No explanation, no markdown, no Chi
 
 Schema:
   View vw_indicator_location_year(indicator_name, location_name, value, year) — use for simple filters
-  fact_values(report_id, location_sk, indicator_sk, date_id, value, value_type)
+  fact_values(report_id, location_sk, indicator_sk, date_id, value)
   dim_location(location_sk, location_code, name, region, sub_region)
   dim_indicator(indicator_sk, source_system, indicator_code, indicator_name)
   dim_date(date_id, year)

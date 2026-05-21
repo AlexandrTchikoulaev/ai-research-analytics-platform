@@ -91,7 +91,6 @@ def main():
         indicator_sk INTEGER NOT NULL REFERENCES dim_indicator(indicator_sk),
         date_id      INTEGER NOT NULL REFERENCES dim_date(date_id),
         value        NUMERIC,
-        value_type   VARCHAR(100),
         PRIMARY KEY (report_id, location_sk, indicator_sk, date_id)
     );
     """)

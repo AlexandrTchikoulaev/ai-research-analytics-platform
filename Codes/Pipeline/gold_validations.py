@@ -22,7 +22,8 @@ MINIO_CONFIG = {
 BUCKET_SILVER = "silver"
 
 _INDICATOR_COLS = {"code", "name"}
-_VALUE_COLS = {"location_code", "indicator_code", "year", "value", "value_type"}
+_VALUE_COLS     = {"location_code", "indicator_code", "year", "value"}
+_COMBINED_COLS  = {"location_code", "indicator_code", "indicator_name", "year", "value"}
 
 
 def validate():
@@ -55,7 +56,9 @@ def validate():
                 cols = set(df.columns)
                 if cols == _INDICATOR_COLS:
                     pass
-                elif _VALUE_COLS <= cols:
+                elif cols == _VALUE_COLS:
+                    pass
+                elif cols == _COMBINED_COLS:
                     pass
                 else:
                     errors.append(f"Estrutura de colunas não reconhecida: {sorted(cols)}")

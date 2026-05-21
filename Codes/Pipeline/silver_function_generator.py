@@ -54,8 +54,8 @@ def f(data):
 _SYSTEM_VALUE = """\
 You are a data engineer. Generate a Python function that extracts data values.
 
-Output DataFrame must have EXACTLY 5 columns:
-  location_code (str), indicator_code (str), year (int), value (float), value_type (str, always "value")
+Output DataFrame must have EXACTLY 4 columns:
+  location_code (str), indicator_code (str), year (int), value (float)
 
 Rules:
 - Function argument is `data` (dict if JSON, DataFrame if CSV/Excel)
@@ -69,14 +69,14 @@ Rules:
 
 JSON example:
 def f(data):
-    rows = [{"location_code": loc, "indicator_code": ind, "year": int(yr), "value": float(v) if v is not None else None, "value_type": "value"} for ind, locs in data.get("values", {}).items() if isinstance(locs, dict) for loc, yrs in locs.items() if isinstance(yrs, dict) for yr, v in yrs.items()]
+    rows = [{"location_code": loc, "indicator_code": ind, "year": int(yr), "value": float(v) if v is not None else None} for ind, locs in data.get("values", {}).items() if isinstance(locs, dict) for loc, yrs in locs.items() if isinstance(yrs, dict) for yr, v in yrs.items()]
     return pd.DataFrame(rows).dropna(subset=["location_code","indicator_code","year","value"])
 
 CSV/Excel example:
 def f(data):
     skip = {"ISO_code", "countries", "region", "year", "rank"}
     ind_cols = [c for c in data.columns if c not in skip]
-    rows = [{"location_code": r["ISO_code"], "indicator_code": c, "year": int(r["year"]), "value": float(r[c]), "value_type": "value"} for _, r in data.iterrows() for c in ind_cols if not pd.isna(r[c])]
+    rows = [{"location_code": r["ISO_code"], "indicator_code": c, "year": int(r["year"]), "value": float(r[c])} for _, r in data.iterrows() for c in ind_cols if not pd.isna(r[c])]
     return pd.DataFrame(rows).dropna(subset=["location_code","indicator_code","year"])
 """
 
@@ -247,7 +247,8 @@ def _call_ollama(system_prompt: str, user_prompt: str, temperature: float = 0.1)
 
 _REQUIRED_COLS = {
     "indicator": {"code", "name"},
-    "value":     {"location_code", "indicator_code", "year", "value", "value_type"},
+    "value":     {"location_code", "indicator_code", "year", "value"},
+    "combined":  {"location_code", "indicator_code", "indicator_name", "year", "value"},
 }
 
 

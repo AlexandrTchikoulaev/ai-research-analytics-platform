@@ -53,14 +53,24 @@ def load_dimensions(s3, report_map, cur_op, cur_dw, conn_dw, cur_pipe, conn_pipe
             log_etl("load", "DataFrame vazio", file_id=nome_base)
             continue
 
-        if set(df.columns) != {"code", "name"}:
+        cols = set(df.columns)
+        if cols == {"code", "name"}:
+            ind_pairs = [(row["code"], row["name"]) for _, row in df.iterrows()]
+        elif cols == {"location_code", "indicator_code", "indicator_name", "year", "value"}:
+            ind_pairs = (
+                df[["indicator_code", "indicator_name"]]
+                .drop_duplicates()
+                .values.tolist()
+            )
+        else:
             continue
+
         source_system = report_source_map.get(report_id)
         if not source_system:
             log_etl("load", f"source_system não encontrado para report_id {report_id}", file_id=nome_base)
             continue
 
-        dados = [(source_system, row["code"], row["name"]) for _, row in df.iterrows()]
+        dados = [(source_system, code, name) for code, name in ind_pairs]
         psycopg2.extras.execute_values(cur_dw, """
             INSERT INTO dim_indicator (source_system, indicator_code, indicator_name)
             VALUES %s
@@ -121,7 +131,11 @@ def load_facts(s3, report_map, cur_op, cur_dw, conn_dw, conn_pipe, log_etl):
             log_etl("load", "DataFrame vazio", file_id=nome_base)
             continue
 
-        if set(df.columns) != {"location_code", "indicator_code", "year", "value", "value_type"}:
+        cols = set(df.columns)
+        if cols not in (
+            {"location_code", "indicator_code", "year", "value"},
+            {"location_code", "indicator_code", "indicator_name", "year", "value"},
+        ):
             continue
         source_system = report_source_map.get(report_id)
         if not source_system:
@@ -159,11 +173,11 @@ def load_facts(s3, report_map, cur_op, cur_dw, conn_dw, conn_pipe, log_etl):
         valid_df["date_id"]      = valid_df["date_id"].astype(int)
         valid_df["report_id"]    = valid_df["report_id"].astype(int)
 
-        insert_data = valid_df[["report_id", "location_sk", "indicator_sk", "date_id", "value", "value_type"]].values.tolist()
+        insert_data = valid_df[["report_id", "location_sk", "indicator_sk", "date_id", "value"]].values.tolist()
 
         psycopg2.extras.execute_values(cur_dw, """
             INSERT INTO fact_values (
-                report_id, location_sk, indicator_sk, date_id, value, value_type
+                report_id, location_sk, indicator_sk, date_id, value
             )
             VALUES %s
             ON CONFLICT DO NOTHING
