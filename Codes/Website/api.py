@@ -2,7 +2,7 @@ from fastapi import FastAPI, HTTPException, UploadFile, File, Form
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import StreamingResponse
 from pydantic import BaseModel
-from typing import Optional
+from typing import Optional, List
 from datetime import datetime, date
 import psycopg2
 import psycopg2.extras
@@ -272,11 +272,107 @@ def _create_mapping_table():
         cur.execute("ALTER TABLE source_function_mapping ADD COLUMN IF NOT EXISTS ai_extract_function TEXT")
         cur.execute("ALTER TABLE source_function_mapping ADD COLUMN IF NOT EXISTS generation_hint TEXT")
         cur.execute("ALTER TABLE source_function_mapping ALTER COLUMN extract_function DROP NOT NULL")
+
         conn.commit()
         cur.close()
         conn.close()
     except Exception:
         pass
+    _seed_generation_hints()
+
+
+_SEED_HINTS = {
+    "YCELP, CIESIN": (
+        "CSV file from the Environmental Performance Index (EPI). "
+        "Columns present: 'iso' (3-letter ISO-3 country code — THIS is location_code), "
+        "'country' (full country name — ignore for location_code), possibly 'code' (ignore). "
+        "Then one or more value columns named INDICATOR.raw.YEAR (e.g. COE.raw.2022, BER.raw.2010). "
+        "CRITICAL: location_code MUST come from the 'iso' column, NOT 'code' or 'country'. "
+        "Extract indicator_code from the part before the first dot (e.g. 'BER' from 'BER.raw.2022'). "
+        "year = 4-digit suffix of each column name. "
+        "Use re.match(r'^.+\\.raw\\.\\d{4}$', col) to find value columns. "
+        "Melt all value columns to get one row per (iso, year, value)."
+    ),
+    "IMF": (
+        "JSON file from the IMF (International Monetary Fund). "
+        "Structure: {\"indicators\": {\"CODE\": {\"label\": \"Full Name\", ...}}, "
+        "\"values\": {\"CODE\": {\"ISO3\": {\"YEAR_STR\": value_or_null}}}}. "
+        "ALL keys are strings — years are string keys, convert with int(yr). "
+        "Values at any level can be null — always guard .items() calls with isinstance(x, dict). "
+        "location_code = ISO3 key, indicator_code = CODE key, "
+        "indicator_name = indicators[CODE]['label'], year = int(yr), value = float(v). "
+        "Drop rows where value is None/null."
+    ),
+    "Cato Institute": (
+        "Excel file from the Cato Institute Human Freedom Index. "
+        "After lowercasing all column names: columns are 'iso' (3-letter ISO country code), "
+        "'year' (int), 'hf_score' (float), plus many other indicator columns. "
+        "Some versions have a double header — real machine-code headers are in the first data row. "
+        "Only extract ONE indicator: indicator_code='hf', indicator_name='Human Freedom', "
+        "location_code='iso' column, year='year' column, value='hf_score' column. "
+        "Use pd.to_numeric(..., errors='coerce') for year and value."
+    ),
+    "Portulans": (
+        "Excel file from the Network Readiness Index (Portulans Institute). "
+        "Has 5 header rows before data: row index 2 = readable indicator names, "
+        "row index 4 = machine codes (ISO3Code, NRI.score, 1.score, 1.1.score, ...). "
+        "Data starts at row index 5. "
+        "Use row index 4 as column headers (df.columns = data.iloc[4]). "
+        "location_code = 'ISO3Code' column. "
+        "Value columns = all columns whose name contains 'score' (case-insensitive), excluding meta columns. "
+        "indicator_code = column name with '.score' suffix removed. "
+        "indicator_name = corresponding value from row index 2. "
+        "year is FIXED = 2025 (no year column in this file)."
+    ),
+    "The Heritage Foundation": (
+        "Excel file from the Heritage Foundation Index of Economic Freedom. "
+        "Row 0 is a title row ('COMPONENT SCORES') — real column headers are in row 1. "
+        "Use data.iloc[1] as headers, data.iloc[2:] as rows. "
+        "Columns: 'Country' (full country name — NOT ISO code), 'Region', then indicator columns. "
+        "CRITICAL: 'Country' contains names like 'Portugal', 'United States' — must convert to ISO3 "
+        "using pycountry: pycountry.countries.search_fuzzy(name)[0].alpha_3. Skip if not found. "
+        "year is FIXED = 2026. Skip columns starting with 'Unnamed'."
+    ),
+    "Fraser Institute": (
+        "Excel file from the Fraser Institute Economic Freedom of the World. "
+        "Has 4 metadata rows before data — real column headers are at row index 3. "
+        "Use data.iloc[3] as headers, data.iloc[4:] as rows. "
+        "Key columns: 'Year' (int), 'ISO Code 3' (3-letter ISO — THIS is location_code), "
+        "'Countries', 'Rank', 'Quartile', 'World Bank Region', "
+        "'World Bank Current Income Classification, 1990-Present'. "
+        "Value columns = all other columns except meta columns above and columns containing 'Rank' or named 'nan'. "
+        "indicator_code = column name (stripped), indicator_name = column name. "
+        "Skip rows where 'ISO Code 3' or 'Year' are NaN."
+    ),
+    "WEF": (
+        "Excel file from the WEF Travel & Tourism Development Index, sheet 'Dataset'. "
+        "Read with header=None. Header row is at row index 3. "
+        "Column index 9 = 'Attribute'. Columns from index 10 onwards = ISO3 country codes. "
+        "Only keep rows where column 9 (Attribute) == 'Score' (case-sensitive). "
+        "Column index 6 = indicator_code, column index 7 = indicator_name. "
+        "year is FIXED = 2024. "
+        "Each row gives one indicator score for all countries — iterate columns 10+ to get "
+        "(location_code=country_iso, indicator_code, indicator_name, year=2024, value=float)."
+    ),
+}
+
+
+def _seed_generation_hints():
+    try:
+        conn = get_operational_connection()
+        cur = conn.cursor()
+        for src, hint in _SEED_HINTS.items():
+            cur.execute("""
+                INSERT INTO source_function_mapping (source_code, generation_hint)
+                VALUES (%s, %s)
+                ON CONFLICT (source_code) DO UPDATE
+                    SET generation_hint = EXCLUDED.generation_hint
+            """, (src, hint))
+        conn.commit()
+        cur.close()
+        conn.close()
+    except Exception as e:
+        print(f"[WARN] _seed_generation_hints falhou: {e}")
 
 
 # ── Schemas ───────────────────────────────────────────────
@@ -452,6 +548,81 @@ async def batch_reports(payload: list[dict]):
             cur.execute(f"ROLLBACK TO SAVEPOINT {sp}")
             msg = "URL duplicado" if getattr(e, 'pgcode', None) == '23505' else str(e)
             errors.append({"index": i, "file_name": item.get("file_name", "?"), "error": msg})
+
+    conn.commit()
+    cur.close()
+    conn.close()
+    if inserted > 0:
+        notify_pipeline_pdfs()
+    return {"inserted": inserted, "errors": errors}
+
+
+@app.post("/op_report/upload-files", status_code=201)
+async def upload_report_files(files: List[UploadFile] = File(...)):
+    """Insere múltiplos PDFs sem metadados (todos os campos null exceto file_name)."""
+    conn = get_operational_connection()
+    cur = conn.cursor()
+    s3 = get_s3()
+    ensure_bucket(s3, BUCKET_UNSTRUCTURED)
+    results = []
+    errors = []
+
+    for f in files:
+        content = await f.read()
+        if content[:4] != b"%PDF":
+            errors.append({"file_name": f.filename, "error": "Não é um PDF válido."})
+            continue
+        try:
+            cur.execute(
+                "INSERT INTO op_report (file_name) VALUES (%s) RETURNING report_id;",
+                (f.filename,)
+            )
+            report_id = cur.fetchone()[0]
+            conn.commit()
+
+            s3.put_object(
+                Bucket=BUCKET_UNSTRUCTURED,
+                Key=f.filename,
+                Body=content,
+                ContentType="application/pdf",
+                Metadata={"report_id": str(report_id), "file_name": f.filename},
+            )
+
+            img = _make_thumbnail(content)
+            if img:
+                _cache_thumbnail(s3, report_id, img)
+
+            results.append({"report_id": report_id, "file_name": f.filename})
+        except Exception as e:
+            conn.rollback()
+            errors.append({"file_name": f.filename, "error": str(e)})
+
+    cur.close()
+    conn.close()
+    if results:
+        notify_pipeline_pdfs()
+    return {"inserted": len(results), "results": results, "errors": errors}
+
+
+@app.post("/op_report/batch-links", status_code=201)
+async def batch_report_links(urls: list[str]):
+    """Insere múltiplos relatórios com apenas report_url, restantes campos null."""
+    conn = get_operational_connection()
+    cur = conn.cursor()
+    inserted = 0
+    errors = []
+
+    for i, url in enumerate(urls):
+        sp = f"sp_{i}"
+        try:
+            cur.execute(f"SAVEPOINT {sp}")
+            cur.execute("INSERT INTO op_report (report_url) VALUES (%s)", (url,))
+            cur.execute(f"RELEASE SAVEPOINT {sp}")
+            inserted += 1
+        except Exception as e:
+            cur.execute(f"ROLLBACK TO SAVEPOINT {sp}")
+            msg = "URL duplicado" if getattr(e, 'pgcode', None) == '23505' else str(e)
+            errors.append({"index": i, "url": url, "error": msg})
 
     conn.commit()
     cur.close()
@@ -1301,9 +1472,9 @@ def delete_ai_function_mapping(source_code: str):
         if cur.rowcount == 0:
             conn.rollback(); cur.close(); conn.close()
             raise HTTPException(status_code=404, detail=f"Mapeamento para '{source_code}' não encontrado.")
-        # Se ambas as colunas ficaram NULL, apagar a linha
+        # Só apaga a linha se não houver nada útil (funções nem hint)
         cur.execute(
-            "DELETE FROM source_function_mapping WHERE source_code = %s AND extract_function IS NULL AND ai_extract_function IS NULL",
+            "DELETE FROM source_function_mapping WHERE source_code = %s AND extract_function IS NULL AND ai_extract_function IS NULL AND generation_hint IS NULL",
             (source_code,)
         )
         conn.commit()

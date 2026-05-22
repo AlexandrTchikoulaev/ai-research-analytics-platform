@@ -180,6 +180,39 @@
       padding: 1.8rem 2rem;
     }
 
+    .report-mode-cards {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 0.4rem;
+      max-width: 340px;
+      margin: 0 auto 1.5rem;
+    }
+    .report-mode-card {
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      background: none;
+      padding: 0.38rem 0.75rem;
+      cursor: pointer;
+      display: flex;
+      flex-direction: row;
+      align-items: center;
+      justify-content: center;
+      gap: 0.38rem;
+      transition: border-color var(--transition), background var(--transition), color var(--transition);
+      color: var(--text-muted);
+      font-family: var(--mono);
+      font-size: 0.62rem;
+      letter-spacing: 0.07em;
+      text-transform: uppercase;
+      user-select: none;
+    }
+    .report-mode-card:hover { border-color: var(--border2); color: var(--text-secondary); }
+    .report-mode-card.active { border-color: var(--accent); background: var(--surface); color: var(--text); }
+    .report-mode-card svg { width: 12px; height: 12px; stroke: currentColor; fill: none; stroke-width: 1.75; stroke-linecap: round; stroke-linejoin: round; flex-shrink: 0; }
+    .r-link-row { display: flex; gap: 0.4rem; align-items: center; margin-bottom: 0.35rem; }
+    .r-link-remove { background: none; border: none; color: var(--text-muted); cursor: pointer; font-size: 1rem; line-height: 1; padding: 0 0.3rem; flex-shrink: 0; transition: color var(--transition); }
+    .r-link-remove:hover { color: var(--red); }
+
     .form-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 1.2rem 2rem; }
     .form-group { display: flex; flex-direction: column; gap: 0.45rem; }
     .form-group.full { grid-column: 1 / -1; }
@@ -1268,9 +1301,19 @@
   <!-- ── Relatórios ── -->
   <div id="isec-relatorios">
   <div class="form-card">
-    <div style="display:flex;justify-content:flex-end;margin-bottom:0.75rem;">
-      <button id="rbtn-json" style="background:none;border:none;color:var(--text-secondary);font-size:0.8rem;cursor:pointer;padding:0.2rem 0.4rem;border-radius:var(--radius);" onclick="setReportMode('json')">ir para JSON</button>
-      <button id="rbtn-form" style="display:none;background:none;border:none;color:var(--text-secondary);font-size:0.8rem;cursor:pointer;padding:0.2rem 0.4rem;border-radius:var(--radius);" onclick="setReportMode('form')">ir para Formulário</button>
+    <div class="report-mode-cards">
+      <div id="rcard-files" class="report-mode-card" onclick="setReportMode('files')">
+        <svg viewBox="0 0 24 24"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>
+        Ficheiros
+      </div>
+      <div id="rcard-form" class="report-mode-card active" onclick="setReportMode('form')">
+        <svg viewBox="0 0 24 24"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/><line x1="10" y1="9" x2="8" y2="9"/></svg>
+        Formulário
+      </div>
+      <div id="rcard-json" class="report-mode-card" onclick="setReportMode('json')">
+        <svg viewBox="0 0 24 24"><polyline points="16 18 22 12 16 6"/><polyline points="8 6 2 12 8 18"/></svg>
+        JSON
+      </div>
     </div>
     <!-- JSON view -->
     <div id="r-json-view" style="display:none;">
@@ -1292,6 +1335,30 @@
     "resumo": "Breve descrição."
   }
 ]'></textarea>
+      </div>
+    </div>
+    <!-- Files view -->
+    <div id="r-files-view" style="display:none;">
+      <div style="display:flex;justify-content:center;margin-bottom:1.1rem;">
+        <div class="section-toggle sm">
+          <button class="active" id="rfbtn-upload" onclick="setFilesSubMode('upload')">Upload</button>
+          <button id="rfbtn-links" onclick="setFilesSubMode('links')">Links</button>
+        </div>
+      </div>
+      <!-- Upload sub-view -->
+      <div id="rf-upload-view">
+        <div class="form-group full" style="margin-bottom:0.6rem;">
+          <label>ficheiros PDF</label>
+          <input type="file" id="r-multi-files" accept=".pdf" multiple onchange="updateFilesPreview()"/>
+        </div>
+        <div id="r-files-preview" style="font-size:0.8rem;color:var(--text-secondary);line-height:1.8;"></div>
+      </div>
+      <!-- Links sub-view -->
+      <div id="rf-links-view" style="display:none;">
+        <div style="margin-bottom:0.5rem;">
+          <label>links PDF</label>
+        </div>
+        <div id="r-links-container"></div>
       </div>
     </div>
     <!-- Form view -->
@@ -1363,103 +1430,111 @@
 
   <!-- ── Dados ── -->
   <div id="isec-dados" style="display:none;">
+  <div class="form-card">
 
-  <!-- Form mode -->
-  <div id="d-form-view" class="form-card">
-    <div style="display:flex;justify-content:flex-end;margin-bottom:0.75rem;">
-      <button id="dbtn-json" style="background:none;border:none;color:var(--text-secondary);font-size:0.8rem;cursor:pointer;padding:0.2rem 0.4rem;border-radius:var(--radius);" onclick="setDataMode2('json')">ir para JSON</button>
-    </div>
-    <div class="form-grid">
-      <div class="form-group full">
-        <label>relatório</label>
-        <div class="chk-dropdown" id="rep-dropdown">
-          <button type="button" class="chk-dropdown-toggle" id="rep-dropdown-toggle" onclick="toggleRepDropdown()">
-            <span id="rep-dropdown-label">— Clica para carregar —</span>
-            <span>▾</span>
-          </button>
-          <div class="chk-dropdown-menu" id="rep-dropdown-menu" style="display:none;"></div>
-        </div>
-        <input type="hidden" id="d-up-rid"/>
+    <!-- Mode cards -->
+    <div style="display:grid;grid-template-columns:repeat(2,1fr);max-width:230px;margin:0 auto 1.5rem;gap:0.4rem;">
+      <div id="dcard-form" class="report-mode-card active" onclick="setDataMode2('form')">
+        <svg viewBox="0 0 24 24"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/><line x1="10" y1="9" x2="8" y2="9"/></svg>
+        Formulário
       </div>
-      <div class="form-group full">
-        <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:0.4rem;">
-          <label id="dfield-label" style="margin:0;">link</label>
-          <div class="section-toggle sm">
-            <button class="active" id="dtog-link" onclick="setDataSource('link')">Link</button>
-            <button id="dtog-ficheiro" onclick="setDataSource('ficheiro')">Ficheiro</button>
+      <div id="dcard-json" class="report-mode-card" onclick="setDataMode2('json')">
+        <svg viewBox="0 0 24 24"><polyline points="16 18 22 12 16 6"/><polyline points="8 6 2 12 8 18"/></svg>
+        JSON
+      </div>
+    </div>
+
+    <!-- Form section -->
+    <div id="d-form-view">
+      <div class="form-grid">
+        <div class="form-group full">
+          <label>relatório</label>
+          <div class="chk-dropdown" id="rep-dropdown">
+            <button type="button" class="chk-dropdown-toggle" id="rep-dropdown-toggle" onclick="toggleRepDropdown()">
+              <span id="rep-dropdown-label">— Clica para carregar —</span>
+              <span>▾</span>
+            </button>
+            <div class="chk-dropdown-menu" id="rep-dropdown-menu" style="display:none;"></div>
+          </div>
+          <input type="hidden" id="d-up-rid"/>
+        </div>
+        <div class="form-group full">
+          <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:0.4rem;">
+            <label id="dfield-label" style="margin:0;">link</label>
+            <div class="section-toggle sm">
+              <button class="active" id="dtog-link" onclick="setDataSource('link')">Link</button>
+              <button id="dtog-ficheiro" onclick="setDataSource('ficheiro')">Ficheiro</button>
+            </div>
+          </div>
+          <div id="dsrc-link">
+            <input type="url" id="d-file_url" placeholder="https://api.imf.org/dados"/>
+          </div>
+          <div id="dsrc-ficheiro" style="display:none;">
+            <input type="file" id="d-up-file" accept=".json,.csv,.xlsx,.xls,.xml,.zip" multiple onchange="updateUploadPreview()"/>
           </div>
         </div>
-        <div id="dsrc-link">
-          <input type="url" id="d-file_url" placeholder="https://api.imf.org/dados"/>
-        </div>
-        <div id="dsrc-ficheiro" style="display:none;">
-          <input type="file" id="d-up-file" accept=".json,.csv,.xlsx,.xls,.xml,.zip" multiple onchange="updateUploadPreview()"/>
+        <div class="form-group full" id="d-file_name-group">
+          <label>nome</label>
+          <input type="text" id="d-file_name" placeholder="nome_ficheiro.json"/>
         </div>
       </div>
-      <div class="form-group full" id="d-file_name-group">
-        <label>nome</label>
-        <input type="text" id="d-file_name" placeholder="nome_ficheiro.json"/>
-      </div>
-    </div>
-    <div class="form-actions">
-      <button class="btn-primary" id="btn-data-submit" onclick="submitDataAuto()">Adicionar Ficheiro</button>
-      <button class="btn-ghost" onclick="clearDataForm()">Limpar</button>
-      <button type="button" id="dtog-ai" class="ai-toggle active" onclick="setAutoGenerate(!_autoGenerate)" title="A AI gera a função de extração automaticamente">
-        <span class="ai-toggle-dot"></span><span class="ai-toggle-label">AI</span>
-      </button>
-      <span id="upload-summary" style="font-size:0.78rem;color:var(--text-muted);"></span>
-    </div>
-    <div id="upload-preview" style="display:none;">
-      <div class="preview-block">
-        <div class="preview-label" id="preview-rows-label">Linhas a criar no op_data</div>
-        <table id="preview-rows-table" style="width:100%;border-collapse:collapse;font-size:0.75rem;font-family:var(--mono);margin-top:0.4rem;">
-          <thead>
-            <tr>
-              <th style="text-align:left;padding:0.25rem 0.5rem;border-bottom:1px solid var(--border);color:var(--text-muted);font-weight:400;">#</th>
-              <th style="text-align:left;padding:0.25rem 0.5rem;border-bottom:1px solid var(--border);color:var(--text-muted);font-weight:400;">Ficheiro</th>
-            </tr>
-          </thead>
-          <tbody id="preview-rows-body"></tbody>
-        </table>
-      </div>
-    </div>
-  </div>
-
-  <!-- JSON mode -->
-  <div id="d-json-view" class="form-card" style="display:none;">
-    <div style="display:flex;justify-content:flex-end;margin-bottom:0.75rem;">
-      <button id="dbtn-form" style="background:none;border:none;color:var(--text-secondary);font-size:0.8rem;cursor:pointer;padding:0.2rem 0.4rem;border-radius:var(--radius);" onclick="setDataMode2('form')">ir para Formulário</button>
-    </div>
-    <div class="form-group full" style="margin-bottom:0.75rem;">
-      <label>relatório</label>
-      <div class="chk-dropdown" id="rep-json-dropdown">
-        <button type="button" class="chk-dropdown-toggle" id="rep-json-dropdown-toggle" onclick="toggleRepJsonDropdown()">
-          <span id="rep-json-dropdown-label">— Clica para carregar —</span>
-          <span>▾</span>
+      <div class="form-actions">
+        <button class="btn-primary" id="btn-data-submit" onclick="submitDataAuto()">Adicionar Ficheiro</button>
+        <button class="btn-ghost" onclick="clearDataForm()">Limpar</button>
+        <button type="button" id="dtog-ai" class="ai-toggle active" onclick="setAutoGenerate(!_autoGenerate)" title="A AI gera a função de extração automaticamente">
+          <span class="ai-toggle-dot"></span><span class="ai-toggle-label">AI</span>
         </button>
-        <div class="chk-dropdown-menu" id="rep-json-dropdown-menu" style="display:none;"></div>
+        <span id="upload-summary" style="font-size:0.78rem;color:var(--text-muted);"></span>
       </div>
-      <input type="hidden" id="d-json-rid"/>
+      <div id="upload-preview" style="display:none;">
+        <div class="preview-block">
+          <div class="preview-label" id="preview-rows-label">Linhas a criar no op_data</div>
+          <table id="preview-rows-table" style="width:100%;border-collapse:collapse;font-size:0.75rem;font-family:var(--mono);margin-top:0.4rem;">
+            <thead>
+              <tr>
+                <th style="text-align:left;padding:0.25rem 0.5rem;border-bottom:1px solid var(--border);color:var(--text-muted);font-weight:400;">#</th>
+                <th style="text-align:left;padding:0.25rem 0.5rem;border-bottom:1px solid var(--border);color:var(--text-muted);font-weight:400;">Ficheiro</th>
+              </tr>
+            </thead>
+            <tbody id="preview-rows-body"></tbody>
+          </table>
+        </div>
+      </div>
     </div>
-    <div class="form-group full" style="margin-bottom:0.75rem;">
-      <label>ficheiro JSON</label>
-      <input type="file" id="d-json-file" accept=".json" onchange="loadJsonFile('d-json-file','d-batch-json')"/>
-    </div>
-    <div class="form-group full" style="margin-bottom:1rem;">
-      <label>JSON</label>
-      <textarea id="d-batch-json" style="min-height:180px;font-size:0.78rem;" placeholder='[
+
+    <!-- JSON section -->
+    <div id="d-json-view" style="display:none;">
+      <div class="form-group full" style="margin-bottom:0.75rem;">
+        <label>relatório</label>
+        <div class="chk-dropdown" id="rep-json-dropdown">
+          <button type="button" class="chk-dropdown-toggle" id="rep-json-dropdown-toggle" onclick="toggleRepJsonDropdown()">
+            <span id="rep-json-dropdown-label">— Clica para carregar —</span>
+            <span>▾</span>
+          </button>
+          <div class="chk-dropdown-menu" id="rep-json-dropdown-menu" style="display:none;"></div>
+        </div>
+        <input type="hidden" id="d-json-rid"/>
+      </div>
+      <div class="form-group full" style="margin-bottom:0.75rem;">
+        <label>ficheiro JSON</label>
+        <input type="file" id="d-json-file" accept=".json" onchange="loadJsonFile('d-json-file','d-batch-json')"/>
+      </div>
+      <div class="form-group full" style="margin-bottom:1rem;">
+        <label>JSON</label>
+        <textarea id="d-batch-json" style="min-height:180px;font-size:0.78rem;" placeholder='[
   "https://api.imf.org/indicadores",
   "https://api.imf.org/valores"
 ]'></textarea>
+      </div>
+      <div class="form-actions">
+        <button class="btn-primary" id="btn-dbatch" onclick="submitBatchData()">Importar Lote</button>
+        <button type="button" id="dtog-ai-batch" class="ai-toggle active" onclick="setAutoGenerate(!_autoGenerate)" title="A AI gera a função de extração automaticamente">
+          <span class="ai-toggle-dot"></span><span class="ai-toggle-label">AI</span>
+        </button>
+      </div>
     </div>
-    <div class="form-actions">
-      <button class="btn-primary" id="btn-dbatch" onclick="submitBatchData()">Importar Lote</button>
-      <button type="button" id="dtog-ai-batch" class="ai-toggle active" onclick="setAutoGenerate(!_autoGenerate)" title="A AI gera a função de extração automaticamente">
-        <span class="ai-toggle-dot"></span><span class="ai-toggle-label">AI</span>
-      </button>
-    </div>
-  </div>
 
+  </div>
   </div><!-- end isec-dados -->
 
 </div>
@@ -1883,34 +1958,19 @@
         <textarea id="map-generation_hint" rows="2" style="width:100%;resize:vertical;font-family:var(--mono);font-size:0.8rem;" placeholder="Ex: Excel com 5 linhas de metadados antes do cabeçalho real; coluna ISO3Code = país; coluna NRI Score = valor; ano fixo 2025"></textarea>
       </div>
     </div>
-    <div class="table-wrapper" style="margin-bottom:2.5rem;">
-      <table>
-        <thead>
-          <tr>
-            <th>Source Code</th>
-            <th>Função</th>
-            <th>Hint AI</th>
-            <th style="width:60px;"></th>
-          </tr>
-        </thead>
-        <tbody id="table-body-mapeamentos-manual">
-          <tr><td colspan="4"><div class="state-box"><p>A carregar...</p></div></td></tr>
-        </tbody>
-      </table>
-    </div>
-
-    <div class="map-section-title">Mapeamento AI</div>
     <div class="table-wrapper">
       <table>
         <thead>
           <tr>
             <th>Source Code</th>
-            <th>Função gerada</th>
-            <th style="width:60px;"></th>
+            <th>Função Manual</th>
+            <th>Função AI</th>
+            <th>Hint</th>
+            <th style="width:90px;"></th>
           </tr>
         </thead>
-        <tbody id="table-body-mapeamentos-ai">
-          <tr><td colspan="3"><div class="state-box"><p>A carregar...</p></div></td></tr>
+        <tbody id="table-body-mapeamentos">
+          <tr><td colspan="5"><div class="state-box"><p>A carregar...</p></div></td></tr>
         </tbody>
       </table>
     </div>
@@ -2355,6 +2415,34 @@
     <div class="etl-modal-footer">
       <button class="btn-ghost" onclick="closeReportEditModal()">Cancelar</button>
       <button class="btn-primary" id="btn-rep-edit-save" onclick="saveReportEdit()">Guardar</button>
+    </div>
+  </div>
+</div>
+
+<!-- ══ Modal editar hint de mapeamento ══ -->
+<div id="hint-edit-modal" class="etl-modal-overlay" style="display:none;" onclick="closeHintModal(event)">
+  <div class="etl-modal-card" onclick="event.stopPropagation()" style="max-width:560px;width:100%;">
+    <div class="etl-modal-header">
+      <span>Editar Hint — <span id="hint-modal-source"></span></span>
+      <button class="btn-ghost" style="padding:0.25rem 0.55rem;font-size:0.85rem;line-height:1;" onclick="closeHintModal()">×</button>
+    </div>
+    <div style="display:flex;flex-direction:column;gap:0.9rem;">
+      <div class="form-group">
+        <label>função manual</label>
+        <input type="text" id="hint-modal-fn-manual" disabled style="opacity:0.55;"/>
+      </div>
+      <div class="form-group">
+        <label>função AI</label>
+        <input type="text" id="hint-modal-fn-ai" disabled style="opacity:0.55;"/>
+      </div>
+      <div class="form-group">
+        <label>hint para o gerador AI</label>
+        <textarea id="hint-modal-hint" rows="6" style="width:100%;resize:vertical;font-family:var(--mono);font-size:0.8rem;" placeholder="Descreve a estrutura do ficheiro para ajudar o gerador automático..."></textarea>
+      </div>
+    </div>
+    <div class="etl-modal-footer">
+      <button class="btn-ghost" onclick="closeHintModal()">Cancelar</button>
+      <button class="btn-primary" id="btn-hint-save" onclick="saveHint()">Guardar</button>
     </div>
   </div>
 </div>
@@ -3369,6 +3457,7 @@
       const indicator = this.value;
       const report_id = document.getElementById('dash-report-select').value;
       const selYear = document.getElementById('dash-year');
+      const prevYear = selYear.value;
       selYear.innerHTML = '<option value="">A carregar anos...</option>';
       selYear.disabled = true;
       if (!indicator) { selYear.innerHTML = '<option value="">— Primeiro seleciona um indicador —</option>'; return; }
@@ -3384,14 +3473,20 @@
           opt.value = y; opt.textContent = y;
           selYear.appendChild(opt);
         });
-        if (years.length === 1) selYear.value = years[0];
+        if (years.length === 1) {
+          selYear.value = years[0];
+        } else if (prevYear) {
+          selYear.value = prevYear;
+        } else {
+          selYear.value = years.includes(2026) ? 2026 : Math.max(...years);
+        }
       } catch (e) {
         selYear.innerHTML = '<option value="">Erro ao carregar</option>';
         showToast(`Erro ao carregar anos: ${e.message}`, 'error');
-      } finally { selYear.disabled = false; updateDashYearArrows(); }
+      } finally { selYear.disabled = false; updateDashYearArrows(); if (selYear.value) applyDashboard(); }
     });
 
-    document.getElementById('dash-year').addEventListener('change', updateDashYearArrows);
+    document.getElementById('dash-year').addEventListener('change', () => { updateDashYearArrows(); applyDashboard(); });
 
     // Indicador (timeseries) → países
     document.getElementById('ts-indicator').addEventListener('change', async function () {
@@ -3428,6 +3523,7 @@
       const indicator = this.value;
       const report_id = document.getElementById('dash-report-select').value;
       const selRankYear = document.getElementById('rank-year');
+      const prevRankYear = selRankYear.value;
       selRankYear.innerHTML = '<option value="">A carregar anos...</option>';
       selRankYear.disabled = true;
       if (!indicator) { selRankYear.innerHTML = '<option value="">— Primeiro seleciona um indicador —</option>'; return; }
@@ -3443,14 +3539,20 @@
           opt.value = y; opt.textContent = y;
           selRankYear.appendChild(opt);
         });
-        if (years.length === 1) selRankYear.value = years[0];
+        if (years.length === 1) {
+          selRankYear.value = years[0];
+        } else if (prevRankYear) {
+          selRankYear.value = prevRankYear;
+        } else {
+          selRankYear.value = years.includes(2026) ? 2026 : Math.max(...years);
+        }
       } catch (e) {
         selRankYear.innerHTML = '<option value="">Erro ao carregar</option>';
         showToast(`Erro ao carregar anos: ${e.message}`, 'error');
-      } finally { selRankYear.disabled = false; updateRankYearArrows(); }
+      } finally { selRankYear.disabled = false; updateRankYearArrows(); if (selRankYear.value) applyRanking(); }
     });
 
-    document.getElementById('rank-year').addEventListener('change', updateRankYearArrows);
+    document.getElementById('rank-year').addEventListener('change', () => { updateRankYearArrows(); applyRanking(); });
   }
 
   async function onDashReportChange() {
@@ -3907,11 +4009,9 @@
 
   // ── MAPEAMENTOS ──
   async function loadMappings() {
-    const tbodyManual = document.getElementById('table-body-mapeamentos-manual');
-    const tbodyAi     = document.getElementById('table-body-mapeamentos-ai');
-    const loading = '<tr><td colspan="4"><div class="state-box"><div class="spinner"></div><p>A carregar...</p></div></td></tr>';
-    tbodyManual.innerHTML = loading;
-    tbodyAi.innerHTML     = loading;
+    const tbody = document.getElementById('table-body-mapeamentos');
+    const loading = '<tr><td colspan="5"><div class="state-box"><div class="spinner"></div><p>A carregar...</p></div></td></tr>';
+    tbody.innerHTML = loading;
     try {
       const [mapsRes, fnsRes, srcsRes] = await Promise.all([
         fetch(`${API_BASE}/function_mappings`),
@@ -3930,40 +4030,23 @@
       fnSel.innerHTML = '<option value="">— Seleciona —</option>' +
         fns.map(f => `<option value="${escHtml(f.name)}">${escHtml(f.name)}</option>`).join('');
 
-      // Tabela manual
-      const manualRows = maps.filter(m => m.extract_function);
-      tbodyManual.innerHTML = manualRows.length === 0
-        ? '<tr><td colspan="4"><div class="state-box"><p>Sem mapeamentos manuais.</p></div></td></tr>'
-        : manualRows.map(m => `
+      // Tabela unificada
+      tbody.innerHTML = maps.length === 0
+        ? '<tr><td colspan="5"><div class="state-box"><p>Sem mapeamentos.</p></div></td></tr>'
+        : maps.map(m => `
           <tr>
             <td><span class="badge">${escHtml(m.source_code)}</span></td>
-            <td style="font-family:var(--mono);font-size:0.8rem;">${escHtml(m.extract_function)}</td>
-            <td style="font-size:0.78rem;color:var(--text-muted);max-width:280px;white-space:pre-wrap;word-break:break-word;">
-              ${m.generation_hint ? `<span title="${escHtml(m.generation_hint)}">${escHtml(m.generation_hint.length > 80 ? m.generation_hint.slice(0, 80) + '…' : m.generation_hint)}</span>
-              <button class="btn-ghost" style="font-size:0.68rem;padding:0.1rem 0.35rem;margin-left:0.4rem;" onclick="editHint('${escHtml(m.source_code)}', this)">Editar</button>` : `<button class="btn-ghost" style="font-size:0.68rem;padding:0.1rem 0.35rem;" onclick="editHint('${escHtml(m.source_code)}', this)">+ Hint</button>`}
-            </td>
-            <td style="text-align:center;">
-              <button class="btn-ghost" style="font-size:0.72rem;padding:0.15rem 0.45rem;color:var(--red);border-color:var(--red);"
-                onclick="deleteFunctionMapping('${escHtml(m.source_code)}', this)">Apagar</button>
+            <td style="font-family:var(--mono);font-size:0.8rem;">${escHtml(m.extract_function || '—')}</td>
+            <td style="font-family:var(--mono);font-size:0.8rem;">${escHtml(m.ai_extract_function || '—')}</td>
+            <td style="font-size:0.78rem;color:var(--text-muted);max-width:220px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;" title="${escHtml(m.generation_hint || '')}">${escHtml(m.generation_hint ? (m.generation_hint.length > 60 ? m.generation_hint.slice(0, 60) + '…' : m.generation_hint) : '')}</td>
+            <td style="text-align:right;">
+              <button class="btn-ghost" style="font-size:0.72rem;padding:0.15rem 0.45rem;"
+                onclick="openHintModal('${escHtml(m.source_code)}', '${escHtml(m.extract_function || '')}', '${escHtml(m.ai_extract_function || '')}', this)">Editar</button>
             </td>
           </tr>`).join('');
 
-      // Tabela AI
-      const aiRows = maps.filter(m => m.ai_extract_function);
-      tbodyAi.innerHTML = aiRows.length === 0
-        ? '<tr><td colspan="3"><div class="state-box"><p>Sem mapeamentos AI gerados.</p></div></td></tr>'
-        : aiRows.map(m => `
-          <tr>
-            <td><span class="badge">${escHtml(m.source_code)}</span></td>
-            <td style="font-family:var(--mono);font-size:0.8rem;">${escHtml(m.ai_extract_function)}</td>
-            <td style="text-align:center;">
-              <button class="btn-ghost" style="font-size:0.72rem;padding:0.15rem 0.45rem;color:var(--red);border-color:var(--red);"
-                onclick="deleteAiMapping('${escHtml(m.source_code)}', this)" title="Apagar mapeamento AI (a AI irá regenerar na próxima execução)">Apagar</button>
-            </td>
-          </tr>`).join('');
     } catch (e) {
-      tbodyManual.innerHTML = `<tr><td colspan="3"><div class="state-box"><p>Erro: ${escHtml(e.message)}</p></div></td></tr>`;
-      tbodyAi.innerHTML = '';
+      tbody.innerHTML = `<tr><td colspan="5"><div class="state-box"><p>Erro: ${escHtml(e.message)}</p></div></td></tr>`;
     }
   }
 
@@ -3991,22 +4074,40 @@
     }
   }
 
-  async function editHint(source_code, btn) {
-    const current = btn.closest('td').querySelector('span')?.title || '';
-    const novo = prompt(`Hint AI para '${source_code}':\n(Descreve a estrutura do ficheiro para o gerador automático)`, current);
-    if (novo === null) return;
+  function openHintModal(source_code, fn_manual, fn_ai, btn) {
+    const row = btn.closest('tr');
+    const currentHint = row.querySelector('td:nth-child(4)')?.title || '';
+    document.getElementById('hint-modal-source').textContent  = source_code;
+    document.getElementById('hint-modal-fn-manual').value     = fn_manual || '—';
+    document.getElementById('hint-modal-fn-ai').value         = fn_ai     || '—';
+    document.getElementById('hint-modal-hint').value          = currentHint;
+    document.getElementById('hint-edit-modal')._source        = source_code;
+    document.getElementById('hint-edit-modal').style.display  = 'flex';
+  }
+
+  function closeHintModal(e) {
+    if (e && e.target !== document.getElementById('hint-edit-modal')) return;
+    document.getElementById('hint-edit-modal').style.display = 'none';
+  }
+
+  async function saveHint() {
+    const source_code = document.getElementById('hint-edit-modal')._source;
+    const hint = document.getElementById('hint-modal-hint').value.trim() || null;
+    const btn  = document.getElementById('btn-hint-save');
     btn.disabled = true;
     try {
       const res = await fetch(`${API_BASE}/function_mappings/${encodeURIComponent(source_code)}/hint`, {
         method: 'PATCH',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ generation_hint: novo.trim() || null }),
+        body: JSON.stringify({ generation_hint: hint }),
       });
       if (!res.ok) throw new Error((await res.json()).detail || `HTTP ${res.status}`);
       showToast(`Hint para '${source_code}' atualizado.`);
+      document.getElementById('hint-edit-modal').style.display = 'none';
       loadMappings();
     } catch (e) {
       showToast(e.message, 'error');
+    } finally {
       btn.disabled = false;
     }
   }
@@ -4554,13 +4655,21 @@
 
   // ── TABS FONTE DO RELATÓRIO ──
   function setReportMode(mode) {
-    const isJson = mode === 'json';
-    document.getElementById('r-json-view').style.display = isJson ? '' : 'none';
-    document.getElementById('r-form-view').style.display = isJson ? 'none' : '';
-    document.getElementById('rbtn-json').style.display = isJson ? 'none' : '';
-    document.getElementById('rbtn-form').style.display = isJson ? '' : 'none';
-    document.getElementById('btn-report-submit').textContent = isJson ? 'Importar Lote'
-      : (document.getElementById('rsrc-upload').style.display !== 'none' ? 'Carregar PDF' : 'Adicionar Relatório');
+    const isJson  = mode === 'json';
+    const isFiles = mode === 'files';
+    const isForm  = mode === 'form';
+    document.getElementById('r-json-view').style.display  = isJson  ? '' : 'none';
+    document.getElementById('r-files-view').style.display = isFiles ? '' : 'none';
+    document.getElementById('r-form-view').style.display  = isForm  ? '' : 'none';
+    document.getElementById('rcard-form').classList.toggle('active',  isForm);
+    document.getElementById('rcard-json').classList.toggle('active',  isJson);
+    document.getElementById('rcard-files').classList.toggle('active', isFiles);
+    if (isJson)        document.getElementById('btn-report-submit').textContent = 'Importar Lote';
+    else if (isFiles)  document.getElementById('btn-report-submit').textContent = _filesSubMode === 'links' ? 'Inserir Links' : 'Carregar Ficheiros';
+    else {
+      const isUpload = document.getElementById('rsrc-upload').style.display !== 'none';
+      document.getElementById('btn-report-submit').textContent = isUpload ? 'Carregar PDF' : 'Adicionar Relatório';
+    }
   }
 
   function setReportSource(type) {
@@ -4575,19 +4684,130 @@
     }
   }
 
+  let _filesSubMode = 'upload';
+
+  function setFilesSubMode(mode) {
+    _filesSubMode = mode;
+    const isUpload = mode === 'upload';
+    document.getElementById('rf-upload-view').style.display = isUpload ? '' : 'none';
+    document.getElementById('rf-links-view').style.display  = isUpload ? 'none' : '';
+    document.getElementById('rfbtn-upload').classList.toggle('active', isUpload);
+    document.getElementById('rfbtn-links').classList.toggle('active', !isUpload);
+    document.getElementById('btn-report-submit').textContent = isUpload ? 'Carregar Ficheiros' : 'Inserir Links';
+    if (!isUpload && !document.querySelector('#r-links-container .r-link-row')) addLinkField();
+  }
+
+  function addLinkField() {
+    const container = document.getElementById('r-links-container');
+    const row = document.createElement('div');
+    row.className = 'r-link-row';
+    row.innerHTML = `<input type="url" placeholder="https://..." style="flex:1;" oninput="onLinkInput(this)"/>`
+      + `<button class="r-link-remove" onclick="removeLinkField(this)" title="Remover">&times;</button>`;
+    container.appendChild(row);
+    row.querySelector('input').focus();
+  }
+
+  function onLinkInput(input) {
+    const rows = document.querySelectorAll('#r-links-container .r-link-row');
+    const lastInput = rows[rows.length - 1].querySelector('input');
+    if (input === lastInput && input.value.trim()) addLinkField();
+  }
+
+  function removeLinkField(btn) {
+    const container = document.getElementById('r-links-container');
+    btn.closest('.r-link-row').remove();
+    if (!container.querySelector('.r-link-row')) addLinkField();
+  }
+
   function submitReportAuto() {
-    const isJson = document.getElementById('r-json-view').style.display !== 'none';
+    const isJson  = document.getElementById('r-json-view').style.display  !== 'none';
+    const isFiles = document.getElementById('r-files-view').style.display !== 'none';
     const isUpload = document.getElementById('rsrc-upload').style.display !== 'none';
-    if (isJson) submitBatchReports();
+    if (isJson)        submitBatchReports();
+    else if (isFiles)  _filesSubMode === 'links' ? submitReportLinks() : submitMultipleReportFiles();
     else if (isUpload) submitReportUpload();
-    else submitReport();
+    else               submitReport();
+  }
+
+  function updateFilesPreview() {
+    const input = document.getElementById('r-multi-files');
+    const preview = document.getElementById('r-files-preview');
+    if (!input.files.length) { preview.innerHTML = ''; return; }
+    preview.innerHTML = Array.from(input.files).map(f => `<div>• ${f.name}</div>`).join('');
+  }
+
+  async function submitMultipleReportFiles() {
+    const input = document.getElementById('r-multi-files');
+    if (!input.files.length) { showToast('Seleciona pelo menos um ficheiro PDF.', 'error'); return; }
+    const fd = new FormData();
+    for (const f of input.files) fd.append('files', f);
+    const btn = document.getElementById('btn-report-submit');
+    btn.disabled = true; btn.textContent = 'A carregar...';
+    _showLeftIndicator('A armazenar dados');
+    try {
+      const res = await fetch(`${API_BASE}/op_report/upload-files`, { method: 'POST', body: fd });
+      if (!res.ok) throw new Error((await res.json().catch(() => ({}))).detail || `HTTP ${res.status}`);
+      const data = await res.json();
+      _hideLeftIndicator();
+      if (data.errors.length === 0) showToast(`${data.inserted} ficheiro(s) carregado(s).`);
+      else showToast(`${data.inserted} carregado(s), ${data.errors.length} erro(s).`, 'error');
+      input.value = '';
+      document.getElementById('r-files-preview').innerHTML = '';
+      _watchPdfsPipeline();
+    } catch (e) { _hideLeftIndicator(); showToast(e.message, 'error'); }
+    finally { btn.disabled = false; btn.textContent = 'Carregar Ficheiros'; }
+  }
+
+  async function submitReportLinks() {
+    const urls = Array.from(document.querySelectorAll('#r-links-container .r-link-row input'))
+      .map(i => i.value.trim()).filter(v => v);
+    if (!urls.length) { showToast('Adiciona pelo menos um link.', 'error'); return; }
+    for (const url of urls) {
+      try { const u = new URL(url); if (!['http:', 'https:'].includes(u.protocol)) throw 0; }
+      catch { showToast(`URL inválido: ${url}`, 'error'); return; }
+    }
+    const btn = document.getElementById('btn-report-submit');
+    btn.disabled = true; btn.textContent = 'A inserir...';
+    _showLeftIndicator('A armazenar dados');
+    try {
+      const res = await fetch(`${API_BASE}/op_report/batch-links`, {
+        method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(urls)
+      });
+      if (!res.ok) throw new Error(`HTTP ${res.status}`);
+      const data = await res.json();
+      _hideLeftIndicator();
+      if (data.errors.length === 0) showToast(`${data.inserted} link(s) inserido(s).`);
+      else showToast(`${data.inserted} inserido(s), ${data.errors.length} erro(s).`, 'error');
+      document.getElementById('r-links-container').innerHTML = '';
+      addLinkField();
+      _watchPdfsPipeline();
+    } catch (e) { _hideLeftIndicator(); showToast(e.message, 'error'); }
+    finally { btn.disabled = false; btn.textContent = 'Inserir Links'; }
   }
 
   // ── TABS MODO DADOS ──
   function setDataMode2(mode) {
     const isJson = mode === 'json';
+    // Sincronizar o relatório selecionado entre os dois dropdowns
+    if (isJson) {
+      const id   = document.getElementById('d-up-rid').value;
+      const name = document.getElementById('rep-dropdown-label').textContent;
+      if (id) {
+        document.getElementById('d-json-rid').value = id;
+        document.getElementById('rep-json-dropdown-label').textContent = name;
+      }
+    } else {
+      const id   = document.getElementById('d-json-rid').value;
+      const name = document.getElementById('rep-json-dropdown-label').textContent;
+      if (id) {
+        document.getElementById('d-up-rid').value = id;
+        document.getElementById('rep-dropdown-label').textContent = name;
+      }
+    }
     document.getElementById('d-form-view').style.display = isJson ? 'none' : '';
     document.getElementById('d-json-view').style.display = isJson ? '' : 'none';
+    document.getElementById('dcard-form').classList.toggle('active', !isJson);
+    document.getElementById('dcard-json').classList.toggle('active',  isJson);
   }
 
   function setDataSource(type) {

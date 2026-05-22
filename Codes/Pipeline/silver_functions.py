@@ -25,7 +25,7 @@ def imf(data):
 
 
 def hfi(data) -> pd.DataFrame:
-    df = data if isinstance(data, pd.DataFrame) else pd.DataFrame(data)
+    df = data if isinstance(data, pd.DataFrame) else pd.read_excel(data)
     df.columns = df.columns.str.lower().str.strip()
 
     if "iso" not in df.columns:
@@ -63,6 +63,8 @@ def hfi(data) -> pd.DataFrame:
 
 
 def nri(data) -> pd.DataFrame:
+    if not isinstance(data, pd.DataFrame):
+        data = pd.read_excel(data)
     # Row 2 = nomes legíveis (Technology, Access, Mobile tariffs, ...)
     # Row 4 = códigos das colunas (NRI.score, 1.score, 1.1.1.score, ...)
     # Row 5+ = dados
@@ -107,6 +109,8 @@ def nri(data) -> pd.DataFrame:
 
 
 def heritage(data) -> pd.DataFrame:
+    if not isinstance(data, pd.DataFrame):
+        data = pd.read_excel(data)
     import pycountry as _pycountry
 
     def _to_iso3(name: str):
@@ -151,6 +155,8 @@ def heritage(data) -> pd.DataFrame:
 
 
 def fraser(data) -> pd.DataFrame:
+    if not isinstance(data, pd.DataFrame):
+        data = pd.read_excel(data)
     # iloc[3] = headers reais; iloc[4:] = dados (4 linhas de metadados antes)
     df = data.iloc[4:].copy()
     df.columns = [str(c) for c in data.iloc[3].values]
@@ -177,6 +183,54 @@ def fraser(data) -> pd.DataFrame:
                     "indicator_code": col.strip(),
                     "indicator_name": col.strip(),
                     "year": int(float(year)),
+                    "value": float(val),
+                })
+            except (ValueError, TypeError):
+                continue
+
+    return pd.DataFrame(rows).dropna(subset=["location_code", "indicator_code", "year", "value"])
+
+
+def wef_ttdi(data) -> pd.DataFrame:
+    if isinstance(data, pd.DataFrame):
+        df = data.reset_index(drop=True)
+        # Detetar linha de cabeçalho dinamicamente (compatibilidade com testes manuais)
+        attr_col = 9
+        header_row = next(
+            (i for i in range(min(10, len(df))) if str(df.iloc[i, attr_col]).strip() == "Attribute"),
+            None,
+        )
+        if header_row is None:
+            raise ValueError("Linha de cabeçalho com 'Attribute' não encontrada nas primeiras 10 linhas.")
+    else:
+        df = pd.read_excel(data, sheet_name="Dataset", header=None)
+        header_row = 3  # estrutura fixa da sheet Dataset
+
+    country_start = 10
+    country_cols = list(range(country_start, df.shape[1]))
+    countries = df.iloc[header_row, country_cols].tolist()
+
+    data_df = df.iloc[header_row + 1:].copy()
+    score_mask = data_df.iloc[:, 9].astype(str).str.strip().str.lower() == "score"
+    score_df = data_df[score_mask]
+
+    if score_df.empty:
+        raise ValueError("Nenhuma linha com Attribute='Score' encontrada.")
+
+    rows = []
+    for _, row in score_df.iterrows():
+        ind_code = str(row.iloc[6]).strip()
+        ind_name = str(row.iloc[7]).strip()
+        for i, iso3 in zip(country_cols, countries):
+            val = row.iloc[i]
+            if pd.isna(val):
+                continue
+            try:
+                rows.append({
+                    "location_code": str(iso3).strip(),
+                    "indicator_code": ind_code,
+                    "indicator_name": ind_name,
+                    "year": 2024,
                     "value": float(val),
                 })
             except (ValueError, TypeError):

@@ -67,7 +67,7 @@ def read_raw_object(s3, key: str):
     elif fmt == "csv":
         return pd.read_csv(io.BytesIO(content))
     elif fmt == "excel":
-        return pd.read_excel(io.BytesIO(content))
+        return io.BytesIO(content)
     else:
         return json.loads(content)
 

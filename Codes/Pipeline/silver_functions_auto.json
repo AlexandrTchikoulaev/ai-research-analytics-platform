@@ -14,5 +14,9 @@
   "valores_dcff": {
     "code": "import json\nfrom typing import Dict, Any\nimport pandas as pd\n\ndef valores_dcff(data):\n    inds = data.get(\"indicators\", {})\n    rows = []\n    for ind, locs in data.get(\"values\", {}).items():\n        if isinstance(locs, dict):\n            for loc, yrs in locs.items():\n                if isinstance(yrs, dict):\n                    ind_name = inds.get(ind, {}).get(\"label\", ind)\n                    year = int(list(yrs.keys())[0])\n                    for yr, v in yrs.items():\n                        rows.append({\"location_code\": loc, \"indicator_code\": ind, \"indicator_name\": ind_name, \"year\": year, \"value\": float(v)})\n    return pd.DataFrame(rows).dropna(subset=[\"location_code\",\"indicator_code\",\"year\",\"value\"])",
     "created_at": "2026-05-22T04:54:11.720064"
+  },
+  "valores_a7bd": {
+    "code": "import re\nimport pandas as pd\n\ndef valores_a7bd(data):\n    skip = {\"code\"}\n    ind_cols = [col for col in data.columns if col not in skip]\n    pattern = r'^.+\\.raw\\.\\d{4}$'\n    rows = []\n    for iso, row in data.iterrows():\n        for col in ind_cols:\n            match = re.match(pattern, col)\n            if match:\n                indicator_code = col.split('.')[0]\n                year = int(col.split('.')[-1])\n                rows.append({\"location_code\": row['iso'], \"indicator_code\": indicator_code, \"indicator_name\": indicator_code, \"year\": year, \"value\": row[col]})\n    return pd.DataFrame(rows).dropna(subset=[\"location_code\",\"indicator_code\",\"year\",\"value\"])",
+    "created_at": "2026-05-22T20:28:16.364198"
   }
 }

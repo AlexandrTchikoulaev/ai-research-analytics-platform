@@ -5,7 +5,10 @@ Limpa todos os dados da pipeline sem apagar a estrutura das tabelas.
   - gestao_db     : TRUNCATE op_data, op_report (CASCADE), etl_logs_dados, etl_logs_pdfs
   - vector_db     : DELETE langchain_pg_embedding e langchain_pg_collection
   - MinIO         : elimina todos os objetos dos buckets bronze/silver/bronze-unstructured/thumbnails
+  - Reports       : elimina ficheiros em Reports/PDFs/ e Reports/Data/
 """
+import os
+import glob
 import psycopg2
 import boto3
 
@@ -81,12 +84,31 @@ def clear_minio():
             print(f"  ERRO bucket '{bucket}': {e}")
 
 
+def clear_reports():
+    base = os.path.normpath(os.path.join(os.path.dirname(os.path.abspath(__file__)), "..", "..", "Reports"))
+    patterns = [
+        os.path.join(base, "PDFs", "pipeline_reports_report_*.txt"),
+        os.path.join(base, "Data", "pipeline_data_report_*.txt"),
+    ]
+    total = 0
+    for pattern in patterns:
+        for path in glob.glob(pattern):
+            try:
+                os.remove(path)
+                print(f"  OK  {os.path.relpath(path, base)}")
+                total += 1
+            except Exception as e:
+                print(f"  ERRO ao apagar {path}: {e}")
+    if total == 0:
+        print("  Sem relatórios para apagar.")
+
+
 if __name__ == "__main__":
     print("=" * 60)
     print("RESET PIPELINE")
     print("=" * 60)
 
-    print("\n[1/4] Data Warehouse (warehouse_db)...")
+    print("\n[1/5] Data Warehouse (warehouse_db)...")
     # dim_location e dim_date são seed estático (países ISO + anos) — não devem ser apagadas no reset
     truncate_tables("warehouse_db", [
         "fact_values",
@@ -94,15 +116,18 @@ if __name__ == "__main__":
         "dim_indicator",
     ])
 
-    print("\n[2/4] Operational DB (gestao_db)...")
+    print("\n[2/5] Operational DB (gestao_db)...")
     truncate_tables("gestao_db", ["op_data", "op_report"])
     truncate_tables("gestao_db", ["etl_logs_dados", "etl_logs_pdfs"])
 
-    print("\n[3/4] Vector DB (vector_db)...")
+    print("\n[3/5] Vector DB (vector_db)...")
     clear_vector_db()
 
-    print("\n[4/4] MinIO — buckets...")
+    print("\n[4/5] MinIO — buckets...")
     clear_minio()
+
+    print("\n[5/5] Relatórios de pipeline...")
+    clear_reports()
 
     print("\n" + "=" * 60)
     print("RESET CONCLUÍDO — sistema pronto para nova carga.")

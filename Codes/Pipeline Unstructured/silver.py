@@ -4,6 +4,7 @@ from langchain_community.embeddings.ollama import OllamaEmbeddings
 from langchain_community.vectorstores import PGVector
 
 from minio import Minio
+from minio.error import S3Error
 import pdfplumber
 
 import io
@@ -203,32 +204,42 @@ def assign_chunk_ids(chunks: list) -> list:
     return chunks
 
 
-def add_to_pgvector(chunks: list):
-    connection_string = (
-        f"postgresql://{DB_VECTOR['user']}:{DB_VECTOR['password']}"
+def _make_connection_string() -> str:
+    # keepalives evitam que o PostgreSQL corte conexões idle durante chamadas Ollama lentas
+    return (
+        f"postgresql+psycopg2://{DB_VECTOR['user']}:{DB_VECTOR['password']}"
         f"@{DB_VECTOR['host']}:{DB_VECTOR['port']}/{DB_VECTOR['database']}"
+        f"?keepalives=1&keepalives_idle=30&keepalives_interval=10&keepalives_count=5"
     )
-    embedding_fn = get_embedding_function()
 
-    store = PGVector(
-        connection_string=connection_string,
-        embedding_function=embedding_fn,
-        collection_name=COLLECTION_NAME,
-        pre_delete_collection=False,
-    )
+
+def add_to_pgvector(chunks: list):
+    connection_string = _make_connection_string()
+    embedding_fn = get_embedding_function()
+    total = 0
 
     for i in range(0, len(chunks), BATCH_SIZE):
         batch = chunks[i:i + BATCH_SIZE]
+        batch_num = i // BATCH_SIZE + 1
         try:
+            # Nova store por lote: ligação fresca depois de cada chamada Ollama
+            # evita "Collection not found" e "connection abort" por idle timeout
+            store = PGVector(
+                connection_string=connection_string,
+                embedding_function=embedding_fn,
+                collection_name=COLLECTION_NAME,
+                pre_delete_collection=False,
+            )
             store.add_documents(batch)
-            print(f"  Lote {i // BATCH_SIZE + 1}: {len(batch)} chunks inseridos")
+            total += len(batch)
+            print(f"  Lote {batch_num}: {len(batch)} chunks inseridos")
         except Exception as e:
-            msg = f"Falha ao inserir lote {i // BATCH_SIZE + 1}: {e}"
+            msg = f"Falha ao inserir lote {batch_num}: {e}"
             print(f"  [ERRO] {msg}")
-            _log_to_etl(f"batch_{i // BATCH_SIZE + 1}", "silver", msg)
+            _log_to_etl(f"batch_{batch_num}", "silver", msg)
             raise
 
-    print(f"{len(chunks)} chunks inseridos no total.")
+    print(f"{total} chunks inseridos no total.")
 
 
 def main():
@@ -269,6 +280,15 @@ def main():
             add_to_pgvector(chunks)
             _mark_status(report_id, "DONE", None)
             print(f"[OK]   report_id={report_id}  {file_name}")
+        except S3Error as e:
+            if e.code == "NoSuchKey":
+                _mark_status(report_id, "PENDING", None)
+                print(f"[PENDING] report_id={report_id}  {file_name}: ficheiro não existe no bucket, reposto como PENDING")
+            else:
+                err_msg = str(e)
+                _mark_status(report_id, "FAILED", err_msg)
+                _log_to_etl(file_name, "silver", err_msg, report_id)
+                print(f"[ERRO] report_id={report_id}  {file_name}: {err_msg}")
         except Exception as e:
             err_msg = str(e)
             _mark_status(report_id, "FAILED", err_msg)
