@@ -1809,4 +1809,127 @@ A carregar: World Competitiveness Ranking
 150 páginas novas carregadas.
   Lote 1: 50 chunks inseridos
   Lote 2: 50 chunks inseridos
-  [ERRO] Falha ao inserir lote 3: (
+  [ERRO] Falha ao inserir lote 3: (psycopg2.OperationalError) could not receive data from server: Software caused connection abort (0x00002745/10053)
+
+[SQL: SELECT langchain_pg_collection.name AS langchain_pg_collection_name, langchain_pg_collection.cmetadata AS langchain_pg_collection_cmetadata, langchain_pg_collection.uuid AS langchain_pg_collection_uuid 
+FROM langchain_pg_collection 
+WHERE langchain_pg_collection.name = %(name_1)s 
+ LIMIT %(param_1)s]
+[parameters: {'name_1': 'documents', 'param_1': 1}]
+(Background on this error at: https://sqlalche.me/e/20/e3q8)
+[ERRO] report_id=6  World Competitiveness Ranking: (psycopg2.OperationalError) could not receive data from server: Software caused connection abort (0x00002745/10053)
+
+[SQL: SELECT langchain_pg_collection.name AS langchain_pg_collection_name, langchain_pg_collection.cmetadata AS langchain_pg_collection_cmetadata, langchain_pg_collection.uuid AS langchain_pg_collection_uuid 
+FROM langchain_pg_collection 
+WHERE langchain_pg_collection.name = %(name_1)s 
+ LIMIT %(param_1)s]
+[parameters: {'name_1': 'documents', 'param_1': 1}]
+(Background on this error at: https://sqlalche.me/e/20/e3q8)
+A carregar: Network Readiness Index 2025
+279 páginas novas carregadas.
+  [ERRO] Falha ao inserir lote 1: Failed to create vector extension: (psycopg2.OperationalError) connection to server at "localhost" (::1), port 5433 failed: Connection refused (0x0000274D/10061)
+	Is the server running on that host and accepting TCP/IP connections?
+connection to server at "localhost" (127.0.0.1), port 5433 failed: Connection refused (0x0000274D/10061)
+	Is the server running on that host and accepting TCP/IP connections?
+
+(Background on this error at: https://sqlalche.me/e/20/e3q8)
+[AVISO] Não foi possível atualizar status report_id=7: connection to server at "localhost" (::1), port 5433 failed: Connection refused (0x0000274D/10061)
+	Is the server running on that host and accepting TCP/IP connections?
+connection to server at "localhost" (127.0.0.1), port 5433 failed: Connection refused (0x0000274D/10061)
+	Is the server running on that host and accepting TCP/IP connections?
+
+[ERRO] report_id=7  Network Readiness Index 2025: Failed to create vector extension: (psycopg2.OperationalError) connection to server at "localhost" (::1), port 5433 failed: Connection refused (0x0000274D/10061)
+	Is the server running on that host and accepting TCP/IP connections?
+connection to server at "localhost" (127.0.0.1), port 5433 failed: Connection refused (0x0000274D/10061)
+	Is the server running on that host and accepting TCP/IP connections?
+
+(Background on this error at: https://sqlalche.me/e/20/e3q8)
+A carregar: Technology and innovation report
+182 páginas novas carregadas.
+  Lote 1: 50 chunks inseridos
+  Lote 2: 50 chunks inseridos
+  Lote 3: 50 chunks inseridos
+  Lote 4: 50 chunks inseridos
+  Lote 5: 50 chunks inseridoste a db migration for your metadata column to be JSONB and update your queries to use the new operators. 
+  store = PGVector(
+
+ PIPELINE DE PDFs INICIADO
+ 2026-05-22 21:19:24
+
+
+==================================================
+ 1/4 — validate_op_report
+==================================================
+validate_op_report — 22 válidos, 0 inválidos
+[OK] 1/4 — validate_op_report concluído.
+
+==================================================
+ 2/4 — bronze
+==================================================
+A correr bronze (ingest unstructured)...
+A descarregar: https://www.cato.org/sites/cato.org/files/2024-12/2024-human-freedom-index.pdf
+[THUMB] Thumbnail gerado: report_id=1
+[OK]   report_id=1  the HUMAN FREEDOM INDEX
+A descarregar: https://reports.weforum.org/docs/WEF_GGGR_2025.pdf
+[THUMB] Thumbnail gerado: report_id=2
+[OK]   report_id=2  Global Gender Gap Report
+A descarregar: https://imd.widen.net/content/xclarczvwr/pdf/WDCR_Report_2025.pdf
+[THUMB] Thumbnail gerado: report_id=3
+[OK]   report_id=3  World Digital Competitiveness Ranking
+A descarregar: https://ccpi.org/ranking/
+[ERRO] report_id=4  The Climate Change Performance Index (CCPI): O servidor devolveu HTML em vez do PDF (bloqueio/CAPTCHA). Content-Type: text/html
+A descarregar: https://hdr.undp.org/system/files/documents/global-report-document/hdr2025reporten.pdf
+[THUMB] Thumbnail gerado: report_id=5
+[OK]   report_id=5  Human Development Index
+A descarregar: https://imd.widen.net/s/wtx5fd2ltn/booklet_wcy_2025
+[THUMB] Thumbnail gerado: report_id=6
+[OK]   report_id=6  World Competitiveness Ranking
+A descarregar: https://download.networkreadinessindex.org/reports/data/2025/nri-2025.pdf
+[THUMB] Thumbnail gerado: report_id=7
+[OK]   report_id=7  Network Readiness Index 2025
+A descarregar: https://unctad.org/system/files/official-document/tir2025_en.pdf
+[THUMB] Thumbnail gerado: report_id=8
+[OK]   report_id=8  Technology and innovation report
+A descarregar: https://www.kearney.com/documents/291362523/313978989/World-recalibrating-The-2026-FDI-Confidence-Index--Executive+Summary-PDF.pdf/3799c0c9-0ead-ed85-abf1-aa74dcfc64a2?t=1775723178000
+[ERRO] report_id=9  The 2025 Kearney FDI Confidence Index®: World at inflection: Parameter validation failed:
+Non ascii characters found in S3 metadata for key "file_name", value: "The 2025 Kearney FDI Confidence Index®: World at inflection".  
+S3 metadata can only contain ASCII characters. 
+A descarregar: https://www.wipo.int/web-publications/global-innovation-index-2025/assets/89507/global-innovation-index-2025-en.pdf
+[THUMB] Thumbnail gerado: report_id=10
+[OK]   report_id=10  Global Innovation Index
+A descarregar: https://imd.widen.net/content/eaznvosueg/pdf/WCC-WTR-2025.pdf?u=dnnfeq
+[THUMB] Thumbnail gerado: report_id=11
+[OK]   report_id=11  IMD World Talent Ranking
+A descarregar: https://www.idea.int/sites/default/files/2025-09/global-state-of-democracy-2025-democracy-on-the-move.pdf
+[THUMB] Thumbnail gerado: report_id=12
+[OK]   report_id=12  The Global State of Democracy 2025
+A descarregar: https://www.visionofhumanity.org/wp-content/uploads/2025/06/Global-Peace-Index-2025-web.pdf
+[THUMB] Thumbnail gerado: report_id=13
+[OK]   report_id=13  Global Peace Index 2025
+A descarregar: https://ccpi.org/wp-content/uploads/CCPI-2026-Results-1.pdf
+[ERRO] report_id=14  Climate Change Performance Index (CCPI) 2026: O servidor devolveu HTML em vez do PDF (bloqueio/CAPTCHA). Content-Type: text/html
+A descarregar: https://www3.weforum.org/docs/WEF_Travel_and_Tourism_Development_Index_2024.pdf
+[THUMB] Thumbnail gerado: report_id=15
+[OK]   report_id=15  Travel & Tourism Development Index 2024
+A descarregar: https://static.heritage.org/index/pdf/2026/2026_indexofeconomicfreedom_preface.pdf
+[THUMB] Thumbnail gerado: report_id=16
+[OK]   report_id=16  Index of Economic Freedom
+A descarregar: https://www.oecd.org/content/dam/oecd/en/publications/reports/2025/06/government-at-a-glance-2025_70e14c6c/0efd0bcd-en.pdf
+[THUMB] Thumbnail gerado: report_id=17
+[OK]   report_id=17  Government at a Glance 2025 (Digital government index)
+A descarregar: https://www.fraserinstitute.org/sites/default/files/2024-10/economic-freedom-of-the-world-2024.pdf
+  [1/3] HTTP 403, a aguardar 5s...
+  [2/3] HTTP 403, a aguardar 10s...
+[ERRO] report_id=18  Economic Freedom of the World, 2024: 403 Client Error: Forbidden for url: https://www.fraserinstitute.org/sites/default/files/2024-10/economic-freedom-of-the-world-2024.pdf
+A descarregar: https://epi.yale.edu/downloads/2024-epi-report-20250106.pdf
+[THUMB] Thumbnail gerado: report_id=19
+[OK]   report_id=19  Environmental Performance Index (EPI)
+A descarregar: https://www.intrum.com/media/caqod3qr/intrum-epr-2025.pdf
+MuPDF error: format error: No common ancestor in structure tree
+
+C:\Users\Alexandr\Desktop\Universidade\3º Ano\Projeto\Projeto-Final-Eu\Codes\Pipeline Unstructured\silver.py:74: LangChainDeprecationWarning: The class `OllamaEmbeddings` was deprecated in LangChain 0.3.1 and will be removed in 1.0.0. An updated version of the class exists in the `langchain-ollama package and should be used instead. To use it run `pip install -U `langchain-ollama` and import as `from `langchain_ollama import OllamaEmbeddings``.
+  return OllamaEmbeddings(model="mxbai-embed-large")
+C:\Users\Alexandr\Desktop\Universidade\3º Ano\Projeto\Projeto-Final-Eu\Codes\Pipeline Unstructured\silver.py:227: LangChainPendingDeprecationWarning: This class is pending deprecation and may be removed in a future version. You can swap to using the `PGVector` implementation in `langchain_postgres`. Please read the guidelines in the doc-string of this class to follow prior to migrating as there are some differences between the implementations. See <https://github.com/langchain-ai/langchain-postgres> for details about the new implementation.
+  store = PGVector(
+C:\Users\Alexandr\Desktop\Universidade\3º Ano\Projeto\Projeto-Final-Eu\Codes\Pipeline Unstructured\silver.py:227: LangChainPendingDeprecationWarning: Please use JSONB instead of JSON for metadata. This change will allow for more efficient querying that involves filtering based on metadata. Please note that filtering operators have been changed when using JSONB metadata to be prefixed with a $ sign to avoid name collisions with columns. If you're using an existing database, you will need to create a db migration for your metadata column to be JSONB and update your queries to use the new operators. 
+  store = PGVector(
