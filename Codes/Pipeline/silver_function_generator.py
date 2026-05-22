@@ -15,6 +15,7 @@ API pública:
 """
 
 import io
+import os
 import re
 import json
 import hashlib
@@ -23,7 +24,7 @@ import pandas as pd
 import requests
 
 OLLAMA_URL     = "http://localhost:11434/api/generate"
-OLLAMA_MODEL   = "qwen2.5:7b"
+OLLAMA_MODEL   = "mistral"
 OLLAMA_TIMEOUT = 300  # segundos
 
 # ── System prompts especializados (exemplos inline, curtos) ───────────────────
@@ -132,7 +133,7 @@ def _build_sample(content: bytes, fmt: str, file_type: str = "value") -> tuple:
     """Devolve (sample_str, parsed_data) para passar ao Ollama e ao validador."""
     if fmt == "json":
         data = json.loads(content)
-        sample = _json_skeleton(data, max_depth=3, max_items=5)
+        sample = _json_skeleton(data, max_depth=4, max_items=5)
         return sample, data
     if fmt == "csv":
         df = pd.read_csv(io.BytesIO(content))
@@ -258,12 +259,13 @@ def _validate(code: str, parsed_data, function_name: str) -> dict:
 
 # ── API pública ───────────────────────────────────────────────────────────────
 
-def generate_and_validate(content: bytes) -> dict:
+def generate_and_validate(content: bytes, hint: str = None) -> dict:
     """
     Gera e valida automaticamente uma função de transformação silver.
 
     Args:
         content: bytes do ficheiro de dados
+        hint:    dica opcional sobre a estrutura do ficheiro (injetada no prompt)
 
     Returns:
         dict com as chaves:
@@ -283,8 +285,10 @@ def generate_and_validate(content: bytes) -> dict:
         }
 
     def _base_user_prompt():
+        hint_block = f"\nSOURCE HINT:\n{hint.strip()}\n" if hint and hint.strip() else ""
         return (
-            f"Generate a transformation function for the following {fmt.upper()} file.\n\n"
+            f"Generate a transformation function for the following {fmt.upper()} file.\n"
+            f"{hint_block}\n"
             f"FILE SAMPLE:\n{sample_str}\n\n"
             f"FUNCTION NAME: {function_name}\n\n"
             f"Return ONLY the Python function code. No markdown, no explanations."
@@ -333,6 +337,24 @@ def generate_and_validate(content: bytes) -> dict:
         "error":         validation["error"],
         "preview":       validation["preview"],
     }
+
+
+# ── Persistência da função gerada ────────────────────────────────────────────
+
+_AUTO_STORE = os.path.join(os.path.dirname(os.path.abspath(__file__)), "silver_functions_auto.json")
+
+
+def save_to_auto_store(function_name: str, code: str) -> None:
+    """Persiste uma função gerada em silver_functions_auto.json."""
+    from datetime import datetime
+    try:
+        with open(_AUTO_STORE, encoding="utf-8") as f:
+            store = json.load(f)
+    except (FileNotFoundError, json.JSONDecodeError):
+        store = {}
+    store[function_name] = {"code": code, "created_at": datetime.utcnow().isoformat()}
+    with open(_AUTO_STORE, "w", encoding="utf-8") as f:
+        json.dump(store, f, ensure_ascii=False, indent=2)
 
 
 # ── Teste rápido via linha de comandos ────────────────────────────────────────

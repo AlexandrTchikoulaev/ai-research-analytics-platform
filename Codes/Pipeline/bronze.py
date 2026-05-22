@@ -53,7 +53,7 @@ def main():
 
     # Lock rows PENDING e marca imediatamente como PROCESSING (liberta o lock de seguida)
     cur.execute("""
-        SELECT file_id, report_id, file_url, extract_function
+        SELECT file_id, report_id, file_url
         FROM op_data
         WHERE pipeline_status = 'PENDING'
         ORDER BY file_id
@@ -77,7 +77,7 @@ def main():
     ok_count = 0
     err_count = 0
 
-    for file_id, report_id, file_url, extract_function in rows:
+    for file_id, report_id, file_url in rows:
 
         # Ficheiro já carregado via upload — já está no MinIO
         if not file_url:
@@ -104,7 +104,6 @@ def main():
                 Body=content,
                 Metadata={
                     "report_id": str(report_id) if report_id is not None else "",
-                    "extract_function": extract_function or "",
                 },
             )
             cur.execute(

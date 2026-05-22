@@ -39,8 +39,10 @@ def generate(run_start: datetime, success: bool):
 
     # ── Candidatos (todos os ficheiros que passaram pela pipeline) ────────
     cur_op.execute("""
-        SELECT d.file_id, d.report_id, d.file_url, d.extract_function,
+        SELECT d.file_id, d.report_id, d.file_url,
                d.pipeline_status, d.pipeline_error,
+               d.auto_generate,
+               d.transform_fn_name, d.transform_fn_source,
                r.file_name AS report_name, r.source_code
         FROM op_data d
         LEFT JOIN op_report r ON r.report_id = d.report_id
@@ -158,6 +160,16 @@ def generate(run_start: datetime, success: bool):
     s5_invalid = len(silver_errs)
     s5_valid   = s4_ok - s5_invalid
 
+    fn_gerada = sum(1 for r in candidates if r["transform_fn_source"] == "ai_gerada")
+    fn_cache  = sum(1 for r in candidates if r["transform_fn_source"] == "ai_cache")
+    fn_manual = sum(1 for r in candidates if r["transform_fn_source"] == "manual")
+    fn_none   = sum(1 for r in candidates
+                    if r["pipeline_status"] == "FAILED"
+                    and r["file_id"] not in invalid_opdata
+                    and r["file_id"] not in ingest_errs
+                    and r["file_id"] not in bronze_errs
+                    and not r["transform_fn_source"])
+
     s6_done = sum(1 for r in candidates if r["pipeline_status"] == "DONE")
     s6_errs = len(load_errs_list)
 
@@ -178,7 +190,8 @@ def generate(run_start: datetime, success: bool):
     w(f"[1] validate_opdata      Total: {s1_total:<4}  Válidos: {s1_valid:<4}  Inválidos: {s1_invalid:<4}  → etl_logs: {s1_invalid}")
     w(f"[2] Ingestão Bronze      Processados: {s1_valid:<4}  OK: {s2_ok:<4}  Erro: {s2_url_err:<4}  → etl_logs: {s2_url_err}")
     w(f"[3] Validação Bronze     Validados: {s2_ok:<4}  OK: {s3_valid:<4}  Inválidos: {s3_invalid:<4}  → etl_logs: {s3_invalid}")
-    w(f"[4] Transformação Silver OK (SILVER_OK/DONE): {s4_ok:<4}  Erro: {s4_err:<4}  → etl_logs: {len(transform_errs)}")
+    fn_detail = f"  [AI gerada: {fn_gerada}  AI cache: {fn_cache}  manual: {fn_manual}  sem função: {fn_none}]"
+    w(f"[4] Transformação Silver OK (SILVER_OK/DONE): {s4_ok:<4}  Erro: {s4_err:<4}{fn_detail}  → etl_logs: {len(transform_errs)}")
     w(f"[5] Validação Silver     OK: {s5_valid:<4}  Inválidos: {s5_invalid:<4}  → etl_logs: {s5_invalid}")
     w(f"[6] Warehouse (gold)     DONE: {s6_done:<4}  dim_report: {dim_report_run}  dim_location: {dim_location_total}  "
       f"dim_indicator: {dim_indicator_total}  fact_values: {total_facts}  Erros: {s6_errs}")
@@ -196,13 +209,12 @@ def generate(run_start: datetime, success: bool):
         for r in candidates:
             fid   = r["file_id"]
             label = f"[{r['source_code']}] {r['report_name']}" if r["report_name"] else f"report_id={r['report_id']}"
-            fn    = r["extract_function"] or "—"
+            mode  = "manual" if not r["auto_generate"] else "auto"
             if fid in invalid_opdata:
-                w(f"  INVALIDO  file_id={fid}  {label}")
-                w(f"            fn={fn}")
+                w(f"  INVALIDO  file_id={fid}  {label}  mode={mode}")
                 w(f"            Erro: {invalid_opdata[fid]}")
             else:
-                w(f"  OK        file_id={fid}  {label}  fn={fn}")
+                w(f"  OK        file_id={fid}  {label}  mode={mode}")
     w("")
 
     # ══════════════════════════════════════════════════════════════════════
@@ -262,22 +274,30 @@ def generate(run_start: datetime, success: bool):
     if not to_transform:
         w("  Nenhum ficheiro chegou a esta fase.")
     else:
+        _fn_src_label = {
+            "ai_gerada": "[AI gerada]",
+            "ai_cache":  "[AI cache]",
+            "manual":    "[manual]",
+        }
         for r in to_transform:
-            fid    = r["file_id"]
-            fn     = r["extract_function"] or "—"
-            status = status_map.get(fid, "PENDING")
+            fid        = r["file_id"]
+            fn_name    = r["transform_fn_name"] or "—"
+            fn_src     = r["transform_fn_source"] or ""
+            fn_label   = _fn_src_label.get(fn_src, f"[{fn_src}]") if fn_src else ""
+            fn_str     = f"fn={fn_name} {fn_label}".strip()
+            status     = status_map.get(fid, "PENDING")
             silver_key = f"{fid}.parquet"
             if fid in transform_errs:
-                w(f"  ERRO      file_id={fid}  fn={fn}")
+                w(f"  ERRO      file_id={fid}  {fn_str}")
                 w(f"            Erro: {transform_errs[fid]}")
             elif status in ("SILVER_OK", "DONE"):
-                w(f"  OK        file_id={fid}  fn={fn}  -> {silver_key}")
+                w(f"  OK        file_id={fid}  {fn_str}  -> {silver_key}")
             elif status == "FAILED":
                 pipeline_err = error_map.get(fid) or "—"
-                w(f"  FAILED    file_id={fid}  fn={fn}")
+                w(f"  FAILED    file_id={fid}  {fn_str}")
                 w(f"            Erro: {pipeline_err}")
             else:
-                w(f"  {status:<9} file_id={fid}  fn={fn}")
+                w(f"  {status:<9} file_id={fid}  {fn_str}")
     w("")
 
     # ══════════════════════════════════════════════════════════════════════

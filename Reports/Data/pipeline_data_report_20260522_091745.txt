@@ -1,0 +1,65 @@
+========================================================================
+RELATÓRIO DA PIPELINE DE DADOS
+Gerado em          : 2026-05-22 09:22:50
+Início da execução : 2026-05-22 09:17:45
+Estado             : FALHOU
+========================================================================
+
+------------------------------------------------------------------------
+RESUMO
+------------------------------------------------------------------------
+[1] validate_opdata      Total: 2     Válidos: 2     Inválidos: 0     → etl_logs: 0
+[2] Ingestão Bronze      Processados: 2     OK: 2     Erro: 0     → etl_logs: 0
+[3] Validação Bronze     Validados: 2     OK: 2     Inválidos: 0     → etl_logs: 0
+[4] Transformação Silver OK (SILVER_OK/DONE): 0     Erro: 0     [AI gerada: 0  AI cache: 0  manual: 0  sem função: 0]  → etl_logs: 0
+[5] Validação Silver     OK: 0     Inválidos: 0     → etl_logs: 0
+[6] Warehouse (gold)     DONE: 0     dim_report: 0  dim_location: 249  dim_indicator: 0  fact_values: 0  Erros: 0
+
+========================================================================
+1/6 — VALIDACAO op_data
+========================================================================
+  OK        file_id=1  [Portulans] Network Readiness Index 2025  mode=auto
+  OK        file_id=2  [Portulans] Network Readiness Index 2025  mode=manual
+
+========================================================================
+2/6 — INGESTAO Bronze (ingest_raw)
+========================================================================
+  UPLOAD    file_id=1  [ficheiro carregado via upload — ja no MinIO]
+  UPLOAD    file_id=2  [ficheiro carregado via upload — ja no MinIO]
+
+========================================================================
+3/6 — VALIDACAO Bronze (validate_bronze)
+========================================================================
+  OK        file_id=1
+  OK        file_id=2
+
+========================================================================
+4/6 — TRANSFORMACAO Silver (transform)
+========================================================================
+  PROCESSING file_id=1  fn=—
+  PROCESSING file_id=2  fn=—
+
+========================================================================
+5/6 — VALIDACAO Silver (validate_silver)
+========================================================================
+  Nenhum ficheiro chegou a esta fase.
+
+========================================================================
+6/6 — CARREGAMENTO Warehouse (gold)
+========================================================================
+  Sem erros de carregamento registados.
+
+  ESTADO DO DATA WAREHOUSE (após esta run):
+  dim_report               desta run : 0         total DW : 0
+  dim_location             total DW  : 249
+  dim_indicator            total DW  : 0
+  fact_values              desta run : 0         total DW : 0
+
+========================================================================
+REGISTOS etl_logs_dados DESTA EXECUCAO
+========================================================================
+  Nenhum erro registado.
+
+========================================================================
+FIM DO RELATORIO
+========================================================================

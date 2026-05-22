@@ -31,7 +31,7 @@ _DB_CONFIG = {
     "password": "projeto",
 }
 
-_OLLAMA_MODEL    = "qwen2.5:7b"
+_OLLAMA_MODEL    = "mistral:latest"
 _FUZZY_THRESHOLD = 72
 
 _ollama: Ollama | None = None

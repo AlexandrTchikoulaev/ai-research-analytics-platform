@@ -46,11 +46,19 @@ def main():
         report_id        INTEGER NOT NULL,
         file_url         TEXT,
         file_name        VARCHAR,
-        extract_function TEXT,
+        auto_generate    BOOLEAN NOT NULL DEFAULT TRUE,
         pipeline_status  TEXT NOT NULL DEFAULT 'PENDING',
         pipeline_error   TEXT,
         CONSTRAINT fk_report
             FOREIGN KEY(report_id) REFERENCES op_report(report_id) ON DELETE CASCADE
+    );
+    """)
+
+    cur.execute("""
+    CREATE TABLE source_function_mapping (
+        source_code          TEXT PRIMARY KEY,
+        extract_function     TEXT,
+        ai_extract_function  TEXT
     );
     """)
 

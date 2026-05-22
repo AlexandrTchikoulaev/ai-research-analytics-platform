@@ -1,0 +1,1305 @@
+Traceback (most recent call last):
+  File "C:\Users\Alexandr\Desktop\Universidade\3º Ano\Projeto\Projeto-Final-Eu\Codes\Pipeline Unstructured\pipeline_reports.py", line 75, in <module>
+    run_pipeline()
+  File "C:\Users\Alexandr\Desktop\Universidade\3º Ano\Projeto\Projeto-Final-Eu\Codes\Pipeline Unstructured\pipeline_reports.py", line 42, in run_pipeline
+    import silver
+  File "C:\Users\Alexandr\Desktop\Universidade\3º Ano\Projeto\Projeto-Final-Eu\Codes\Pipeline Unstructured\silver.py", line 6, in <module>
+    from minio import Minio
+ModuleNotFoundError: No module named 'minio'
+[INFO] A usar Python: C:\Users\Alexandr\miniconda3\envs\projetofinal\python.exe
+
+ PIPELINE DE PDFs INICIADO
+ 2026-05-21 19:53:07
+
+
+==================================================
+ 1/4 — validate_op_report
+==================================================
+validate_op_report — 22 válidos, 0 inválidos
+[OK] 1/4 — validate_op_report concluído.
+
+==================================================
+ 2/4 — bronze
+==================================================
+A correr bronze (ingest unstructured)...
+A descarregar: https://www.cato.org/sites/cato.org/files/2024-12/2024-human-freedom-index.pdf
+[ERRO] report_id=1  the HUMAN FREEDOM INDEX: 403 Client Error: Forbidden for url: https://www.cato.org/sites/cato.org/files/2024-12/2024-human-freedom-index.pdf
+A descarregar: https://reports.weforum.org/docs/WEF_GGGR_2025.pdf
+[THUMB] Thumbnail gerado: report_id=2
+[OK]   report_id=2  Global Gender Gap Report
+A descarregar: https://imd.widen.net/content/xclarczvwr/pdf/WDCR_Report_2025.pdf
+[THUMB] Thumbnail gerado: report_id=3
+[OK]   report_id=3  World Digital Competitiveness Ranking
+A descarregar: https://ccpi.org/ranking/
+[ERRO] report_id=4  The Climate Change Performance Index (CCPI): O servidor devolveu HTML em vez do PDF (bloqueio/CAPTCHA). Content-Type: text/html; charset=UTF-8
+A descarregar: https://hdr.undp.org/system/files/documents/global-report-document/hdr2025reporten.pdf
+[THUMB] Thumbnail gerado: report_id=5
+[OK]   report_id=5  Human Development Index
+A descarregar: https://imd.widen.net/s/wtx5fd2ltn/booklet_wcy_2025
+[THUMB] Thumbnail gerado: report_id=6
+[OK]   report_id=6  World Competitiveness Ranking
+A descarregar: https://download.networkreadinessindex.org/reports/data/2025/nri-2025.pdf
+[THUMB] Thumbnail gerado: report_id=7
+[OK]   report_id=7  Network Readiness Index 2025
+A descarregar: https://unctad.org/system/files/official-document/tir2025_en.pdf
+[THUMB] Thumbnail gerado: report_id=8
+[OK]   report_id=8  Technology and innovation report
+A descarregar: https://www.kearney.com/documents/291362523/313978989/World-recalibrating-The-2026-FDI-Confidence-Index--Executive+Summary-PDF.pdf/3799c0c9-0ead-ed85-abf1-aa74dcfc64a2?t=1775723178000
+[ERRO] report_id=9  The 2025 Kearney FDI Confidence Index®: World at inflection: 403 Client Error: Forbidden for url: https://www.kearney.com/documents/291362523/313978989/World-recalibrating-The-2026-FDI-Confidence-Index--Executive+Summary-PDF.pdf/3799c0c9-0ead-ed85-abf1-aa74dcfc64a2?t=1775723178000
+A descarregar: https://www.wipo.int/web-publications/global-innovation-index-2025/assets/89507/global-innovation-index-2025-en.pdf
+[THUMB] Thumbnail gerado: report_id=10
+[OK]   report_id=10  Global Innovation Index
+A descarregar: https://imd.widen.net/content/eaznvosueg/pdf/WCC-WTR-2025.pdf?u=dnnfeq
+[THUMB] Thumbnail gerado: report_id=11
+[OK]   report_id=11  IMD World Talent Ranking
+A descarregar: https://www.idea.int/sites/default/files/2025-09/global-state-of-democracy-2025-democracy-on-the-move.pdf
+[THUMB] Thumbnail gerado: report_id=12
+[OK]   report_id=12  The Global State of Democracy 2025
+A descarregar: https://www.visionofhumanity.org/wp-content/uploads/2025/06/Global-Peace-Index-2025-web.pdf
+[THUMB] Thumbnail gerado: report_id=13
+[OK]   report_id=13  Global Peace Index 2025
+A descarregar: https://ccpi.org/wp-content/uploads/CCPI-2026-Results-1.pdf
+[ERRO] report_id=14  Climate Change Performance Index (CCPI) 2026: O servidor devolveu HTML em vez do PDF (bloqueio/CAPTCHA). Content-Type: text/html; charset=UTF-8
+A descarregar: https://www3.weforum.org/docs/WEF_Travel_and_Tourism_Development_Index_2024.pdf
+[THUMB] Thumbnail gerado: report_id=15
+[OK]   report_id=15  Travel & Tourism Development Index 2024
+A descarregar: https://static.heritage.org/index/pdf/2026/2026_indexofeconomicfreedom_preface.pdf
+[THUMB] Thumbnail gerado: report_id=16
+[OK]   report_id=16  Index of Economic Freedom
+A descarregar: https://www.oecd.org/content/dam/oecd/en/publications/reports/2025/06/government-at-a-glance-2025_70e14c6c/0efd0bcd-en.pdf
+[THUMB] Thumbnail gerado: report_id=17
+[OK]   report_id=17  Government at a Glance 2025 (Digital government index)
+A descarregar: https://www.fraserinstitute.org/sites/default/files/2024-10/economic-freedom-of-the-world-2024.pdf
+[ERRO] report_id=18  Economic Freedom of the World, 2024: 403 Client Error: Forbidden for url: https://www.fraserinstitute.org/sites/default/files/2024-10/economic-freedom-of-the-world-2024.pdf
+A descarregar: https://epi.yale.edu/downloads/2024-epi-report-20250106.pdf
+[ERRO] 2/4 — bronze falhou: cursor already closed
+Relatório guardado em: C:\Users\Alexandr\Desktop\Universidade\3º Ano\Projeto\Projeto-Final-Eu\Reports\PDFs\pipeline_reports_report_20260521_195307.txt
+Traceback (most recent call last):
+  File "C:\Users\Alexandr\Desktop\Universidade\3º Ano\Projeto\Projeto-Final-Eu\Codes\Pipeline Unstructured\bronze.py", line 154, in main
+    cur.execute(
+    ~~~~~~~~~~~^
+        "UPDATE op_report SET pipeline_status = 'BRONZE_OK' WHERE report_id = %s",
+        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+        (report_id,)
+        ^^^^^^^^^^^^
+    )
+    ^
+psycopg2.OperationalError: could not receive data from server: Software caused connection abort (0x00002745/10053)
+
+
+During handling of the above exception, another exception occurred:
+
+Traceback (most recent call last):
+  File "C:\Users\Alexandr\Desktop\Universidade\3º Ano\Projeto\Projeto-Final-Eu\Codes\Pipeline Unstructured\pipeline_reports.py", line 75, in <module>
+    run_pipeline()
+    ~~~~~~~~~~~~^^
+  File "C:\Users\Alexandr\Desktop\Universidade\3º Ano\Projeto\Projeto-Final-Eu\Codes\Pipeline Unstructured\pipeline_reports.py", line 60, in run_pipeline
+    run_step("2/4 — bronze",                     bronze.main)
+    ~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\Alexandr\Desktop\Universidade\3º Ano\Projeto\Projeto-Final-Eu\Codes\Pipeline Unstructured\pipeline_reports.py", line 30, in run_step
+    result = fn()
+  File "C:\Users\Alexandr\Desktop\Universidade\3º Ano\Projeto\Projeto-Final-Eu\Codes\Pipeline Unstructured\bronze.py", line 165, in main
+    cur.execute(
+    ~~~~~~~~~~~^
+        "UPDATE op_report SET pipeline_status = 'FAILED', pipeline_error = %s WHERE report_id = %s",
+        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+        (err_msg, report_id)
+        ^^^^^^^^^^^^^^^^^^^^
+    )
+    ^
+psycopg2.InterfaceError: cursor already closed
+
+ PIPELINE DE PDFs INICIADO
+ 2026-05-21 21:30:43
+
+
+==================================================
+ 1/4 — validate_op_report
+==================================================
+validate_op_report — 22 válidos, 0 inválidos
+[OK] 1/4 — validate_op_report concluído.
+
+==================================================
+ 2/4 — bronze
+==================================================
+A correr bronze (ingest unstructured)...
+A descarregar: https://www.cato.org/sites/cato.org/files/2024-12/2024-human-freedom-index.pdf
+[THUMB] Thumbnail gerado: report_id=1
+[OK]   report_id=1  the HUMAN FREEDOM INDEX
+A descarregar: https://reports.weforum.org/docs/WEF_GGGR_2025.pdf
+[THUMB] Thumbnail gerado: report_id=2
+[OK]   report_id=2  Global Gender Gap Report
+A descarregar: https://imd.widen.net/content/xclarczvwr/pdf/WDCR_Report_2025.pdf
+[THUMB] Thumbnail gerado: report_id=3
+[OK]   report_id=3  World Digital Competitiveness Ranking
+A descarregar: https://ccpi.org/ranking/
+[ERRO] report_id=4  The Climate Change Performance Index (CCPI): O servidor devolveu HTML em vez do PDF (bloqueio/CAPTCHA). Content-Type: text/html; charset=UTF-8
+A descarregar: https://hdr.undp.org/system/files/documents/global-report-document/hdr2025reporten.pdf
+[THUMB] Thumbnail gerado: report_id=5
+[OK]   report_id=5  Human Development Index
+A descarregar: https://imd.widen.net/s/wtx5fd2ltn/booklet_wcy_2025
+[THUMB] Thumbnail gerado: report_id=6
+[OK]   report_id=6  World Competitiveness Ranking
+A descarregar: https://download.networkreadinessindex.org/reports/data/2025/nri-2025.pdf
+[THUMB] Thumbnail gerado: report_id=7
+[OK]   report_id=7  Network Readiness Index 2025
+A descarregar: https://unctad.org/system/files/official-document/tir2025_en.pdf
+[THUMB] Thumbnail gerado: report_id=8
+[OK]   report_id=8  Technology and innovation report
+A descarregar: https://www.kearney.com/documents/291362523/313978989/World-recalibrating-The-2026-FDI-Confidence-Index--Executive+Summary-PDF.pdf/3799c0c9-0ead-ed85-abf1-aa74dcfc64a2?t=1775723178000
+[ERRO] report_id=9  The 2025 Kearney FDI Confidence Index®: World at inflection: 403 Client Error: Forbidden for url: https://www.kearney.com/documents/291362523/313978989/World-recalibrating-The-2026-FDI-Confidence-Index--Executive+Summary-PDF.pdf/3799c0c9-0ead-ed85-abf1-aa74dcfc64a2?t=1775723178000
+A descarregar: https://www.wipo.int/web-publications/global-innovation-index-2025/assets/89507/global-innovation-index-2025-en.pdf
+[THUMB] Thumbnail gerado: report_id=10
+[OK]   report_id=10  Global Innovation Index
+A descarregar: https://imd.widen.net/content/eaznvosueg/pdf/WCC-WTR-2025.pdf?u=dnnfeq
+[THUMB] Thumbnail gerado: report_id=11
+[OK]   report_id=11  IMD World Talent Ranking
+A descarregar: https://www.idea.int/sites/default/files/2025-09/global-state-of-democracy-2025-democracy-on-the-move.pdf
+[THUMB] Thumbnail gerado: report_id=12
+[OK]   report_id=12  The Global State of Democracy 2025
+A descarregar: https://www.visionofhumanity.org/wp-content/uploads/2025/06/Global-Peace-Index-2025-web.pdf
+[THUMB] Thumbnail gerado: report_id=13
+[OK]   report_id=13  Global Peace Index 2025
+A descarregar: https://ccpi.org/wp-content/uploads/CCPI-2026-Results-1.pdf
+[ERRO] report_id=14  Climate Change Performance Index (CCPI) 2026: O servidor devolveu HTML em vez do PDF (bloqueio/CAPTCHA). Content-Type: text/html; charset=UTF-8
+A descarregar: https://www3.weforum.org/docs/WEF_Travel_and_Tourism_Development_Index_2024.pdf
+[THUMB] Thumbnail gerado: report_id=15
+[OK]   report_id=15  Travel & Tourism Development Index 2024
+A descarregar: https://static.heritage.org/index/pdf/2026/2026_indexofeconomicfreedom_preface.pdf
+[THUMB] Thumbnail gerado: report_id=16
+[OK]   report_id=16  Index of Economic Freedom
+A descarregar: https://www.oecd.org/content/dam/oecd/en/publications/reports/2025/06/government-at-a-glance-2025_70e14c6c/0efd0bcd-en.pdf
+[THUMB] Thumbnail gerado: report_id=17
+[OK]   report_id=17  Government at a Glance 2025 (Digital government index)
+A descarregar: https://www.fraserinstitute.org/sites/default/files/2024-10/economic-freedom-of-the-world-2024.pdf
+[ERRO] report_id=18  Economic Freedom of the World, 2024: 403 Client Error: Forbidden for url: https://www.fraserinstitute.org/sites/default/files/2024-10/economic-freedom-of-the-world-2024.pdf
+[OK]   report_id=19  [já no bucket: Environmental Performance Index (EPI)]
+A descarregar: https://www.intrum.com/media/caqod3qr/intrum-epr-2025.pdf
+MuPDF error: format error: No common ancestor in structure tree
+
+C:\Users\Alexandr\Desktop\Universidade\3º Ano\Projeto\Projeto-Final-Eu\Codes\Pipeline Unstructured\silver.py:73: LangChainDeprecationWarning: The class `OllamaEmbeddings` was deprecated in LangChain 0.3.1 and will be removed in 1.0.0. An updated version of the class exists in the `langchain-ollama package and should be used instead. To use it run `pip install -U `langchain-ollama` and import as `from `langchain_ollama import OllamaEmbeddings``.
+  return OllamaEmbeddings(model="mxbai-embed-large")
+C:\Users\Alexandr\Desktop\Universidade\3º Ano\Projeto\Projeto-Final-Eu\Codes\Pipeline Unstructured\silver.py:213: LangChainPendingDeprecationWarning: This class is pending deprecation and may be removed in a future version. You can swap to using the `PGVector` implementation in `langchain_postgres`. Please read the guidelines in the doc-string of this class to follow prior to migrating as there are some differences between the implementations. See <https://github.com/langchain-ai/langchain-postgres> for details about the new implementation.
+  store = PGVector(
+C:\Users\Alexandr\Desktop\Universidade\3º Ano\Projeto\Projeto-Final-Eu\Codes\Pipeline Unstructured\silver.py:213: LangChainPendingDeprecationWarning: Please use JSONB instead of JSON for metadata. This change will allow for more efficient querying that involves filtering based on metadata. Please note that filtering operators have been changed when using JSONB metadata to be prefixed with a $ sign to avoid name collisions with columns. If you're using an existing database, you will need to create a db migration for your metadata column to be JSONB and update your queries to use the new operators. 
+  store = PGVector(
+[THUMB] Thumbnail gerado: report_id=20
+[OK]   report_id=20  European Payment Index
+A descarregar: https://cdn.henleyglobal.com/storage/app/media/HPI/Henley%20Passport%20Index%202026%20May%20Global%20Ranking.pdf
+[THUMB] Thumbnail gerado: report_id=21
+[OK]   report_id=21  the Henley Passport Index
+A descarregar: https://www.imf.org/external/datamapper/AIPINote.pdf
+[ERRO] report_id=22  AI Preparedness Index (AIPI): 403 Client Error: Forbidden for url: https://www.imf.org/external/datamapper/AIPINote.pdf
+bronze concluído — 17 OK, 5 erros
+[OK] 2/4 — bronze concluído.
+
+==================================================
+ 3/4 — validate_bronze_unstructured
+==================================================
+validate_bronze_unstructured — 17 válidos, 0 inválidos/removidos
+[OK] 3/4 — validate_bronze_unstructured concluído.
+
+==================================================
+ 4/4 — silver
+==================================================
+A correr silver (ingest vectorial)...
+[AVISO] Não foi possível consultar documentos já indexados: relation "langchain_pg_embedding" does not exist
+LINE 3:             FROM langchain_pg_embedding
+                         ^
+
+Documentos já indexados: 0
+A carregar: the HUMAN FREEDOM INDEX
+427 páginas novas carregadas.
+  Lote 1: 50 chunks inseridos
+  Lote 2: 50 chunks inseridos
+  Lote 3: 50 chunks inseridos
+  [ERRO] Falha ao inserir lote 4: (psycopg2.OperationalError) could not receive data from server: Software caused connection abort (0x00002745/10053)
+
+[SQL: SELECT langchain_pg_collection.name AS langchain_pg_collection_name, langchain_pg_collection.cmetadata AS langchain_pg_collection_cmetadata, langchain_pg_collection.uuid AS langchain_pg_collection_uuid 
+FROM langchain_pg_collection 
+WHERE langchain_pg_collection.name = %(name_1)s 
+ LIMIT %(param_1)s]
+[parameters: {'name_1': 'documents', 'param_1': 1}]
+(Background on this error at: https://sqlalche.me/e/20/e3q8)
+[ERRO] report_id=1  the HUMAN FREEDOM INDEX: (psycopg2.OperationalError) could not receive data from server: Software caused connection abort (0x00002745/10053)
+
+[SQL: SELECT langchain_pg_collection.name AS langchain_pg_collection_name, langchain_pg_collection.cmetadata AS langchain_pg_collection_cmetadata, langchain_pg_collection.uuid AS langchain_pg_collection_uuid 
+FROM langchain_pg_collection 
+WHERE langchain_pg_collection.name = %(name_1)s 
+ LIMIT %(param_1)s]
+[parameters: {'name_1': 'documents', 'param_1': 1}]
+(Background on this error at: https://sqlalche.me/e/20/e3q8)
+A carregar: Global Gender Gap Report
+395 páginas novas carregadas.
+  Lote 1: 50 chunks inseridos
+  Lote 2: 50 chunks inseridos
+  [ERRO] Falha ao inserir lote 3: (psycopg2.OperationalError) could not receive data from server: Software caused connection abort (0x00002745/10053)
+
+[SQL: SELECT langchain_pg_collection.name AS langchain_pg_collection_name, langchain_pg_collection.cmetadata AS langchain_pg_collection_cmetadata, langchain_pg_collection.uuid AS langchain_pg_collection_uuid 
+FROM langchain_pg_collection 
+WHERE langchain_pg_collection.name = %(name_1)s 
+ LIMIT %(param_1)s]
+[parameters: {'name_1': 'documents', 'param_1': 1}]
+(Background on this error at: https://sqlalche.me/e/20/e3q8)
+[ERRO] report_id=2  Global Gender Gap Report: (psycopg2.OperationalError) could not receive data from server: Software caused connection abort (0x00002745/10053)
+
+[SQL: SELECT langchain_pg_collection.name AS langchain_pg_collection_name, langchain_pg_collection.cmetadata AS langchain_pg_collection_cmetadata, langchain_pg_collection.uuid AS langchain_pg_collection_uuid 
+FROM langchain_pg_collection 
+WHERE langchain_pg_collection.name = %(name_1)s 
+ LIMIT %(param_1)s]
+[parameters: {'name_1': 'documents', 'param_1': 1}]
+(Background on this error at: https://sqlalche.me/e/20/e3q8)
+A carregar: World Digital Competitiveness Ranking
+122 páginas novas carregadas.
+  Lote 1: 50 chunks inseridos
+  Lote 2: 50 chunks inseridos
+  Lote 3: 50 chunks inseridos
+  Lote 4: 50 chunks inseridos
+  [ERRO] Falha ao inserir lote 5: (psycopg2.OperationalError) could not receive data from server: Software caused connection abort (0x00002745/10053)
+
+[SQL: SELECT langchain_pg_collection.name AS langchain_pg_collection_name, langchain_pg_collection.cmetadata AS langchain_pg_collection_cmetadata, langchain_pg_collection.uuid AS langchain_pg_collection_uuid 
+FROM langchain_pg_collection 
+WHERE langchain_pg_collection.name = %(name_1)s 
+ LIMIT %(param_1)s]
+[parameters: {'name_1': 'documents', 'param_1': 1}]
+(Background on this error at: https://sqlalche.me/e/20/e3q8)
+[ERRO] report_id=3  World Digital Competitiveness Ranking: (psycopg2.OperationalError) could not receive data from server: Software caused connection abort (0x00002745/10053)
+
+[SQL: SELECT langchain_pg_collection.name AS langchain_pg_collection_name, langchain_pg_collection.cmetadata AS langchain_pg_collection_cmetadata, langchain_pg_collection.uuid AS langchain_pg_collection_uuid 
+FROM langchain_pg_collection 
+WHERE langchain_pg_collection.name = %(name_1)s 
+ LIMIT %(param_1)s]
+[parameters: {'name_1': 'documents', 'param_1': 1}]
+(Background on this error at: https://sqlalche.me/e/20/e3q8)
+A carregar: Human Development Index
+314 páginas novas carregadas.
+  Lote 1: 50 chunks inseridos
+  [ERRO] Falha ao inserir lote 2: (psycopg2.OperationalError) could not receive data from server: Software caused connection abort (0x00002745/10053)
+
+[SQL: SELECT langchain_pg_collection.name AS langchain_pg_collection_name, langchain_pg_collection.cmetadata AS langchain_pg_collection_cmetadata, langchain_pg_collection.uuid AS langchain_pg_collection_uuid 
+FROM langchain_pg_collection 
+WHERE langchain_pg_collection.name = %(name_1)s 
+ LIMIT %(param_1)s]
+[parameters: {'name_1': 'documents', 'param_1': 1}]
+(Background on this error at: https://sqlalche.me/e/20/e3q8)
+[ERRO] report_id=5  Human Development Index: (psycopg2.OperationalError) could not receive data from server: Software caused connection abort (0x00002745/10053)
+
+[SQL: SELECT langchain_pg_collection.name AS langchain_pg_collection_name, langchain_pg_collection.cmetadata AS langchain_pg_collection_cmetadata, langchain_pg_collection.uuid AS langchain_pg_collection_uuid 
+FROM langchain_pg_collection 
+WHERE langchain_pg_collection.name = %(name_1)s 
+ LIMIT %(param_1)s]
+[parameters: {'name_1': 'documents', 'param_1': 1}]
+(Background on this error at: https://sqlalche.me/e/20/e3q8)
+A carregar: World Competitiveness Ranking
+150 páginas novas carregadas.
+  [ERRO] Falha ao inserir lote 1: (psycopg2.OperationalError) could not receive data from server: Software caused connection abort (0x00002745/10053)
+
+[SQL: SELECT langchain_pg_collection.name AS langchain_pg_collection_name, langchain_pg_collection.cmetadata AS langchain_pg_collection_cmetadata, langchain_pg_collection.uuid AS langchain_pg_collection_uuid 
+FROM langchain_pg_collection 
+WHERE langchain_pg_collection.name = %(name_1)s 
+ LIMIT %(param_1)s]
+[parameters: {'name_1': 'documents', 'param_1': 1}]
+(Background on this error at: https://sqlalche.me/e/20/e3q8)
+[ERRO] report_id=6  World Competitiveness Ranking: (psycopg2.OperationalError) could not receive data from server: Software caused connection abort (0x00002745/10053)
+
+[SQL: SELECT langchain_pg_collection.name AS langchain_pg_collection_name, langchain_pg_collection.cmetadata AS langchain_pg_collection_cmetadata, langchain_pg_collection.uuid AS langchain_pg_collection_uuid 
+FROM langchain_pg_collection 
+WHERE langchain_pg_collection.name = %(name_1)s 
+ LIMIT %(param_1)s]
+[parameters: {'name_1': 'documents', 'param_1': 1}]
+(Background on this error at: https://sqlalche.me/e/20/e3q8)
+A carregar: Network Readiness Index 2025
+279 páginas novas carregadas.
+  Lote 1: 50 chunks inseridos
+  [ERRO] Falha ao inserir lote 2: (psycopg2.OperationalError) could not receive data from server: Software caused connection abort (0x00002745/10053)
+
+[SQL: SELECT langchain_pg_collection.name AS langchain_pg_collection_name, langchain_pg_collection.cmetadata AS langchain_pg_collection_cmetadata, langchain_pg_collection.uuid AS langchain_pg_collection_uuid 
+FROM langchain_pg_collection 
+WHERE langchain_pg_collection.name = %(name_1)s 
+ LIMIT %(param_1)s]
+[parameters: {'name_1': 'documents', 'param_1': 1}]
+(Background on this error at: https://sqlalche.me/e/20/e3q8)
+[ERRO] report_id=7  Network Readiness Index 2025: (psycopg2.OperationalError) could not receive data from server: Software caused connection abort (0x00002745/10053)
+
+[SQL: SELECT langchain_pg_collection.name AS langchain_pg_collection_name, langchain_pg_collection.cmetadata AS langchain_pg_collection_cmetadata, langchain_pg_collection.uuid AS langchain_pg_collection_uuid 
+FROM langchain_pg_collection 
+WHERE langchain_pg_collection.name = %(name_1)s 
+ LIMIT %(param_1)s]
+[parameters: {'name_1': 'documents', 'param_1': 1}]
+(Background on this error at: https://sqlalche.me/e/20/e3q8)
+A carregar: Technology and innovation report
+182 páginas novas carregadas.
+  Lote 1: 50 chunks inseridos
+  [ERRO] Falha ao inserir lote 2: (psycopg2.OperationalError) could not receive data from server: Software caused connection abort (0x00002745/10053)
+
+[SQL: SELECT langchain_pg_collection.name AS langchain_pg_collection_name, langchain_pg_collection.cmetadata AS langchain_pg_collection_cmetadata, langchain_pg_collection.uuid AS langchain_pg_collection_uuid 
+FROM langchain_pg_collection 
+WHERE langchain_pg_collection.name = %(name_1)s 
+ LIMIT %(param_1)s]
+[parameters: {'name_1': 'documents', 'param_1': 1}]
+(Background on this error at: https://sqlalche.me/e/20/e3q8)
+[ERRO] report_id=8  Technology and innovation report: (psycopg2.OperationalError) could not receive data from server: Software caused connection abort (0x00002745/10053)
+
+[SQL: SELECT langchain_pg_collection.name AS langchain_pg_collection_name, langchain_pg_collection.cmetadata AS langchain_pg_collection_cmetadata, langchain_pg_collection.uuid AS langchain_pg_collection_uuid 
+FROM langchain_pg_collection 
+WHERE langchain_pg_collection.name = %(name_1)s 
+ LIMIT %(param_1)s]
+[parameters: {'name_1': 'documents', 'param_1': 1}]
+(Background on this error at: https://sqlalche.me/e/20/e3q8)
+A carregar: Global Innovation Index
+295 páginas novas carregadas.
+  Lote 1: 50 chunks inseridos
+  Lote 2: 50 chunks inseridos
+  Lote 3: 50 chunks inseridos
+  Lote 4: 50 chunks inseridos
+  Lote 5: 50 chunks inseridos
+  Lote 6: 50 chunks inseridos
+  Lote 7: 50 chunks inseridos
+  Lote 8: 50 chunks inseridos
+  Lote 9: 50 chunks inseridos
+  Lote 10: 50 chunks inseridos
+  Lote 11: 50 chunks inseridos
+  Lote 12: 50 chunks inseridos
+  Lote 13: 50 chunks inseridos
+  Lote 14: 50 chunks inseridos
+  Lote 15: 50 chunks inseridos
+  Lote 16: 50 chunks inseridos
+  Lote 17: 50 chunks inseridos
+  Lote 18: 50 chunks inseridos
+  Lote 19: 50 chunks inseridos
+  Lote 20: 50 chunks inseridos
+  Lote 21: 50 chunks inseridos
+  Lote 22: 50 chunks inseridos
+  Lote 23: 50 chunks inseridos
+  Lote 24: 50 chunks inseridos
+  [ERRO] Falha ao inserir lote 25: (psycopg2.OperationalError) could not receive data from server: Software caused connection abort (0x00002745/10053)
+
+[SQL: SELECT langchain_pg_collection.name AS langchain_pg_collection_name, langchain_pg_collection.cmetadata AS langchain_pg_collection_cmetadata, langchain_pg_collection.uuid AS langchain_pg_collection_uuid 
+FROM langchain_pg_collection 
+WHERE langchain_pg_collection.name = %(name_1)s 
+ LIMIT %(param_1)s]
+[parameters: {'name_1': 'documents', 'param_1': 1}]
+(Background on this error at: https://sqlalche.me/e/20/e3q8)
+[ERRO] report_id=10  Global Innovation Index: (psycopg2.OperationalError) could not receive data from server: Software caused connection abort (0x00002745/10053)
+
+[SQL: SELECT langchain_pg_collection.name AS langchain_pg_collection_name, langchain_pg_collection.cmetadata AS langchain_pg_collection_cmetadata, langchain_pg_collection.uuid AS langchain_pg_collection_uuid 
+FROM langchain_pg_collection 
+WHERE langchain_pg_collection.name = %(name_1)s 
+ LIMIT %(param_1)s]
+[parameters: {'name_1': 'documents', 'param_1': 1}]
+(Background on this error at: https://sqlalche.me/e/20/e3q8)
+A carregar: IMD World Talent Ranking
+79 páginas novas carregadas.
+  Lote 1: 50 chunks inseridos
+  Lote 2: 50 chunks inseridos
+  Lote 3: 50 chunks inseridos
+  Lote 4: 50 chunks inseridos
+  Lote 5: 50 chunks inseridos
+  Lote 6: 50 chunks inseridos
+  Lote 7: 50 chunks inseridos
+  Lote 8: 50 chunks inseridos
+  Lote 9: 50 chunks inseridos
+  Lote 10: 50 chunks inseridos
+  Lote 11: 50 chunks inseridos
+  Lote 12: 50 chunks inseridos
+  Lote 13: 50 chunks inseridos
+  Lote 14: 50 chunks inseridos
+  Lote 15: 50 chunks inseridos
+  Lote 16: 50 chunks inseridos
+  Lote 17: 50 chunks inseridos
+  Lote 18: 47 chunks inseridos
+897 chunks inseridos no total.
+[OK]   report_id=11  IMD World Talent Ranking
+A carregar: The Global State of Democracy 2025
+332 páginas novas carregadas.
+  Lote 1: 50 chunks inseridos
+  Lote 2: 50 chunks inseridos
+  Lote 3: 50 chunks inseridos
+  Lote 4: 50 chunks inseridos
+  Lote 5: 50 chunks inseridos
+  Lote 6: 50 chunks inseridos
+  Lote 7: 50 chunks inseridos
+  Lote 8: 50 chunks inseridos
+  Lote 9: 50 chunks inseridos
+  Lote 10: 50 chunks inseridos
+  Lote 11: 50 chunks inseridos
+  Lote 12: 50 chunks inseridos
+  Lote 13: 50 chunks inseridos
+  Lote 14: 50 chunks inseridos
+  Lote 15: 50 chunks inseridos
+  Lote 16: 50 chunks inseridos
+  Lote 17: 50 chunks inseridos
+  Lote 18: 50 chunks inseridos
+  Lote 19: 50 chunks inseridos
+  Lote 20: 50 chunks inseridos
+  Lote 21: 50 chunks inseridos
+  [ERRO] Falha ao inserir lote 22: (psycopg2.OperationalError) could not receive data from server: Software caused connection abort (0x00002745/10053)
+
+[SQL: SELECT langchain_pg_collection.name AS langchain_pg_collection_name, langchain_pg_collection.cmetadata AS langchain_pg_collection_cmetadata, langchain_pg_collection.uuid AS langchain_pg_collection_uuid 
+FROM langchain_pg_collection 
+WHERE langchain_pg_collection.name = %(name_1)s 
+ LIMIT %(param_1)s]
+[parameters: {'name_1': 'documents', 'param_1': 1}]
+(Background on this error at: https://sqlalche.me/e/20/e3q8)
+[AVISO] Não foi possível atualizar status report_id=12: connection to server at "localhost" (::1), port 5433 failed: Connection refused (0x0000274D/10061)
+	Is the server running on that host and accepting TCP/IP connections?
+connection to server at "localhost" (127.0.0.1), port 5433 failed: Connection refused (0x0000274D/10061)
+	Is the server running on that host and accepting TCP/IP connections?
+
+[ERRO] report_id=12  The Global State of Democracy 2025: (psycopg2.OperationalError) could not receive data from server: Software caused connection abort (0x00002745/10053)
+
+[SQL: SELECT langchain_pg_collection.name AS langchain_pg_collection_name, langchain_pg_collection.cmetadata AS langchain_pg_collection_cmetadata, langchain_pg_collection.uuid AS langchain_pg_collection_uuid 
+FROM langchain_pg_collection 
+WHERE langchain_pg_collection.name = %(name_1)s 
+ LIMIT %(param_1)s]
+[parameters: {'name_1': 'documents', 'param_1': 1}]
+(Background on this error at: https://sqlalche.me/e/20/e3q8)
+A carregar: Global Peace Index 2025
+[AVISO] Não foi possível atualizar status report_id=13: connection to server at "localhost" (::1), port 5433 failed: Connection refused (0x0000274D/10061)
+	Is the server running on that host and accepting TCP/IP connections?
+connection to server at "localhost" (127.0.0.1), port 5433 failed: Connection refused (0x0000274D/10061)
+	Is the server running on that host and accepting TCP/IP connections?
+
+[ERRO] report_id=13  Global Peace Index 2025: HTTPConnectionPool(host='localhost', port=9002): Max retries exceeded with url: /bronze-unstructured?location= (Caused by NewConnectionError('<urllib3.connection.HTTPConnection object at 0x000001F2E4E10410>: Failed to establish a new connection: [WinError 10061] Nenhuma ligação pôde ser feita porque o computador de destino\r\nas recusou ativamente'))
+A carregar: Travel & Tourism Development Index 2024
+[AVISO] Não foi possível atualizar status report_id=15: connection to server at "localhost" (::1), port 5433 failed: Connection refused (0x0000274D/10061)
+	Is the server running on that host and accepting TCP/IP connections?
+connection to server at "localhost" (127.0.0.1), port 5433 failed: Connection refused (0x0000274D/10061)
+	Is the server running on that host and accepting TCP/IP connections?
+
+ PIPELINE DE PDFs INICIADO
+ 2026-05-22 03:54:30
+
+
+==================================================
+ 1/4 — validate_op_report
+==================================================
+validate_op_report — 22 válidos, 0 inválidos
+[OK] 1/4 — validate_op_report concluído.
+
+==================================================
+ 2/4 — bronze
+==================================================
+A correr bronze (ingest unstructured)...
+A descarregar: https://www.cato.org/sites/cato.org/files/2024-12/2024-human-freedom-index.pdf
+[THUMB] Thumbnail gerado: report_id=1
+[OK]   report_id=1  the HUMAN FREEDOM INDEX
+A descarregar: https://reports.weforum.org/docs/WEF_GGGR_2025.pdf
+[THUMB] Thumbnail gerado: report_id=2
+[OK]   report_id=2  Global Gender Gap Report
+A descarregar: https://imd.widen.net/content/xclarczvwr/pdf/WDCR_Report_2025.pdf
+[THUMB] Thumbnail gerado: report_id=3
+[OK]   report_id=3  World Digital Competitiveness Ranking
+A descarregar: https://ccpi.org/ranking/
+[ERRO] report_id=4  The Climate Change Performance Index (CCPI): O servidor devolveu HTML em vez do PDF (bloqueio/CAPTCHA). Content-Type: text/html; charset=UTF-8
+A descarregar: https://hdr.undp.org/system/files/documents/global-report-document/hdr2025reporten.pdf
+[THUMB] Thumbnail gerado: report_id=5
+[OK]   report_id=5  Human Development Index
+A descarregar: https://imd.widen.net/s/wtx5fd2ltn/booklet_wcy_2025
+[THUMB] Thumbnail gerado: report_id=6
+[OK]   report_id=6  World Competitiveness Ranking
+A descarregar: https://download.networkreadinessindex.org/reports/data/2025/nri-2025.pdf
+[THUMB] Thumbnail gerado: report_id=7
+[OK]   report_id=7  Network Readiness Index 2025
+A descarregar: https://unctad.org/system/files/official-document/tir2025_en.pdf
+[THUMB] Thumbnail gerado: report_id=8
+[OK]   report_id=8  Technology and innovation report
+A descarregar: https://www.kearney.com/documents/291362523/313978989/World-recalibrating-The-2026-FDI-Confidence-Index--Executive+Summary-PDF.pdf/3799c0c9-0ead-ed85-abf1-aa74dcfc64a2?t=1775723178000
+[ERRO] report_id=9  The 2025 Kearney FDI Confidence Index®: World at inflection: 403 Client Error: Forbidden for url: https://www.kearney.com/documents/291362523/313978989/World-recalibrating-The-2026-FDI-Confidence-Index--Executive+Summary-PDF.pdf/3799c0c9-0ead-ed85-abf1-aa74dcfc64a2?t=1775723178000
+A descarregar: https://www.wipo.int/web-publications/global-innovation-index-2025/assets/89507/global-innovation-index-2025-en.pdf
+[THUMB] Thumbnail gerado: report_id=10
+[OK]   report_id=10  Global Innovation Index
+A descarregar: https://imd.widen.net/content/eaznvosueg/pdf/WCC-WTR-2025.pdf?u=dnnfeq
+[THUMB] Thumbnail gerado: report_id=11
+[OK]   report_id=11  IMD World Talent Ranking
+A descarregar: https://www.idea.int/sites/default/files/2025-09/global-state-of-democracy-2025-democracy-on-the-move.pdf
+[THUMB] Thumbnail gerado: report_id=12
+[OK]   report_id=12  The Global State of Democracy 2025
+A descarregar: https://www.visionofhumanity.org/wp-content/uploads/2025/06/Global-Peace-Index-2025-web.pdf
+[THUMB] Thumbnail gerado: report_id=13
+[OK]   report_id=13  Global Peace Index 2025
+A descarregar: https://ccpi.org/wp-content/uploads/CCPI-2026-Results-1.pdf
+[ERRO] report_id=14  Climate Change Performance Index (CCPI) 2026: O servidor devolveu HTML em vez do PDF (bloqueio/CAPTCHA). Content-Type: text/html; charset=UTF-8
+A descarregar: https://www3.weforum.org/docs/WEF_Travel_and_Tourism_Development_Index_2024.pdf
+[THUMB] Thumbnail gerado: report_id=15
+[OK]   report_id=15  Travel & Tourism Development Index 2024
+A descarregar: https://static.heritage.org/index/pdf/2026/2026_indexofeconomicfreedom_preface.pdf
+[THUMB] Thumbnail gerado: report_id=16
+[OK]   report_id=16  Index of Economic Freedom
+A descarregar: https://www.oecd.org/content/dam/oecd/en/publications/reports/2025/06/government-at-a-glance-2025_70e14c6c/0efd0bcd-en.pdf
+[THUMB] Thumbnail gerado: report_id=17
+[OK]   report_id=17  Government at a Glance 2025 (Digital government index)
+A descarregar: https://www.fraserinstitute.org/sites/default/files/2024-10/economic-freedom-of-the-world-2024.pdf
+[ERRO] report_id=18  Economic Freedom of the World, 2024: 403 Client Error: Forbidden for url: https://www.fraserinstitute.org/sites/default/files/2024-10/economic-freedom-of-the-world-2024.pdf
+A descarregar: https://epi.yale.edu/downloads/2024-epi-report-20250106.pdf
+[THUMB] Thumbnail gerado: report_id=19
+[OK]   report_id=19  Environmental Performance Index (EPI)
+A descarregar: https://www.intrum.com/media/caqod3qr/intrum-epr-2025.pdf
+MuPDF error: format error: No common ancestor in structure tree
+
+C:\Users\Alexandr\Desktop\Universidade\3º Ano\Projeto\Projeto-Final-Eu\Codes\Pipeline Unstructured\silver.py:73: LangChainDeprecationWarning: The class `OllamaEmbeddings` was deprecated in LangChain 0.3.1 and will be removed in 1.0.0. An updated version of the class exists in the `langchain-ollama package and should be used instead. To use it run `pip install -U `langchain-ollama` and import as `from `langchain_ollama import OllamaEmbeddings``.
+  return OllamaEmbeddings(model="mxbai-embed-large")
+C:\Users\Alexandr\Desktop\Universidade\3º Ano\Projeto\Projeto-Final-Eu\Codes\Pipeline Unstructured\silver.py:213: LangChainPendingDeprecationWarning: This class is pending deprecation and may be removed in a future version. You can swap to using the `PGVector` implementation in `langchain_postgres`. Please read the guidelines in the doc-string of this class to follow prior to migrating as there are some differences between the implementations. See <https://github.com/langchain-ai/langchain-postgres> for details about the new implementation.
+  store = PGVector(
+C:\Users\Alexandr\Desktop\Universidade\3º Ano\Projeto\Projeto-Final-Eu\Codes\Pipeline Unstructured\silver.py:213: LangChainPendingDeprecationWarning: Please use JSONB instead of JSON for metadata. This change will allow for more efficient querying that involves filtering based on metadata. Please note that filtering operators have been changed when using JSONB metadata to be prefixed with a $ sign to avoid name collisions with columns. If you're using an existing database, you will need to create a db migration for your metadata column to be JSONB and update your queries to use the new operators. 
+  store = PGVector(
+[THUMB] Thumbnail gerado: report_id=20
+[OK]   report_id=20  European Payment Index
+A descarregar: https://cdn.henleyglobal.com/storage/app/media/HPI/Henley%20Passport%20Index%202026%20May%20Global%20Ranking.pdf
+[THUMB] Thumbnail gerado: report_id=21
+[OK]   report_id=21  the Henley Passport Index
+A descarregar: https://www.imf.org/external/datamapper/AIPINote.pdf
+[ERRO] report_id=22  AI Preparedness Index (AIPI): 403 Client Error: Forbidden for url: https://www.imf.org/external/datamapper/AIPINote.pdf
+bronze concluído — 17 OK, 5 erros
+[OK] 2/4 — bronze concluído.
+
+==================================================
+ 3/4 — validate_bronze_unstructured
+==================================================
+validate_bronze_unstructured — 17 válidos, 0 inválidos/removidos
+[OK] 3/4 — validate_bronze_unstructured concluído.
+
+==================================================
+ 4/4 — silver
+==================================================
+A correr silver (ingest vectorial)...
+Documentos já indexados: 0
+A carregar: the HUMAN FREEDOM INDEX
+427 páginas novas carregadas.
+  Lote 1: 50 chunks inseridos
+  [ERRO] Falha ao inserir lote 2: (psycopg2.OperationalError) could not receive data from server: Software caused connection abort (0x00002745/10053)
+
+[SQL: SELECT langchain_pg_collection.name AS langchain_pg_collection_name, langchain_pg_collection.cmetadata AS langchain_pg_collection_cmetadata, langchain_pg_collection.uuid AS langchain_pg_collection_uuid 
+FROM langchain_pg_collection 
+WHERE langchain_pg_collection.name = %(name_1)s 
+ LIMIT %(param_1)s]
+[parameters: {'name_1': 'documents', 'param_1': 1}]
+(Background on this error at: https://sqlalche.me/e/20/e3q8)
+[ERRO] report_id=1  the HUMAN FREEDOM INDEX: (psycopg2.OperationalError) could not receive data from server: Software caused connection abort (0x00002745/10053)
+
+[SQL: SELECT langchain_pg_collection.name AS langchain_pg_collection_name, langchain_pg_collection.cmetadata AS langchain_pg_collection_cmetadata, langchain_pg_collection.uuid AS langchain_pg_collection_uuid 
+FROM langchain_pg_collection 
+WHERE langchain_pg_collection.name = %(name_1)s 
+ LIMIT %(param_1)s]
+[parameters: {'name_1': 'documents', 'param_1': 1}]
+(Background on this error at: https://sqlalche.me/e/20/e3q8)
+A carregar: Global Gender Gap Report
+395 páginas novas carregadas.
+  [ERRO] Falha ao inserir lote 1: (psycopg2.OperationalError) could not receive data from server: Software caused connection abort (0x00002745/10053)
+
+[SQL: SELECT langchain_pg_collection.name AS langchain_pg_collection_name, langchain_pg_collection.cmetadata AS langchain_pg_collection_cmetadata, langchain_pg_collection.uuid AS langchain_pg_collection_uuid 
+FROM langchain_pg_collection 
+WHERE langchain_pg_collection.name = %(name_1)s 
+ LIMIT %(param_1)s]
+[parameters: {'name_1': 'documents', 'param_1': 1}]
+(Background on this error at: https://sqlalche.me/e/20/e3q8)
+[AVISO] Não foi possível atualizar status report_id=2: connection to server at "localhost" (::1), port 5433 failed: Connection refused (0x0000274D/10061)
+	Is the server running on that host and accepting TCP/IP connections?
+connection to server at "localhost" (127.0.0.1), port 5433 failed: Connection refused (0x0000274D/10061)
+	Is the server running on that host and accepting TCP/IP connections?
+
+[ERRO] report_id=2  Global Gender Gap Report: (psycopg2.OperationalError) could not receive data from server: Software caused connection abort (0x00002745/10053)
+
+[SQL: SELECT langchain_pg_collection.name AS langchain_pg_collection_name, langchain_pg_collection.cmetadata AS langchain_pg_collection_cmetadata, langchain_pg_collection.uuid AS langchain_pg_collection_uuid 
+FROM langchain_pg_collection 
+WHERE langchain_pg_collection.name = %(name_1)s 
+ LIMIT %(param_1)s]
+[parameters: {'name_1': 'documents', 'param_1': 1}]
+(Background on this error at: https://sqlalche.me/e/20/e3q8)
+A carregar: World Digital Competitiveness Ranking
+[AVISO] Não foi possível atualizar status report_id=3: connection to server at "localhost" (::1), port 5433 failed: Connection refused (0x0000274D/10061)
+	Is the server running on that host and accepting TCP/IP connections?
+connection to server at "localhost" (127.0.0.1), port 5433 failed: Connection refused (0x0000274D/10061)
+	Is the server running on that host and accepting TCP/IP connections?
+
+[ERRO] report_id=3  World Digital Competitiveness Ranking: HTTPConnectionPool(host='localhost', port=9002): Max retries exceeded with url: /bronze-unstructured?location= (Caused by NewConnectionError('<urllib3.connection.HTTPConnection object at 0x0000020C44D41A90>: Failed to establish a new connection: [WinError 10061] Nenhuma ligação pôde ser feita porque o computador de destino\r\nas recusou ativamente'))
+A carregar: Human Development Index
+314 páginas novas carregadas.
+  Lote 1: 50 chunks inseridos
+  Lote 2: 50 chunks inseridos
+  [ERRO] Falha ao inserir lote 3: (psycopg2.OperationalError) could not receive data from server: Software caused connection abort (0x00002745/10053)
+
+[SQL: SELECT langchain_pg_collection.name AS langchain_pg_collection_name, langchain_pg_collection.cmetadata AS langchain_pg_collection_cmetadata, langchain_pg_collection.uuid AS langchain_pg_collection_uuid 
+FROM langchain_pg_collection 
+WHERE langchain_pg_collection.name = %(name_1)s 
+ LIMIT %(param_1)s]
+[parameters: {'name_1': 'documents', 'param_1': 1}]
+(Background on this error at: https://sqlalche.me/e/20/e3q8)
+[AVISO] Não foi possível atualizar status report_id=5: connection to server at "localhost" (::1), port 5433 failed: Connection refused (0x0000274D/10061)
+	Is the server running on that host and accepting TCP/IP connections?
+connection to server at "localhost" (127.0.0.1), port 5433 failed: Connection refused (0x0000274D/10061)
+	Is the server running on that host and accepting TCP/IP connections?
+
+[ERRO] report_id=5  Human Development Index: (psycopg2.OperationalError) could not receive data from server: Software caused connection abort (0x00002745/10053)
+
+[SQL: SELECT langchain_pg_collection.name AS langchain_pg_collection_name, langchain_pg_collection.cmetadata AS langchain_pg_collection_cmetadata, langchain_pg_collection.uuid AS langchain_pg_collection_uuid 
+FROM langchain_pg_collection 
+WHERE langchain_pg_collection.name = %(C:\Users\Alexandr\Desktop\Universidade\3º Ano\Projeto\Projeto-Final-Eu\Codes\Pipeline Unstructured\silver.py:73: LangChainDeprecationWarning: The class `OllamaEmbeddings` was deprecated in LangChain 0.3.1 and will be removed in 1.0.0. An updated version of the class exists in the `langchain-ollama package and should be used instead. To use it run `pip install -U `langchain-ollama` and import as `from `langchain_ollama import OllamaEmbeddings``.
+  return OllamaEmbeddings(model="mxbai-embed-large")
+C:\Users\Alexandr\Desktop\Universidade\3º Ano\Projeto\Projeto-Final-Eu\Codes\Pipeline Unstructured\silver.py:213: LangChainPendingDeprecationWarning: This class is pending deprecation and may be removed in a future version. You can swap to using the `PGVector` implementation in `langchain_postgres`. Please read the guidelines in the doc-string of this class to follow prior to migrating as there are some differences between the implementations. See <https://github.com/langchain-ai/langchain-postgres> for details about the new implementation.
+  store = PGVector(
+C:\Users\Alexandr\Desktop\Universidade\3º Ano\Projeto\Projeto-Final-Eu\Codes\Pipeline Unstructured\silver.py:213: LangChainPendingDeprecationWarning: Please use JSONB instead of JSON for metadata. This change will allow for more efficient querying that involves filtering based on metadata. Please note that filtering operators have been changed when using JSONB metadata to be prefixed with a $ sign to avoid name collisions with columns. If you're using an existing database, you will need to create a db migration for your metadata column to be JSONB and update your queries to use the new operators. 
+  store = PGVector(
+
+ PIPELINE DE PDFs INICIADO
+ 2026-05-22 04:37:25
+
+
+==================================================
+ 1/4 — validate_op_report
+==================================================
+validate_op_report — 12 válidos, 0 inválidos
+[OK] 1/4 — validate_op_report concluído.
+
+==================================================
+ 2/4 — bronze
+==================================================
+A correr bronze (ingest unstructured)...
+A descarregar: https://www.cato.org/sites/cato.org/files/2024-12/2024-human-freedom-index.pdf
+[THUMB] Thumbnail gerado: report_id=1
+[OK]   report_id=1  the HUMAN FREEDOM INDEX
+A descarregar: https://reports.weforum.org/docs/WEF_GGGR_2025.pdf
+[THUMB] Thumbnail gerado: report_id=2
+[OK]   report_id=2  Global Gender Gap Report
+A descarregar: https://ccpi.org/ranking/
+[ERRO] report_id=4  The Climate Change Performance Index (CCPI): O servidor devolveu HTML em vez do PDF (bloqueio/CAPTCHA). Content-Type: text/html; charset=UTF-8
+A descarregar: https://www.kearney.com/documents/291362523/313978989/World-recalibrating-The-2026-FDI-Confidence-Index--Executive+Summary-PDF.pdf/3799c0c9-0ead-ed85-abf1-aa74dcfc64a2?t=1775723178000
+[ERRO] report_id=9  The 2025 Kearney FDI Confidence Index®: World at inflection: 403 Client Error: Forbidden for url: https://www.kearney.com/documents/291362523/313978989/World-recalibrating-The-2026-FDI-Confidence-Index--Executive+Summary-PDF.pdf/3799c0c9-0ead-ed85-abf1-aa74dcfc64a2?t=1775723178000
+A descarregar: https://ccpi.org/wp-content/uploads/CCPI-2026-Results-1.pdf
+[ERRO] report_id=14  Climate Change Performance Index (CCPI) 2026: O servidor devolveu HTML em vez do PDF (bloqueio/CAPTCHA). Content-Type: text/html; charset=UTF-8
+A descarregar: https://www.fraserinstitute.org/sites/default/files/2024-10/economic-freedom-of-the-world-2024.pdf
+[ERRO] report_id=18  Economic Freedom of the World, 2024: 403 Client Error: Forbidden for url: https://www.fraserinstitute.org/sites/default/files/2024-10/economic-freedom-of-the-world-2024.pdf
+A descarregar: https://cdn.henleyglobal.com/storage/app/media/HPI/Henley%20Passport%20Index%202026%20May%20Global%20Ranking.pdf
+[THUMB] Thumbnail gerado: report_id=21
+[OK]   report_id=21  the Henley Passport Index
+A descarregar: https://www.imf.org/external/datamapper/AIPINote.pdf
+[ERRO] report_id=22  AI Preparedness Index (AIPI): 403 Client Error: Forbidden for url: https://www.imf.org/external/datamapper/AIPINote.pdf
+bronze concluído — 3 OK, 5 erros
+[OK] 2/4 — bronze concluído.
+
+==================================================
+ 3/4 — validate_bronze_unstructured
+==================================================
+validate_bronze_unstructured — 3 válidos, 0 inválidos/removidos
+[OK] 3/4 — validate_bronze_unstructured concluído.
+
+==================================================
+ 4/4 — silver
+==================================================
+A correr silver (ingest vectorial)...
+Documentos já indexados: 0
+A carregar: the HUMAN FREEDOM INDEX
+427 páginas novas carregadas.
+  [ERRO] Falha ao inserir lote 1: (psycopg2.OperationalError) could not receive data from server: Software caused connection abort (0x00002745/10053)
+
+[SQL: SELECT langchain_pg_collection.name AS langchain_pg_collection_name, langchain_pg_collection.cmetadata AS langchain_pg_collection_cmetadata, langchain_pg_collection.uuid AS langchain_pg_collection_uuid 
+FROM langchain_pg_collection 
+WHERE langchain_pg_collection.name = %(name_1)s 
+ LIMIT %(param_1)s]
+[parameters: {'name_1': 'documents', 'param_1': 1}]
+(Background on this error at: https://sqlalche.me/e/20/e3q8)
+[ERRO] report_id=1  the HUMAN FREEDOM INDEX: (psycopg2.OperationalError) could not receive data from server: Software caused connection abort (0x00002745/10053)
+
+[SQL: SELECT langchain_pg_collection.name AS langchain_pg_collection_name, langchain_pg_collection.cmetadata AS langchain_pg_collection_cmetadata, langchain_pg_collection.uuid AS langchain_pg_collection_uuid 
+FROM langchain_pg_collection 
+WHERE langchain_pg_collection.name = %(name_1)s 
+ LIMIT %(param_1)s]
+[parameters: {'name_1': 'documents', 'param_1': 1}]
+(Background on this error at: https://sqlalche.me/e/20/e3q8)
+A carregar: Global Gender Gap Report
+395 páginas novas carregadas.
+  Lote 1: 50 chunks inseridos
+  Lote 2: 50 chunks inseridos
+  Lote 3: 50 chunks inseridos
+  Lote 4: 50 chunks inseridos
+  Lote 5: 50 chunks inseridos
+  Lote 6: 50 chunks inseridos
+  Lote 7: 50 chunks inseridos
+  Lote 8: 50 chunks inseridos
+  Lote 9: 50 chunks inseridos
+  Lote 10: 50 chunks inseridos
+  Lote 11: 50 chunks inseridos
+  Lote 12: 50 chunks inseridos
+  Lote 13: 50 chunks inseridos
+  Lote 14: 50 chunks inseridos
+  [ERRO] Falha ao inserir lote 15: Collection not found
+[ERRO] report_id=2  Global Gender Gap Report: Collection not found
+A carregar: the Henley Passport Index
+[ERRO] report_id=21  the Henley Passport Index: S3 operation failed; code: NoSuchKey, message: The specified key does not exist., resource: /bronze-unstructured/the Henley Passport Index, request_id: 18B1C86C1F146493, host_id: dd9025bab4ad464b049177c95eb6ebf374d3b3fd1af9251148b658df7ac2e3e8, bucket_name: bronze-unstructured, object_name: the Henley Passport Index
+silver concluído.
+[OK] 4/4 — silver concluído.
+
+ PIPELINE DE PDFs CONCLUÍDO COM SUCESSO
+Relatório guardado em: C:\Users\Alexandr\Desktop\Universidade\3º Ano\Projeto\Projeto-Final-Eu\Reports\PDFs\pipeline_reports_report_20260522_043725.txt
+arregar: Travel & Tourism Development Index 2024
+[ERRO] report_id=15  Travel & Tourism Development Index 2024: S3 operation failed; code: NoSuchKey, message: The specified key does not exist., resource: /bronze-unstructured/Travel & Tourism Development Index 2024, request_id: 18B1C603607DBA2C, host_id: dd9025bab4ad464b049177c95eb6ebf374d3b3fd1af9251148b658df7ac2e3e8, bucket_name: bronze-unstructured, object_name: Travel & Tourism Development Index 2024
+A carregar: Index of Economic Freedom
+[ERRO] report_id=16  Index of Economic Freedom: S3 operation failed; code: NoSuchKey, message: The specified key does not exist., resource: /bronze-unstructured/Index of Economic Freedom, request_id: 18B1C60366524D36, host_id: dd9025bab4ad464b049177c95eb6ebf374d3b3fd1af9251148b658df7ac2e3e8, bucket_name: bronze-unstructured, object_name: Index of Economic Freedom
+A carregar: Government at a Glance 2025 (Digital government index)
+[ERRO] report_id=17  Government at a Glance 2025 (Digital government index): S3 operation failed; code: NoSuchKey, message: The specified key does not exist., resource: /bronze-unstructured/Government at a Glance 2025 (Digital government index), request_id: 18B1C6036C08E8B1, host_id: dd9025bab4ad464b049177c95eb6ebf374d3b3fd1af9251148b658df7ac2e3e8, bucket_name: bronze-unstructured, object_name: Government at a Glance 2025 (Digital government index)
+A carregar: Environmental Performance Index (EPI)
+[ERRO] report_id=19  Environmental Performance Index (EPI): S3 operation failed; code: NoSuchKey, message: The specified key does not exist., resource: /bronze-unstructured/Environmental Performance Index (EPI), request_id: 18B1C60371BC3F4A, host_id: dd9025bab4ad464b049177c95eb6ebf374d3b3fd1af9251148b658df7ac2e3e8, bucket_name: bronze-unstructured, object_name: Environmental Performance Index (EPI)
+A carregar: European Payment Index
+[ERRO] report_id=20  European Payment Index: S3 operation failed; code: NoSuchKey, message: The specified key does not exist., resource: /bronze-unstructured/European Payment Index, request_id: 18B1C60377FE633D, host_id: dd9025bab4ad464b049177c95eb6ebf374d3b3fd1af9251148b658df7ac2e3e8, bucket_name: bronze-unstructured, object_name: European Payment Index
+A carregar: the Henley Passport Index
+[ERRO] report_id=21  the Henley Passport Index: S3 operation failed; code: NoSuchKey, message: The specified key does not exist., resource: /bronze-unstructured/the Henley Passport Index, request_id: 18B1C6037DB95766, host_id: dd9025bab4ad464b049177c95eb6ebf374d3b3fd1af9251148b658df7ac2e3e8, bucket_name: bronze-unstructured, object_name: the Henley Passport Index
+silver concluído.
+[OK] 4/4 — silver concluído.
+
+ PIPELINE DE PDFs CONCLUÍDO COM SUCESSO
+Relatório guardado em: C:\Users\Alexandr\Desktop\Universidade\3º Ano\Projeto\Projeto-Final-Eu\Reports\PDFs\pipeline_reports_report_20260522_040906.txt
+
+ PIPELINE DE PDFs INICIADO
+ 2026-05-22 05:23:44
+
+
+==================================================
+ 1/4 — validate_op_report
+==================================================
+validate_op_report — 22 válidos, 0 inválidos
+[OK] 1/4 — validate_op_report concluído.
+
+==================================================
+ 2/4 — bronze
+==================================================
+A correr bronze (ingest unstructured)...
+A descarregar: https://www.cato.org/sites/cato.org/files/2024-12/2024-human-freedom-index.pdf
+[THUMB] Thumbnail gerado: report_id=1
+[OK]   report_id=1  the HUMAN FREEDOM INDEX
+A descarregar: https://reports.weforum.org/docs/WEF_GGGR_2025.pdf
+[THUMB] Thumbnail gerado: report_id=2
+[OK]   report_id=2  Global Gender Gap Report
+A descarregar: https://imd.widen.net/content/xclarczvwr/pdf/WDCR_Report_2025.pdf
+[THUMB] Thumbnail gerado: report_id=3
+[OK]   report_id=3  World Digital Competitiveness Ranking
+A descarregar: https://ccpi.org/ranking/
+[ERRO] report_id=4  The Climate Change Performance Index (CCPI): O servidor devolveu HTML em vez do PDF (bloqueio/CAPTCHA). Content-Type: text/html; charset=UTF-8
+A descarregar: https://hdr.undp.org/system/files/documents/global-report-document/hdr2025reporten.pdf
+[THUMB] Thumbnail gerado: report_id=5
+[OK]   report_id=5  Human Development Index
+A descarregar: https://imd.widen.net/s/wtx5fd2ltn/booklet_wcy_2025
+[THUMB] Thumbnail gerado: report_id=6
+[OK]   report_id=6  World Competitiveness Ranking
+A descarregar: https://download.networkreadinessindex.org/reports/data/2025/nri-2025.pdf
+[THUMB] Thumbnail gerado: report_id=7
+[OK]   report_id=7  Network Readiness Index 2025
+A descarregar: https://unctad.org/system/files/official-document/tir2025_en.pdf
+[THUMB] Thumbnail gerado: report_id=8
+[OK]   report_id=8  Technology and innovation report
+A descarregar: https://www.kearney.com/documents/291362523/313978989/World-recalibrating-The-2026-FDI-Confidence-Index--Executive+Summary-PDF.pdf/3799c0c9-0ead-ed85-abf1-aa74dcfc64a2?t=1775723178000
+[ERRO] report_id=9  The 2025 Kearney FDI Confidence Index®: World at inflection: 403 Client Error: Forbidden for url: https://www.kearney.com/documents/291362523/313978989/World-recalibrating-The-2026-FDI-Confidence-Index--Executive+Summary-PDF.pdf/3799c0c9-0ead-ed85-abf1-aa74dcfc64a2?t=1775723178000
+A descarregar: https://www.wipo.int/web-publications/global-innovation-index-2025/assets/89507/global-innovation-index-2025-en.pdf
+[THUMB] Thumbnail gerado: report_id=10
+[OK]   report_id=10  Global Innovation Index
+A descarregar: https://imd.widen.net/content/eaznvosueg/pdf/WCC-WTR-2025.pdf?u=dnnfeq
+[THUMB] Thumbnail gerado: report_id=11
+[OK]   report_id=11  IMD World Talent Ranking
+A descarregar: https://www.idea.int/sites/default/files/2025-09/global-state-of-democracy-2025-democracy-on-the-move.pdf
+[THUMB] Thumbnail gerado: report_id=12
+[OK]   report_id=12  The Global State of Democracy 2025
+A descarregar: https://www.visionofhumanity.org/wp-content/uploads/2025/06/Global-Peace-Index-2025-web.pdf
+[THUMB] Thumbnail gerado: report_id=13
+[OK]   report_id=13  Global Peace Index 2025
+A descarregar: https://ccpi.org/wp-content/uploads/CCPI-2026-Results-1.pdf
+[ERRO] report_id=14  Climate Change Performance Index (CCPI) 2026: O servidor devolveu HTML em vez do PDF (bloqueio/CAPTCHA). Content-Type: text/html; charset=UTF-8
+A descarregar: https://www3.weforum.org/docs/WEF_Travel_and_Tourism_Development_Index_2024.pdf
+[THUMB] Thumbnail gerado: report_id=15
+[OK]   report_id=15  Travel & Tourism Development Index 2024
+A descarregar: https://static.heritage.org/index/pdf/2026/2026_indexofeconomicfreedom_preface.pdf
+[THUMB] Thumbnail gerado: report_id=16
+[OK]   report_id=16  Index of Economic Freedom
+A descarregar: https://www.oecd.org/content/dam/oecd/en/publications/reports/2025/06/government-at-a-glance-2025_70e14c6c/0efd0bcd-en.pdf
+[THUMB] Thumbnail gerado: report_id=17
+[OK]   report_id=17  Government at a Glance 2025 (Digital government index)
+A descarregar: https://www.fraserinstitute.org/sites/default/files/2024-10/economic-freedom-of-the-world-2024.pdf
+[ERRO] report_id=18  Economic Freedom of the World, 2024: 403 Client Error: Forbidden for url: https://www.fraserinstitute.org/sites/default/files/2024-10/economic-freedom-of-the-world-2024.pdf
+A descarregar: https://epi.yale.edu/downloads/2024-epi-report-20250106.pdf
+[THUMB] Thumbnail gerado: report_id=19
+[OK]   report_id=19  Environmental Performance Index (EPI)
+A descarregar: https://www.intrum.com/media/caqod3qr/intrum-epr-2025.pdf
+MuPDF error: format error: No common ancestor in structure tree
+
+C:\Users\Alexandr\Desktop\Universidade\3º Ano\Projeto\Projeto-Final-Eu\Codes\Pipeline Unstructured\silver.py:73: LangChainDeprecationWarning: The class `OllamaEmbeddings` was deprecated in LangChain 0.3.1 and will be removed in 1.0.0. An updated version of the class exists in the `langchain-ollama package and should be used instead. To use it run `pip install -U `langchain-ollama` and import as `from `langchain_ollama import OllamaEmbeddings``.
+  return OllamaEmbeddings(model="mxbai-embed-large")
+C:\Users\Alexandr\Desktop\Universidade\3º Ano\Projeto\Projeto-Final-Eu\Codes\Pipeline Unstructured\silver.py:213: LangChainPendingDeprecationWarning: This class is pending deprecation and may be removed in a future version. You can swap to using the `PGVector` implementation in `langchain_postgres`. Please read the guidelines in the doc-string of this class to follow prior to migrating as there are some differences between the implementations. See <https://github.com/langchain-ai/langchain-postgres> for details about the new implementation.
+  store = PGVector(
+C:\Users\Alexandr\Desktop\Universidade\3º Ano\Projeto\Projeto-Final-Eu\Codes\Pipeline Unstructured\silver.py:213: LangChainPendingDeprecationWarning: Please use JSONB instead of JSON for metadata. This change will allow for more efficient querying that involves filtering based on metadata. Please note that filtering operators have been changed when using JSONB metadata to be prefixed with a $ sign to avoid name collisions with columns. If you're using an existing database, you will need to create a db migration for your metadata column to be JSONB and update your queries to use the new operators. 
+  store = PGVector(
+[THUMB] Thumbnail gerado: report_id=20
+[OK]   report_id=20  European Payment Index
+A descarregar: https://cdn.henleyglobal.com/storage/app/media/HPI/Henley%20Passport%20Index%202026%20May%20Global%20Ranking.pdf
+[THUMB] Thumbnail gerado: report_id=21
+[OK]   report_id=21  the Henley Passport Index
+A descarregar: https://www.imf.org/external/datamapper/AIPINote.pdf
+[ERRO] report_id=22  AI Preparedness Index (AIPI): 403 Client Error: Forbidden for url: https://www.imf.org/external/datamapper/AIPINote.pdf
+bronze concluído — 17 OK, 5 erros
+[OK] 2/4 — bronze concluído.
+
+==================================================
+ 3/4 — validate_bronze_unstructured
+==================================================
+validate_bronze_unstructured — 17 válidos, 0 inválidos/removidos
+[OK] 3/4 — validate_bronze_unstructured concluído.
+
+==================================================
+ 4/4 — silver
+==================================================
+A correr silver (ingest vectorial)...
+Documentos já indexados: 0
+A carregar: the HUMAN FREEDOM INDEX
+427 páginas novas carregadas.
+  Lote 1: 50 chunks inseridos
+  Lote 2: 50 chunks inseridos
+  Lote 3: 50 chunks inseridos
+  Lote 4: 50 chunks inseridos
+  Lote 5: 50 chunks inseridos
+  Lote 6: 50 chunks inseridos
+  [ERRO] Falha ao inserir lote 7: Collection not found
+[ERRO] report_id=1  the HUMAN FREEDOM INDEX: Collection not found
+A carregar: Global Gender Gap Report
+[ERRO] report_id=2  Global Gender Gap Report: S3 operation failed; code: NoSuchKey, message: The specified key does not exist., resource: /bronze-unstructured/Global Gender Gap Report, request_id: 18B1C98E557B9B9C, host_id: dd9025bab4ad464b049177c95eb6ebf374d3b3fd1af9251148b658df7ac2e3e8, bucket_name: bronze-unstructured, object_name: Global Gender Gap Report
+A carregar: World Digital Competitiveness Ranking
+[ERRO] report_id=3  World Digital Competitiveness Ranking: S3 operation failed; code: NoSuchKey, message: The specified key does not exist., resource: /bronze-unstructured/World Digital Competitiveness Ranking, request_id: 18B1C98E5B578E30, host_id: dd9025bab4ad464b049177c95eb6ebf374d3b3fd1af9251148b658df7ac2e3e8, bucket_name: bronze-unstructured, object_name: World Digital Competitiveness Ranking
+A carregar: Human Development Index
+[ERRO] report_id=5  Human Development Index: S3 operation failed; code: NoSuchKey, message: The specified key does not exist., resource: /bronze-unstructured/Human Development Index, request_id: 18B1C98E60051503, host_id: dd9025bab4ad464b049177c95eb6ebf374d3b3fd1af9251148b658df7ac2e3e8, bucket_name: bronze-unstructured, object_name: Human Development Index
+A carregar: World Competitiveness Ranking
+[ERRO] report_id=6  World Competitiveness Ranking: S3 operation failed; code: NoSuchKey, message: The specified key does not exist., resource: /bronze-unstructured/World Competitiveness Ranking, request_id: 18B1C98E64EA5593, host_id: dd9025bab4ad464b049177c95eb6ebf374d3b3fd1af9251148b658df7ac2e3e8, bucket_name: bronze-unstructured, object_name: World Competitiveness Ranking
+A carregar: Network Readiness Index 2025
+[ERRO] report_id=7  Network Readiness Index 2025: S3 operation failed; code: NoSuchKey, message: The specified key does not exist., resource: /bronze-unstructured/Network Readiness Index 2025, request_id: 18B1C98E693BFA5C, host_id: dd9025bab4ad464b049177c95eb6ebf374d3b3fd1af9251148b658df7ac2e3e8, bucket_name: bronze-unstructured, object_name: Network Readiness Index 2025
+A carregar: Technology and innovation report
+[ERRO] report_id=8  Technology and innovation report: S3 operation failed; code: NoSuchKey, message: The specified key does not exist., resource: /bronze-unstructured/Technology and innovation report, request_id: 18B1C98E6F5D1EF7, host_id: dd9025bab4ad464b049177c95eb6ebf374d3b3fd1af9251148b658df7ac2e3e8, bucket_name: bronze-unstructured, object_name: Technology and innovation report
+A carregar: Global Innovation Index
+[ERRO] report_id=10  Global Innovation Index: S3 operation failed; code: NoSuchKey, message: The specified key does not exist., resource: /bronze-unstructured/Global Innovation Index, request_id: 18B1C98E76A1A4B0, host_id: dd9025bab4ad464b049177c95eb6ebf374d3b3fd1af9251148b658df7ac2e3e8, bucket_name: bronze-unstructured, object_name: Global Innovation Index
+A carregar: IMD World Talent Ranking
+[ERRO] report_id=11  IMD World Talent Ranking: S3 operation failed; code: NoSuchKey, message: The specified key does not exist., resource: /bronze-unstructured/IMD World Talent Ranking, request_id: 18B1C98E7CED1EC6, host_id: dd9025bab4ad464b049177c95eb6ebf374d3b3fd1af9251148b658df7ac2e3e8, bucket_name: bronze-unstructured, object_name: IMD World Talent Ranking
+A carregar: The Global State of Democracy 2025
+[ERRO] report_id=12  The Global State of Democracy 2025: S3 operation failed; code: NoSuchKey, message: The specified key does not exist., resource: /bronze-unstructured/The Global State of Democracy 2025, request_id: 18B1C98E841D003B, host_id: dd9025bab4ad464b049177c95eb6ebf374d3b3fd1af9251148b658df7ac2e3e8, bucket_name: bronze-unstructured, object_name: The Global State of Democracy 2025
+A carregar: Global Peace Index 2025
+[ERRO] report_id=13  Global Peace Index 2025: S3 operation failed; code: NoSuchKey, message: The specified key does not exist., resource: /bronze-unstructured/Global Peace Index 2025, request_id: 18B1C98E8830F6DA, host_id: dd9025bab4ad464b049177c95eb6ebf374d3b3fd1af9251148b658df7ac2e3e8, bucket_name: bronze-unstructured, object_name: Global Peace Index 2025
+A carregar: Travel & Tourism Development Index 2024
+[ERRO] report_id=15  Travel & Tourism Development Index 2024: S3 operation failed; code: NoSuchKey, message: The specified key does not exist., resource: /bronze-unstructured/Travel & Tourism Development Index 2024, request_id: 18B1C98E8C7607FB, host_id: dd9025bab4ad464b049177c95eb6ebf374d3b3fd1af9251148b658df7ac2e3e8, bucket_name: bronze-unstructured, object_name: Travel & Tourism Development Index 2024
+A carregar: Index of Economic Freedom
+[ERRO] report_id=16  Index of Economic Freedom: S3 operation failed; code: NoSuchKey, message: The specified key does not exist., resource: /bronze-unstructured/Index of Economic Freedom, request_id: 18B1C98E923B8CC7, host_id: dd9025bab4ad464b049177c95eb6ebf374d3b3fd1af9251148b658df7ac2e3e8, bucket_name: bronze-unstructured, object_name: Index of Economic Freedom
+A carregar: Government at a Glance 2025 (Digital government index)
+[ERRO] report_id=17  Government at a Glance 2025 (Digital government index): S3 operation failed; code: NoSuchKey, message: The specified key does not exist., resource: /bronze-unstructured/Government at a Glance 2025 (Digital government index), request_id: 18B1C98E973DA238, host_id: dd9025bab4ad464b049177c95eb6ebf374d3b3fd1af9251148b658df7ac2e3e8, bucket_name: bronze-unstructured, object_name: Government at a Glance 2025 (Digital government index)
+A carregar: Environmental Performance Index (EPI)
+[ERRO] report_id=19  Environmental Performance Index (EPI): S3 operation failed; code: NoSuchKey, message: The specified key does not exist., resource: /bronze-unstructured/Environmental Performance Index (EPI), request_id: 18B1C98E9C26B1F2, host_id: dd9025bab4ad464b049177c95eb6ebf374d3b3fd1af9251148b658df7ac2e3e8, bucket_name: bronze-unstructured, object_name: Environmental Performance Index (EPI)
+A carregar: European Payment Index
+[ERRO] report_id=20  European Payment Index: S3 operation failed; code: NoSuchKey, message: The specified key does not exist., resource: /bronze-unstructured/European Payment Index, request_id: 18B1C98EA1CBAF6D, host_id: dd9025bab4ad464b049177c95eb6ebf374d3b3fd1af9251148b658df7ac2e3e8, bucket_name: bronze-unstructured, object_name: European Payment Index
+A carregar: the Henley Passport Index
+[ERRO] report_id=21  the Henley Passport Index: S3 operation failed; code: NoSuchKey, message: The specified key does not exist., resource: /bronze-unstructured/the Henley Passport Index, request_id: 18B1C98EA7C3EC8D, host_id: dd9025bab4ad464b049177c95eb6ebf374d3b3fd1af9251148b658df7ac2e3e8, bucket_name: bronze-unstructured, object_name: the Henley Passport Index
+silver concluído.
+[OK] 4/4 — silver concluído.
+
+ PIPELINE DE PDFs CONCLUÍDO COM SUCESSO
+Relatório guardado em: C:\Users\Alexandr\Desktop\Universidade\3º Ano\Projeto\Projeto-Final-Eu\Reports\PDFs\pipeline_reports_report_20260522_052344.txt
+[INFO] A usar Python: C:\Users\Alexandr\miniconda3\python.exe
+
+ PIPELINE DE PDFs INICIADO
+ 2026-05-22 05:42:29
+
+
+==================================================
+ 1/4 — validate_op_report
+==================================================
+validate_op_report — 5 válidos, 0 inválidos
+[OK] 1/4 — validate_op_report concluído.
+
+==================================================
+ 2/4 — bronze
+==================================================
+A correr bronze (ingest unstructured)...
+A descarregar: https://ccpi.org/ranking/
+[ERRO] report_id=4  The Climate Change Performance Index (CCPI): O servidor devolveu HTML em vez do PDF (bloqueio/CAPTCHA). Content-Type: text/html; charset=UTF-8
+A descarregar: https://www.kearney.com/documents/291362523/313978989/World-recalibrating-The-2026-FDI-Confidence-Index--Executive+Summary-PDF.pdf/3799c0c9-0ead-ed85-abf1-aa74dcfc64a2?t=1775723178000
+[ERRO] report_id=9  The 2025 Kearney FDI Confidence Index®: World at inflection: 403 Client Error: Forbidden for url: https://www.kearney.com/documents/291362523/313978989/World-recalibrating-The-2026-FDI-Confidence-Index--Executive+Summary-PDF.pdf/3799c0c9-0ead-ed85-abf1-aa74dcfc64a2?t=1775723178000
+A descarregar: https://ccpi.org/wp-content/uploads/CCPI-2026-Results-1.pdf
+[ERRO] report_id=14  Climate Change Performance Index (CCPI) 2026: O servidor devolveu HTML em vez do PDF (bloqueio/CAPTCHA). Content-Type: text/html; charset=UTF-8
+A descarregar: https://www.fraserinstitute.org/sites/default/files/2024-10/economic-freedom-of-the-world-2024.pdf
+[ERRO] report_id=18  Economic Freedom of the World, 2024: 403 Client Error: Forbidden for url: https://www.fraserinstitute.org/sites/default/files/2024-10/economic-freedom-of-the-world-2024.pdf
+A descarregar: https://www.imf.org/external/datamapper/AIPINote.pdf
+[ERRO] report_id=22  AI Preparedness Index (AIPI): 403 Client Error: Forbidden for url: https://www.imf.org/external/datamapper/AIPINote.pdf
+bronze concluído — 0 OK, 5 erros
+[OK] 2/4 — bronze concluído.
+
+==================================================
+ 3/4 — validate_bronze_unstructured
+==================================================
+validate_bronze_unstructured — 0 válidos, 0 inválidos/removidos
+[OK] 3/4 — validate_bronze_unstructured concluído.
+
+==================================================
+ 4/4 — silver
+==================================================
+A correr silver (ingest vectorial)...
+Sem relatórios BRONZE_OK para indexar.
+[OK] 4/4 — silver concluído.
+
+ PIPELINE DE PDFs CONCLUÍDO COM SUCESSO
+Relatório guardado em: C:\Users\Alexandr\Desktop\Universidade\3º Ano\Projeto\Projeto-Final-Eu\Reports\PDFs\pipeline_reports_report_20260522_054229.txt
+[INFO] A usar Python: C:\Users\Alexandr\miniconda3\python.exe
+
+ PIPELINE DE PDFs INICIADO
+ 2026-05-22 05:45:49
+
+
+==================================================
+ 1/4 — validate_op_report
+==================================================
+validate_op_report — 22 válidos, 0 inválidos
+[OK] 1/4 — validate_op_report concluído.
+
+==================================================
+ 2/4 — bronze
+==================================================
+A correr bronze (ingest unstructured)...
+A descarregar: https://www.cato.org/sites/cato.org/files/2024-12/2024-human-freedom-index.pdf
+[THUMB] Thumbnail gerado: report_id=1
+[OK]   report_id=1  the HUMAN FREEDOM INDEX
+A descarregar: https://reports.weforum.org/docs/WEF_GGGR_2025.pdf
+[THUMB] Thumbnail gerado: report_id=2
+[OK]   report_id=2  Global Gender Gap Report
+A descarregar: https://imd.widen.net/content/xclarczvwr/pdf/WDCR_Report_2025.pdf
+[THUMB] Thumbnail gerado: report_id=3
+[OK]   report_id=3  World Digital Competitiveness Ranking
+A descarregar: https://ccpi.org/ranking/
+[ERRO] report_id=4  The Climate Change Performance Index (CCPI): O servidor devolveu HTML em vez do PDF (bloqueio/CAPTCHA). Content-Type: text/html; charset=UTF-8
+A descarregar: https://hdr.undp.org/system/files/documents/global-report-document/hdr2025reporten.pdf
+[THUMB] Thumbnail gerado: report_id=5
+[OK]   report_id=5  Human Development Index
+A descarregar: https://imd.widen.net/s/wtx5fd2ltn/booklet_wcy_2025
+[THUMB] Thumbnail gerado: report_id=6
+[OK]   report_id=6  World Competitiveness Ranking
+A descarregar: https://download.networkreadinessindex.org/reports/data/2025/nri-2025.pdf
+[THUMB] Thumbnail gerado: report_id=7
+[OK]   report_id=7  Network Readiness Index 2025
+A descarregar: https://unctad.org/system/files/official-document/tir2025_en.pdf
+[THUMB] Thumbnail gerado: report_id=8
+[OK]   report_id=8  Technology and innovation report
+A descarregar: https://www.kearney.com/documents/291362523/313978989/World-recalibrating-The-2026-FDI-Confidence-Index--Executive+Summary-PDF.pdf/3799c0c9-0ead-ed85-abf1-aa74dcfc64a2?t=1775723178000
+[ERRO] report_id=9  The 2025 Kearney FDI Confidence Index®: World at inflection: 403 Client Error: Forbidden for url: https://www.kearney.com/documents/291362523/313978989/World-recalibrating-The-2026-FDI-Confidence-Index--Executive+Summary-PDF.pdf/3799c0c9-0ead-ed85-abf1-aa74dcfc64a2?t=1775723178000
+A descarregar: https://www.wipo.int/web-publications/global-innovation-index-2025/assets/89507/global-innovation-index-2025-en.pdf
+[THUMB] Thumbnail gerado: report_id=10
+[OK]   report_id=10  Global Innovation Index
+A descarregar: https://imd.widen.net/content/eaznvosueg/pdf/WCC-WTR-2025.pdf?u=dnnfeq
+[THUMB] Thumbnail gerado: report_id=11
+[OK]   report_id=11  IMD World Talent Ranking
+A descarregar: https://www.idea.int/sites/default/files/2025-09/global-state-of-democracy-2025-democracy-on-the-move.pdf
+[THUMB] Thumbnail gerado: report_id=12
+[OK]   report_id=12  The Global State of Democracy 2025
+A descarregar: https://www.visionofhumanity.org/wp-content/uploads/2025/06/Global-Peace-Index-2025-web.pdf
+[THUMB] Thumbnail gerado: report_id=13
+[OK]   report_id=13  Global Peace Index 2025
+A descarregar: https://ccpi.org/wp-content/uploads/CCPI-2026-Results-1.pdf
+[ERRO] report_id=14  Climate Change Performance Index (CCPI) 2026: O servidor devolveu HTML em vez do PDF (bloqueio/CAPTCHA). Content-Type: text/html; charset=UTF-8
+A descarregar: https://www3.weforum.org/docs/WEF_Travel_and_Tourism_Development_Index_2024.pdf
+[THUMB] Thumbnail gerado: report_id=15
+[OK]   report_id=15  Travel & Tourism Development Index 2024
+A descarregar: https://static.heritage.org/index/pdf/2026/2026_indexofeconomicfreedom_preface.pdf
+[THUMB] Thumbnail gerado: report_id=16
+[OK]   report_id=16  Index of Economic Freedom
+A descarregar: https://www.oecd.org/content/dam/oecd/en/publications/reports/2025/06/government-at-a-glance-2025_70e14c6c/0efd0bcd-en.pdf
+[THUMB] Thumbnail gerado: report_id=17
+[OK]   report_id=17  Government at a Glance 2025 (Digital government index)
+A descarregar: https://www.fraserinstitute.org/sites/default/files/2024-10/economic-freedom-of-the-world-2024.pdf
+[ERRO] report_id=18  Economic Freedom of the World, 2024: 403 Client Error: Forbidden for url: https://www.fraserinstitute.org/sites/default/files/2024-10/economic-freedom-of-the-world-2024.pdf
+A descarregar: https://epi.yale.edu/downloads/2024-epi-report-20250106.pdf
+[THUMB] Thumbnail gerado: report_id=19
+[OK]   report_id=19  Environmental Performance Index (EPI)
+A descarregar: https://www.intrum.com/media/caqod3qr/intrum-epr-2025.pdf
+MuPDF error: format error: No common ancestor in structure tree
+
+C:\Users\Alexandr\Desktop\Universidade\3º Ano\Projeto\Projeto-Final-Eu\Codes\Pipeline Unstructured\silver.py:73: LangChainDeprecationWarning: The class `OllamaEmbeddings` was deprecated in LangChain 0.3.1 and will be removed in 1.0.0. An updated version of the class exists in the `langchain-ollama package and should be used instead. To use it run `pip install -U `langchain-ollama` and import as `from `langchain_ollama import OllamaEmbeddings``.
+  return OllamaEmbeddings(model="mxbai-embed-large")
+C:\Users\Alexandr\Desktop\Universidade\3º Ano\Projeto\Projeto-Final-Eu\Codes\Pipeline Unstructured\silver.py:213: LangChainPendingDeprecationWarning: This class is pending deprecation and may be removed in a future version. You can swap to using the `PGVector` implementation in `langchain_postgres`. Please read the guidelines in the doc-string of this class to follow prior to migrating as there are some differences between the implementations. See <https://github.com/langchain-ai/langchain-postgres> for details about the new implementation.
+  store = PGVector(
+C:\Users\Alexandr\Desktop\Universidade\3º Ano\Projeto\Projeto-Final-Eu\Codes\Pipeline Unstructured\silver.py:213: LangChainPendingDeprecationWarning: Please use JSONB instead of JSON for metadata. This change will allow for more efficient querying that involves filtering based on metadata. Please note that filtering operators have been changed when using JSONB metadata to be prefixed with a $ sign to avoid name collisions with columns. If you're using an existing database, you will need to create a db migration for your metadata column to be JSONB and update your queries to use the new operators. 
+  store = PGVector(
+
+ PIPELINE DE PDFs INICIADO
+ 2026-05-22 06:31:29
+
+
+==================================================
+ 1/4 — validate_op_report
+==================================================
+validate_op_report — 22 válidos, 0 inválidos
+[OK] 1/4 — validate_op_report concluído.
+
+==================================================
+ 2/4 — bronze
+==================================================
+A correr bronze (ingest unstructured)...
+A descarregar: https://www.cato.org/sites/cato.org/files/2024-12/2024-human-freedom-index.pdf
+[THUMB] Thumbnail gerado: report_id=1
+[OK]   report_id=1  the HUMAN FREEDOM INDEX
+A descarregar: https://reports.weforum.org/docs/WEF_GGGR_2025.pdf
+[THUMB] Thumbnail gerado: report_id=2
+[OK]   report_id=2  Global Gender Gap Report
+A descarregar: https://imd.widen.net/content/xclarczvwr/pdf/WDCR_Report_2025.pdf
+[THUMB] Thumbnail gerado: report_id=3
+[OK]   report_id=3  World Digital Competitiveness Ranking
+A descarregar: https://ccpi.org/ranking/
+[ERRO] report_id=4  The Climate Change Performance Index (CCPI): O servidor devolveu HTML em vez do PDF (bloqueio/CAPTCHA). Content-Type: text/html; charset=UTF-8
+A descarregar: https://hdr.undp.org/system/files/documents/global-report-document/hdr2025reporten.pdf
+[THUMB] Thumbnail gerado: report_id=5
+[OK]   report_id=5  Human Development Index
+A descarregar: https://imd.widen.net/s/wtx5fd2ltn/booklet_wcy_2025
+[THUMB] Thumbnail gerado: report_id=6
+[OK]   report_id=6  World Competitiveness Ranking
+A descarregar: https://download.networkreadinessindex.org/reports/data/2025/nri-2025.pdf
+[THUMB] Thumbnail gerado: report_id=7
+[OK]   report_id=7  Network Readiness Index 2025
+A descarregar: https://unctad.org/system/files/official-document/tir2025_en.pdf
+[THUMB] Thumbnail gerado: report_id=8
+[OK]   report_id=8  Technology and innovation report
+A descarregar: https://www.kearney.com/documents/291362523/313978989/World-recalibrating-The-2026-FDI-Confidence-Index--Executive+Summary-PDF.pdf/3799c0c9-0ead-ed85-abf1-aa74dcfc64a2?t=1775723178000
+[ERRO] report_id=9  The 2025 Kearney FDI Confidence Index®: World at inflection: 403 Client Error: Forbidden for url: https://www.kearney.com/documents/291362523/313978989/World-recalibrating-The-2026-FDI-Confidence-Index--Executive+Summary-PDF.pdf/3799c0c9-0ead-ed85-abf1-aa74dcfc64a2?t=1775723178000
+A descarregar: https://www.wipo.int/web-publications/global-innovation-index-2025/assets/89507/global-innovation-index-2025-en.pdf
+[THUMB] Thumbnail gerado: report_id=10
+[OK]   report_id=10  Global Innovation Index
+A descarregar: https://imd.widen.net/content/eaznvosueg/pdf/WCC-WTR-2025.pdf?u=dnnfeq
+[THUMB] Thumbnail gerado: report_id=11
+[OK]   report_id=11  IMD World Talent Ranking
+A descarregar: https://www.idea.int/sites/default/files/2025-09/global-state-of-democracy-2025-democracy-on-the-move.pdf
+[THUMB] Thumbnail gerado: report_id=12
+[OK]   report_id=12  The Global State of Democracy 2025
+A descarregar: https://www.visionofhumanity.org/wp-content/uploads/2025/06/Global-Peace-Index-2025-web.pdf
+[THUMB] Thumbnail gerado: report_id=13
+[OK]   report_id=13  Global Peace Index 2025
+A descarregar: https://ccpi.org/wp-content/uploads/CCPI-2026-Results-1.pdf
+[ERRO] report_id=14  Climate Change Performance Index (CCPI) 2026: O servidor devolveu HTML em vez do PDF (bloqueio/CAPTCHA). Content-Type: text/html; charset=UTF-8
+A descarregar: https://www3.weforum.org/docs/WEF_Travel_and_Tourism_Development_Index_2024.pdf
+[THUMB] Thumbnail gerado: report_id=15
+[OK]   report_id=15  Travel & Tourism Development Index 2024
+A descarregar: https://static.heritage.org/index/pdf/2026/2026_indexofeconomicfreedom_preface.pdf
+[THUMB] Thumbnail gerado: report_id=16
+[OK]   report_id=16  Index of Economic Freedom
+A descarregar: https://www.oecd.org/content/dam/oecd/en/publications/reports/2025/06/government-at-a-glance-2025_70e14c6c/0efd0bcd-en.pdf
+[THUMB] Thumbnail gerado: report_id=17
+[OK]   report_id=17  Government at a Glance 2025 (Digital government index)
+A descarregar: https://www.fraserinstitute.org/sites/default/files/2024-10/economic-freedom-of-the-world-2024.pdf
+[ERRO] report_id=18  Economic Freedom of the World, 2024: 403 Client Error: Forbidden for url: https://www.fraserinstitute.org/sites/default/files/2024-10/economic-freedom-of-the-world-2024.pdf
+A descarregar: https://epi.yale.edu/downloads/2024-epi-report-20250106.pdf
+[THUMB] Thumbnail gerado: report_id=19
+[OK]   report_id=19  Environmental Performance Index (EPI)
+A descarregar: https://www.intrum.com/media/caqod3qr/intrum-epr-2025.pdf
+MuPDF error: format error: No common ancestor in structure tree
+
+C:\Users\Alexandr\Desktop\Universidade\3º Ano\Projeto\Projeto-Final-Eu\Codes\Pipeline Unstructured\silver.py:73: LangChainDeprecationWarning: The class `OllamaEmbeddings` was deprecated in LangChain 0.3.1 and will be removed in 1.0.0. An updated version of the class exists in the `langchain-ollama package and should be used instead. To use it run `pip install -U `langchain-ollama` and import as `from `langchain_ollama import OllamaEmbeddings``.
+  return OllamaEmbeddings(model="mxbai-embed-large")
+C:\Users\Alexandr\Desktop\Universidade\3º Ano\Projeto\Projeto-Final-Eu\Codes\Pipeline Unstructured\silver.py:213: LangChainPendingDeprecationWarning: This class is pending deprecation and may be removed in a future version. You can swap to using the `PGVector` implementation in `langchain_postgres`. Please read the guidelines in the doc-string of this class to follow prior to migrating as there are some differences between the implementations. See <https://github.com/langchain-ai/langchain-postgres> for details about the new implementation.
+  store = PGVector(
+C:\Users\Alexandr\Desktop\Universidade\3º Ano\Projeto\Projeto-Final-Eu\Codes\Pipeline Unstructured\silver.py:213: LangChainPendingDeprecationWarning: Please use JSONB instead of JSON for metadata. This change will allow for more efficient querying that involves filtering based on metadata. Please note that filtering operators have been changed when using JSONB metadata to be prefixed with a $ sign to avoid name collisions with columns. If you're using an existing database, you will need to create a db migration for your metadata column to be JSONB and update your queries to use the new operators. 
+  store = PGVector(
+
+ PIPELINE DE PDFs INICIADO
+ 2026-05-22 08:44:32
+
+
+==================================================
+ 1/4 — validate_op_report
+==================================================
+validate_op_report — 22 válidos, 0 inválidos
+[OK] 1/4 — validate_op_report concluído.
+
+==================================================
+ 2/4 — bronze
+==================================================
+A correr bronze (ingest unstructured)...
+A descarregar: https://www.cato.org/sites/cato.org/files/2024-12/2024-human-freedom-index.pdf
+[THUMB] Thumbnail gerado: report_id=1
+[OK]   report_id=1  the HUMAN FREEDOM INDEX
+A descarregar: https://reports.weforum.org/docs/WEF_GGGR_2025.pdf
+[THUMB] Thumbnail gerado: report_id=2
+[OK]   report_id=2  Global Gender Gap Report
+A descarregar: https://imd.widen.net/content/xclarczvwr/pdf/WDCR_Report_2025.pdf
+[THUMB] Thumbnail gerado: report_id=3
+[OK]   report_id=3  World Digital Competitiveness Ranking
+A descarregar: https://ccpi.org/ranking/
+[ERRO] report_id=4  The Climate Change Performance Index (CCPI): O servidor devolveu HTML em vez do PDF (bloqueio/CAPTCHA). Content-Type: text/html; charset=UTF-8
+A descarregar: https://hdr.undp.org/system/files/documents/global-report-document/hdr2025reporten.pdf
+[THUMB] Thumbnail gerado: report_id=5
+[OK]   report_id=5  Human Development Index
+A descarregar: https://imd.widen.net/s/wtx5fd2ltn/booklet_wcy_2025
+[THUMB] Thumbnail gerado: report_id=6
+[OK]   report_id=6  World Competitiveness Ranking
+A descarregar: https://download.networkreadinessindex.org/reports/data/2025/nri-2025.pdf
+[THUMB] Thumbnail gerado: report_id=7
+[OK]   report_id=7  Network Readiness Index 2025
+A descarregar: https://unctad.org/system/files/official-document/tir2025_en.pdf
+[THUMB] Thumbnail gerado: report_id=8
+[OK]   report_id=8  Technology and innovation report
+A descarregar: https://www.kearney.com/documents/291362523/313978989/World-recalibrating-The-2026-FDI-Confidence-Index--Executive+Summary-PDF.pdf/3799c0c9-0ead-ed85-abf1-aa74dcfc64a2?t=1775723178000
+[ERRO] report_id=9  The 2025 Kearney FDI Confidence Index®: World at inflection: 403 Client Error: Forbidden for url: https://www.kearney.com/documents/291362523/313978989/World-recalibrating-The-2026-FDI-Confidence-Index--Executive+Summary-PDF.pdf/3799c0c9-0ead-ed85-abf1-aa74dcfc64a2?t=1775723178000
+A descarregar: https://www.wipo.int/web-publications/global-innovation-index-2025/assets/89507/global-innovation-index-2025-en.pdf
+[THUMB] Thumbnail gerado: report_id=10
+[OK]   report_id=10  Global Innovation Index
+A descarregar: https://imd.widen.net/content/eaznvosueg/pdf/WCC-WTR-2025.pdf?u=dnnfeq
+[THUMB] Thumbnail gerado: report_id=11
+[OK]   report_id=11  IMD World Talent Ranking
+A descarregar: https://www.idea.int/sites/default/files/2025-09/global-state-of-democracy-2025-democracy-on-the-move.pdf
+[THUMB] Thumbnail gerado: report_id=12
+[OK]   report_id=12  The Global State of Democracy 2025
+A descarregar: https://www.visionofhumanity.org/wp-content/uploads/2025/06/Global-Peace-Index-2025-web.pdf
+[THUMB] Thumbnail gerado: report_id=13
+[OK]   report_id=13  Global Peace Index 2025
+A descarregar: https://ccpi.org/wp-content/uploads/CCPI-2026-Results-1.pdf
+[ERRO] report_id=14  Climate Change Performance Index (CCPI) 2026: O servidor devolveu HTML em vez do PDF (bloqueio/CAPTCHA). Content-Type: text/html; charset=UTF-8
+A descarregar: https://www3.weforum.org/docs/WEF_Travel_and_Tourism_Development_Index_2024.pdf
+[THUMB] Thumbnail gerado: report_id=15
+[OK]   report_id=15  Travel & Tourism Development Index 2024
+A descarregar: https://static.heritage.org/index/pdf/2026/2026_indexofeconomicfreedom_preface.pdf
+[THUMB] Thumbnail gerado: report_id=16
+[OK]   report_id=16  Index of Economic Freedom
+A descarregar: https://www.oecd.org/content/dam/oecd/en/publications/reports/2025/06/government-at-a-glance-2025_70e14c6c/0efd0bcd-en.pdf
+[THUMB] Thumbnail gerado: report_id=17
+[OK]   report_id=17  Government at a Glance 2025 (Digital government index)
+A descarregar: https://www.fraserinstitute.org/sites/default/files/2024-10/economic-freedom-of-the-world-2024.pdf
+[ERRO] report_id=18  Economic Freedom of the World, 2024: 403 Client Error: Forbidden for url: https://www.fraserinstitute.org/sites/default/files/2024-10/economic-freedom-of-the-world-2024.pdf
+A descarregar: https://epi.yale.edu/downloads/2024-epi-report-20250106.pdf
+[THUMB] Thumbnail gerado: report_id=19
+[OK]   report_id=19  Environmental Performance Index (EPI)
+A descarregar: https://www.intrum.com/media/caqod3qr/intrum-epr-2025.pdf
+MuPDF error: format error: No common ancestor in structure tree
+
+C:\Users\Alexandr\Desktop\Universidade\3º Ano\Projeto\Projeto-Final-Eu\Codes\Pipeline Unstructured\silver.py:73: LangChainDeprecationWarning: The class `OllamaEmbeddings` was deprecated in LangChain 0.3.1 and will be removed in 1.0.0. An updated version of the class exists in the `langchain-ollama package and should be used instead. To use it run `pip install -U `langchain-ollama` and import as `from `langchain_ollama import OllamaEmbeddings``.
+  return OllamaEmbeddings(model="mxbai-embed-large")
+C:\Users\Alexandr\Desktop\Universidade\3º Ano\Projeto\Projeto-Final-Eu\Codes\Pipeline Unstructured\silver.py:213: LangChainPendingDeprecationWarning: This class is pending deprecation and may be removed in a future version. You can swap to using the `PGVector` implementation in `langchain_postgres`. Please read the guidelines in the doc-string of this class to follow prior to migrating as there are some differences between the implementations. See <https://github.com/langchain-ai/langchain-postgres> for details about the new implementation.
+  store = PGVector(
+C:\Users\Alexandr\Desktop\Universidade\3º Ano\Projeto\Projeto-Final-Eu\Codes\Pipeline Unstructured\silver.py:213: LangChainPendingDeprecationWarning: Please use JSONB instead of JSON for metadata. This change will allow for more efficient querying that involves filtering based on metadata. Please note that filtering operators have been changed when using JSONB metadata to be prefixed with a $ sign to avoid name collisions with columns. If you're using an existing database, you will need to create a db migration for your metadata column to be JSONB and update your queries to use the new operators. 
+  store = PGVector(
+
+ PIPELINE DE PDFs INICIADO
+ 2026-05-22 09:16:49
+
+
+==================================================
+ 1/4 — validate_op_report
+==================================================
+validate_op_report — 22 válidos, 0 inválidos
+[OK] 1/4 — validate_op_report concluído.
+
+==================================================
+ 2/4 — bronze
+==================================================
+A correr bronze (ingest unstructured)...
+A descarregar: https://www.cato.org/sites/cato.org/files/2024-12/2024-human-freedom-index.pdf
+[THUMB] Thumbnail gerado: report_id=1
+[OK]   report_id=1  the HUMAN FREEDOM INDEX
+A descarregar: https://reports.weforum.org/docs/WEF_GGGR_2025.pdf
+[THUMB] Thumbnail gerado: report_id=2
+[OK]   report_id=2  Global Gender Gap Report
+A descarregar: https://imd.widen.net/content/xclarczvwr/pdf/WDCR_Report_2025.pdf
+[THUMB] Thumbnail gerado: report_id=3
+[OK]   report_id=3  World Digital Competitiveness Ranking
+A descarregar: https://ccpi.org/ranking/
+[ERRO] report_id=4  The Climate Change Performance Index (CCPI): O servidor devolveu HTML em vez do PDF (bloqueio/CAPTCHA). Content-Type: text/html; charset=UTF-8
+A descarregar: https://unctad.org/system/files/official-document/tir2025_en.pdf
+[THUMB] Thumbnail gerado: report_id=8
+[OK]   report_id=8  Technology and innovation report
+A descarregar: https://www.kearney.com/documents/291362523/313978989/World-recalibrating-The-2026-FDI-Confidence-Index--Executive+Summary-PDF.pdf/3799c0c9-0ead-ed85-abf1-aa74dcfc64a2?t=1775723178000
+[ERRO] report_id=9  The 2025 Kearney FDI Confidence Index®: World at inflection: 403 Client Error: Forbidden for url: https://www.kearney.com/documents/291362523/313978989/World-recalibrating-The-2026-FDI-Confidence-Index--Executive+Summary-PDF.pdf/3799c0c9-0ead-ed85-abf1-aa74dcfc64a2?t=1775723178000
+A descarregar: https://www.wipo.int/web-publications/global-innovation-index-2025/assets/89507/global-innovation-index-2025-en.pdf
+[THUMB] Thumbnail gerado: report_id=10
+[OK]   report_id=10  Global Innovation Index
+A descarregar: https://imd.widen.net/content/eaznvosueg/pdf/WCC-WTR-2025.pdf?u=dnnfeq
+[THUMB] Thumbnail gerado: report_id=11
+[OK]   report_id=11  IMD World Talent Ranking
+A descarregar: https://www.idea.int/sites/default/files/2025-09/global-state-of-democracy-2025-democracy-on-the-move.pdf
+[THUMB] Thumbnail gerado: report_id=12
+[OK]   report_id=12  The Global State of Democracy 2025
+A descarregar: https://www.visionofhumanity.org/wp-content/uploads/2025/06/Global-Peace-Index-2025-web.pdf
+[THUMB] Thumbnail gerado: report_id=13
+[OK]   report_id=13  Global Peace Index 2025
+A descarregar: https://ccpi.org/wp-content/uploads/CCPI-2026-Results-1.pdf
+[ERRO] report_id=14  Climate Change Performance Index (CCPI) 2026: O servidor devolveu HTML em vez do PDF (bloqueio/CAPTCHA). Content-Type: text/html; charset=UTF-8
+A descarregar: https://www3.weforum.org/docs/WEF_Travel_and_Tourism_Development_Index_2024.pdf
+[THUMB] Thumbnail gerado: report_id=15
+[OK]   report_id=15  Travel & Tourism Development Index 2024
+A descarregar: https://static.heritage.org/index/pdf/2026/2026_indexofeconomicfreedom_preface.pdf
+[ERRO] 2/4 — bronze falhou: cursor already closed
+[AVISO] Não foi possível gerar o relatório: connection to server at "localhost" (::1), port 5433 failed: server closed the connection unexpectedly
+	This probably means the server terminated abnormally
+	before or while processing the request.
+
+Traceback (most recent call last):
+  File "C:\Users\Alexandr\Desktop\Universidade\3º Ano\Projeto\Projeto-Final-Eu\Codes\Pipeline Unstructured\bronze.py", line 154, in main
+    cur.execute(
+    ~~~~~~~~~~~^
+        "UPDATE op_report SET pipeline_status = 'BRONZE_OK' WHERE report_id = %s",
+        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+        (report_id,)
+        ^^^^^^^^^^^^
+    )
+    ^
+psycopg2.OperationalError: could not receive data from server: Software caused connection abort (0x00002745/10053)
+
+
+During handling of the above exception, another exception occurred:
+
+Traceback (most recent call last):
+  File "C:\Users\Alexandr\Desktop\Universidade\3º Ano\Projeto\Projeto-Final-Eu\Codes\Pipeline Unstructured\pipeline_reports.py", line 75, in <module>
+    run_pipeline()
+    ~~~~~~~~~~~~^^
+  File "C:\Users\Alexandr\Desktop\Universidade\3º Ano\Projeto\Projeto-Final-Eu\Codes\Pipeline Unstructured\pipeline_reports.py", line 60, in run_pipeline
+    run_step("2/4 — bronze",                     bronze.main)
+    ~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\Alexandr\Desktop\Universidade\3º Ano\Projeto\Projeto-Final-Eu\Codes\Pipeline Unstructured\pipeline_reports.py", line 30, in run_step
+    result = fn()
+  File "C:\Users\Alexandr\Desktop\Universidade\3º Ano\Projeto\Projeto-Final-Eu\Codes\Pipeline Unstructured\bronze.py", line 165, in main
+    cur.execute(
+    ~~~~~~~~~~~^
+        "UPDATE op_report SET pipeline_status = 'FAILED', pipeline_error = %s WHERE report_id = %s",
+        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+        (err_msg, report_id)
+        ^^^^^^^^^^^^^^^^^^^^
+    )
+    ^
+psycopg2.InterfaceError: cursor already closed
+n_name, langchain_pg_collection.cmetadata AS langchain_pg_collection_cmetadata, langchain_pg_collection.uuid AS langchain_pg_collection_uuid 
+FROM langchain_pg_collection 
+WHERE langchain_pg_collection.name = %(name_1)s 
+ LIMIT %(param_1)s]
+[parameters: {'name_1': 'documents', 'param_1': 1}]
+(Background on this error at: https://sqlalche.me/e/20/e3q8)
+[ERRO] report_id=5  Human Development Index: (psycopg2.OperationalError) could not receive data from server: Software caused connection abort (0x00002745/10053)
+
+[SQL: SELECT langchain_pg_collection.name AS langchain_pg_collection_name, langchain_pg_collection.cmetadata AS langchain_pg_collection_cmetadata, langchain_pg_collection.uuid AS langchain_pg_collection_uuid 
+FROM langchain_pg_collection 
+WHERE langchain_pg_collection.name = %(name_1)s 
+ LIMIT %(param_1)s]
+[parameters: {'name_1': 'documents', 'param_1': 1}]
+(Background on this error at: https://sqlalche.me/e/20/e3q8)
+A carregar: World Competitiveness Ranking
+[ERRO] report_id=6  World Competitiveness Ranking: S3 operation failed; code: NoSuchKey, message: The specified key does not exist., resource: /bronze-unstructured/World Competitiveness Ranking, request_id: 18B1D5426ECE9334, host_id: dd9025bab4ad464b049177c95eb6ebf374d3b3fd1af9251148b658df7ac2e3e8, bucket_name: bronze-unstructured, object_name: World Competitiveness Ranking
+A carregar: Network Readiness Index 2025
+[ERRO] report_id=7  Network Readiness Index 2025: S3 operation failed; code: NoSuchKey, message: The specified key does not exist., resource: /bronze-unstructured/Network Readiness Index 2025, request_id: 18B1D542725CEF28, host_id: dd9025bab4ad464b049177c95eb6ebf374d3b3fd1af9251148b658df7ac2e3e8, bucket_name: bronze-unstructured, object_name: Network Readiness Index 2025
+A carregar: Technology and innovation report
+[ERRO] report_id=8  Technology and innovation report: S3 operation failed; code: NoSuchKey, message: The specified key does not exist., resource: /bronze-unstructured/Technology and innovation report, request_id: 18B1D542771FF91C, host_id: dd9025bab4ad464b049177c95eb6ebf374d3b3fd1af9251148b658df7ac2e3e8, bucket_name: bronze-unstructured, object_name: Technology and innovation report
+A carregar: Global Innovation Index
+[ERRO] report_id=10  Global Innovation Index: S3 operation failed; code: NoSuchKey, message: The specified key does not exist., resource: /bronze-unstructured/Global Innovation Index, request_id: 18B1D5427B9360AB, host_id: dd9025bab4ad464b049177c95eb6ebf374d3b3fd1af9251148b658df7ac2e3e8, bucket_name: bronze-unstructured, object_name: Global Innovation Index
+A carregar: IMD World Talent Ranking
+[ERRO] report_id=11  IMD World Talent Ranking: S3 operation failed; code: NoSuchKey, message: The specified key does not exist., resource: /bronze-unstructured/IMD World Talent Ranking, request_id: 18B1D5427EA36BFE, host_id: dd9025bab4ad464b049177c95eb6ebf374d3b3fd1af9251148b658df7ac2e3e8, bucket_name: bronze-unstructured, object_name: IMD World Talent Ranking
+A carregar: The Global State of Democracy 2025
+[ERRO] report_id=12  The Global State of Democracy 2025: S3 operation failed; code: NoSuchKey, message: The specified key does not exist., resource: /bronze-unstructured/The Global State of Democracy 2025, request_id: 18B1D5428285674B, host_id: dd9025bab4ad464b049177c95eb6ebf374d3b3fd1af9251148b658df7ac2e3e8, bucket_name: bronze-unstructured, object_name: The Global State of Democracy 2025
+A carregar: Global Peace Index 2025
+[ERRO] report_id=13  Global Peace Index 2025: S3 operation failed; code: NoSuchKey, message: The specified key does not exist., resource: /bronze-unstructured/Global Peace Index 2025, request_id: 18B1D54286FA0D9A, host_id: dd9025bab4ad464b049177c95eb6ebf374d3b3fd1af9251148b658df7ac2e3e8, bucket_name: bronze-unstructured, object_name: Global Peace Index 2025
+A carregar: Travel & Tourism Development Index 2024
+[ERRO] report_id=15  Travel & Tourism Development Index 2024: S3 operation failed; code: NoSuchKey, message: The specified key does not exist., resource: /bronze-unstructured/Travel & Tourism Development Index 2024, request_id: 18B1D5428A6635C1, host_id: dd9025bab4ad464b049177c95eb6ebf374d3b3fd1af9251148b658df7ac2e3e8, bucket_name: bronze-unstructured, object_name: Travel & Tourism Development Index 2024
+A carregar: Index of Economic Freedom
+[ERRO] report_id=16  Index of Economic Freedom: S3 operation failed; code: NoSuchKey, message: The specified key does not exist., resource: /bronze-unstructured/Index of Economic Freedom, request_id: 18B1D5428E13E78F, host_id: dd9025bab4ad464b049177c95eb6ebf374d3b3fd1af9251148b658df7ac2e3e8, bucket_name: bronze-unstructured, object_name: Index of Economic Freedom
+A carregar: Government at a Glance 2025 (Digital government index)
+[ERRO] report_id=17  Government at a Glance 2025 (Digital government index): S3 operation failed; code: NoSuchKey, message: The specified key does not exist., resource: /bronze-unstructured/Government at a Glance 2025 (Digital government index), request_id: 18B1D54290B49525, host_id: dd9025bab4ad464b049177c95eb6ebf374d3b3fd1af9251148b658df7ac2e3e8, bucket_name: bronze-unstructured, object_name: Government at a Glance 2025 (Digital government index)
+A carregar: Environmental Performance Index (EPI)
+[ERRO] report_id=19  Environmental Performance Index (EPI): S3 operation failed; code: NoSuchKey, message: The specified key does not exist., resource: /bronze-unstructured/Environmental Performance Index (EPI), request_id: 18B1D54294161B85, host_id: dd9025bab4ad464b049177c95eb6ebf374d3b3fd1af9251148b658df7ac2e3e8, bucket_name: bronze-unstructured, object_name: Environmental Performance Index (EPI)
+A carregar: European Payment Index
+[ERRO] report_id=20  European Payment Index: S3 operation failed; code: NoSuchKey, message: The specified key does not exist., resource: /bronze-unstructured/European Payment Index, request_id: 18B1D5429878EFB6, host_id: dd9025bab4ad464b049177c95eb6ebf374d3b3fd1af9251148b658df7ac2e3e8, bucket_name: bronze-unstructured, object_name: European Payment Index
+A carregar: the Henley Passport Index
+[ERRO] report_id=21  the Henley Passport Index: S3 operation failed; code: NoSuchKey, message: The specified key does not exist., resource: /bronze-unstructured/the Henley Passport Index, request_id: 18B1D5429CDE755B, host_id: dd9025bab4ad464b049177c95eb6ebf374d3b3fd1af9251148b658df7ac2e3e8, bucket_name: bronze-unstructured, object_name: the Henley Passport Index
+silver concluído.
+[OK] 4/4 — silver concluído.
+
+ PIPELINE DE PDFs CONCLUÍDO COM SUCESSO
+Relatório guardado em: C:\Users\Alexandr\Desktop\Universidade\3º Ano\Projeto\Projeto-Final-Eu\Reports\PDFs\pipeline_reports_report_20260522_084432.txt
+[INFO] A usar Python: C:\Users\Alexandr\miniconda3\python.exe

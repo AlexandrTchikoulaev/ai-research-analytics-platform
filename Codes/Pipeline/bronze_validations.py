@@ -10,31 +10,21 @@ DB_CONFIG = {
     "user": "projeto_utilizador", "password": "projeto",
 }
 
-def _get_extract_functions():
-    from silver_functions import EXTRACT_FUNCTIONS
-    return set(EXTRACT_FUNCTIONS.keys())
-
-
 def validate():
     conn = psycopg2.connect(**DB_CONFIG)
     cur = conn.cursor()
 
     cur.execute("""
-        SELECT file_id, report_id, file_url, extract_function
+        SELECT file_id, report_id, file_url
         FROM op_data
         WHERE pipeline_status = 'PENDING'
     """)
     rows = cur.fetchall()
 
-    try:
-        known_functions = _get_extract_functions()
-    except Exception:
-        known_functions = set()
-
     valid_ids = []
     invalid_ids = []
 
-    for file_id, report_id, file_url, extract_function in rows:
+    for file_id, report_id, file_url in rows:
         errors = []
 
         cur.execute("SELECT 1 FROM op_report WHERE report_id = %s", (report_id,))
@@ -43,9 +33,6 @@ def validate():
 
         if file_url and not file_url.startswith("http"):
             errors.append(f"file_url inválido: {file_url}")
-
-        if extract_function and known_functions and extract_function not in known_functions:
-            errors.append(f"extract_function desconhecida: {extract_function}")
 
         if errors:
             msg = "; ".join(errors)

@@ -259,10 +259,19 @@ def _create_mapping_table():
         cur = conn.cursor()
         cur.execute("""
             CREATE TABLE IF NOT EXISTS source_function_mapping (
-                source_code      TEXT PRIMARY KEY,
-                extract_function TEXT NOT NULL
+                source_code          TEXT PRIMARY KEY,
+                extract_function     TEXT,
+                ai_extract_function  TEXT
             )
         """)
+        # Migrações de schema
+        cur.execute("ALTER TABLE op_data DROP COLUMN IF EXISTS extract_function")
+        cur.execute("ALTER TABLE op_data ADD COLUMN IF NOT EXISTS auto_generate BOOLEAN NOT NULL DEFAULT TRUE")
+        cur.execute("ALTER TABLE op_data ADD COLUMN IF NOT EXISTS transform_fn_name TEXT")
+        cur.execute("ALTER TABLE op_data ADD COLUMN IF NOT EXISTS transform_fn_source TEXT")
+        cur.execute("ALTER TABLE source_function_mapping ADD COLUMN IF NOT EXISTS ai_extract_function TEXT")
+        cur.execute("ALTER TABLE source_function_mapping ADD COLUMN IF NOT EXISTS generation_hint TEXT")
+        cur.execute("ALTER TABLE source_function_mapping ALTER COLUMN extract_function DROP NOT NULL")
         conn.commit()
         cur.close()
         conn.close()
@@ -294,19 +303,17 @@ class OpDataIn(BaseModel):
     report_id: int
     file_url: str = ""
     file_name: str = ""
-    extract_function: str = ""
+    auto_generate: bool = True
 
 
 class OpDataPatch(BaseModel):
     report_id: Optional[int] = None
     file_url: Optional[str] = None
     file_name: Optional[str] = None
-    extract_function: Optional[str] = None
 
 
 class OpDataSimplePatch(BaseModel):
     file_name: Optional[str] = None
-    extract_function: Optional[str] = None
 
 
 class ReportPatch(BaseModel):
@@ -469,11 +476,10 @@ def add_op_data(data: OpDataIn):
             raise HTTPException(status_code=404, detail=f"report_id {data.report_id} não existe.")
 
         cur.execute("""
-            INSERT INTO op_data (report_id, file_url, file_name, extract_function)
+            INSERT INTO op_data (report_id, file_url, file_name, auto_generate)
             VALUES (%s, %s, %s, %s)
             RETURNING file_id;
-        """, (data.report_id, data.file_url or None, data.file_name or "",
-              data.extract_function or None))
+        """, (data.report_id, data.file_url or None, data.file_name or "", data.auto_generate))
         file_id = cur.fetchone()[0]
         conn.commit()
         cur.close()
@@ -492,7 +498,7 @@ def add_op_data(data: OpDataIn):
 async def upload_op_data(
     file: UploadFile = File(...),
     report_id: int = Form(...),
-    extract_function: str = Form(""),
+    auto_generate: bool = Form(True),
 ):
     """Carrega um ficheiro de dados diretamente para Bronze (MinIO raw)."""
     content = await file.read()
@@ -510,10 +516,10 @@ async def upload_op_data(
     original_name = file.filename or ""
     try:
         cur.execute("""
-            INSERT INTO op_data (report_id, file_url, file_name, extract_function)
+            INSERT INTO op_data (report_id, file_url, file_name, auto_generate)
             VALUES (%s, NULL, %s, %s)
             RETURNING file_id;
-        """, (report_id, original_name, extract_function or None))
+        """, (report_id, original_name, auto_generate))
         file_id = cur.fetchone()[0]
         conn.commit()
     except Exception as e:
@@ -535,7 +541,6 @@ async def upload_op_data(
             Body=content,
             Metadata={
                 "report_id": str(report_id),
-                "extract_function": extract_function or "",
             },
         )
     except Exception as e:
@@ -545,66 +550,6 @@ async def upload_op_data(
     return {"file_id": file_id, "message": "Ficheiro carregado e registado com sucesso."}
 
 
-@app.post("/op_data/pairs", status_code=201)
-async def upload_op_data_pairs(
-    files: list[UploadFile] = File(...),
-    report_id: int = Form(...),
-    extract_functions: str = Form(...),
-):
-    """Carrega múltiplos ficheiros e associa-os a múltiplas funções (produto cartesiano)."""
-    functions = [f.strip() for f in extract_functions.split(",") if f.strip()]
-    if not functions:
-        raise HTTPException(status_code=400, detail="Pelo menos uma extract_function é necessária.")
-
-    file_data = []
-    for f in files:
-        content = await f.read()
-        fmt = (f.filename or "").rsplit(".", 1)[-1].lower() if "." in (f.filename or "") else "json"
-        file_data.append((content, fmt, f.filename or ""))
-
-    conn = get_operational_connection()
-    cur = conn.cursor()
-    cur.execute("SELECT 1 FROM op_report WHERE report_id = %s", (report_id,))
-    if not cur.fetchone():
-        cur.close()
-        conn.close()
-        raise HTTPException(status_code=404, detail=f"report_id {report_id} não existe.")
-
-    s3 = get_s3()
-    ensure_bucket(s3, BUCKET_RAW)
-
-    created_ids = []
-    try:
-        for content, fmt, file_name in file_data:
-            for fn in functions:
-                cur.execute("""
-                    INSERT INTO op_data (report_id, file_url, file_name, extract_function)
-                    VALUES (%s, NULL, %s, %s)
-                    RETURNING file_id;
-                """, (report_id, file_name, fn))
-                file_id = cur.fetchone()[0]
-                s3.put_object(
-                    Bucket=BUCKET_RAW,
-                    Key=str(file_id),
-                    Body=content,
-                    Metadata={
-                        "report_id": str(report_id),
-                        "extract_function": fn,
-                    },
-                )
-                created_ids.append(file_id)
-        conn.commit()
-    except Exception as e:
-        conn.rollback()
-        cur.close()
-        conn.close()
-        raise HTTPException(status_code=500, detail=str(e))
-
-    cur.close()
-    conn.close()
-    notify_pipeline_dados()
-    n_files, n_fns = len(file_data), len(functions)
-    return {"file_ids": created_ids, "message": f"{len(created_ids)} registos criados ({n_files} ficheiro(s) × {n_fns} função(ões))."}
 
 
 @app.post("/op_data/batch", status_code=201)
@@ -619,9 +564,9 @@ async def batch_op_data(payload: list[dict]):
         sp = f"sp_{i}"
         try:
             cur.execute(f"SAVEPOINT {sp}")
-            report_id = item.get("report_id")
-            file_url = item.get("file_url") or None
-            extract_function = item.get("extract_function") or None
+            report_id     = item.get("report_id")
+            file_url      = item.get("file_url") or None
+            auto_generate = bool(item.get("auto_generate", True))
             if not report_id:
                 raise ValueError("report_id é obrigatório")
 
@@ -630,9 +575,9 @@ async def batch_op_data(payload: list[dict]):
                 raise ValueError(f"report_id {report_id} não existe")
 
             cur.execute("""
-                INSERT INTO op_data (report_id, file_url, extract_function)
+                INSERT INTO op_data (report_id, file_url, auto_generate)
                 VALUES (%s, %s, %s)
-            """, (report_id, file_url, extract_function))
+            """, (report_id, file_url, auto_generate))
             cur.execute(f"RELEASE SAVEPOINT {sp}")
             inserted += 1
         except Exception as e:
@@ -668,6 +613,7 @@ def _load_auto_store() -> dict:
 
 def _save_to_auto_store(name: str, code: str):
     from datetime import datetime
+    import pandas as _pd
     store = _load_auto_store()
     store[name] = {
         "code":       code,
@@ -675,7 +621,15 @@ def _save_to_auto_store(name: str, code: str):
     }
     with open(_AUTO_STORE, "w", encoding="utf-8") as f:
         json.dump(store, f, ensure_ascii=False, indent=2)
-    _EXTRACT_FUNCTIONS.update({name: None})
+    # Carregar a função em memória para que o registo /extract_functions a inclua
+    try:
+        ns = {"pd": _pd}
+        exec(compile(code, "<auto>", "exec"), ns)
+        fn = ns.get(name)
+        if callable(fn):
+            _EXTRACT_FUNCTIONS[name] = fn
+    except Exception:
+        _EXTRACT_FUNCTIONS[name] = None
 
 
 @app.post("/generate_function")
@@ -808,7 +762,7 @@ def get_op_data():
         cur = conn.cursor(cursor_factory=psycopg2.extras.RealDictCursor)
         cur.execute("""
             SELECT d.file_id, d.report_id, d.file_url,
-                   d.extract_function, r.source_code, d.file_name,
+                   r.source_code, d.file_name,
                    r.file_name AS report_name,
                    CASE
                      WHEN d.pipeline_status IN ('PENDING', 'FAILED') THEN TRUE
@@ -832,7 +786,7 @@ def get_op_data_by_id(file_id: int):
         conn = get_operational_connection()
         cur = conn.cursor(cursor_factory=psycopg2.extras.RealDictCursor)
         cur.execute("""
-            SELECT d.file_id, d.file_name, d.report_id, d.file_url, d.extract_function,
+            SELECT d.file_id, d.file_name, d.report_id, d.file_url,
                    r.file_name AS report_name, r.source_code
             FROM op_data d
             LEFT JOIN op_report r ON r.report_id = d.report_id
@@ -852,19 +806,18 @@ def get_op_data_by_id(file_id: int):
 
 @app.patch("/op_data/{file_id}/edit")
 def patch_op_data_simple(file_id: int, data: OpDataSimplePatch):
-    """Edita apenas nome e função de extração; repõe status para reprocessamento."""
+    """Edita o nome do ficheiro; repõe status para reprocessamento."""
     try:
         conn = get_operational_connection()
         cur = conn.cursor()
         cur.execute("""
             UPDATE op_data
             SET file_name        = COALESCE(%s, file_name),
-                extract_function = COALESCE(%s, extract_function),
                 pipeline_status  = 'PENDING',
                 pipeline_error   = NULL
             WHERE file_id = %s
             RETURNING file_id
-        """, (data.file_name or None, data.extract_function or None, file_id))
+        """, (data.file_name or None, file_id))
         if not cur.fetchone():
             conn.rollback()
             cur.close(); conn.close()
@@ -891,12 +844,11 @@ def patch_op_data(file_id: int, data: OpDataPatch):
             SET report_id        = COALESCE(%s, report_id),
                 file_url         = %s,
                 file_name        = COALESCE(%s, file_name),
-                extract_function = %s,
                 pipeline_status  = 'PENDING',
                 pipeline_error   = NULL
             WHERE file_id = %s
-            RETURNING report_id, file_url, extract_function
-        """, (data.report_id, data.file_url or None, data.file_name or None, data.extract_function or None, file_id))
+            RETURNING report_id, file_url
+        """, (data.report_id, data.file_url or None, data.file_name or None, file_id))
 
         row = cur_op.fetchone()
         if not row:
@@ -904,7 +856,7 @@ def patch_op_data(file_id: int, data: OpDataPatch):
             cur_op.close(); conn_op.close()
             raise HTTPException(status_code=404, detail=f"file_id {file_id} não encontrado.")
 
-        new_report_id, new_file_url, new_extract_function = row
+        new_report_id, new_file_url = row
         conn_op.commit()
         cur_op.close()
         conn_op.close()
@@ -928,8 +880,7 @@ def patch_op_data(file_id: int, data: OpDataPatch):
             s3 = get_s3()
             head = s3.head_object(Bucket=BUCKET_RAW, Key=str(file_id))
             new_meta = {
-                "report_id":        str(new_report_id) if new_report_id is not None else "",
-                "extract_function": new_extract_function or "",
+                "report_id": str(new_report_id) if new_report_id is not None else "",
             }
             s3.copy_object(
                 Bucket=BUCKET_RAW,
@@ -1261,6 +1212,7 @@ def get_extract_functions():
 class FunctionMappingIn(BaseModel):
     source_code: str
     extract_function: str
+    generation_hint: Optional[str] = None
 
 
 @app.get("/function_mappings")
@@ -1268,7 +1220,7 @@ def get_function_mappings():
     try:
         conn = get_operational_connection()
         cur = conn.cursor(cursor_factory=psycopg2.extras.RealDictCursor)
-        cur.execute("SELECT source_code, extract_function FROM source_function_mapping ORDER BY source_code")
+        cur.execute("SELECT source_code, extract_function, ai_extract_function, generation_hint FROM source_function_mapping ORDER BY source_code")
         rows = cur.fetchall()
         cur.close(); conn.close()
         return [dict(r) for r in rows]
@@ -1280,17 +1232,40 @@ def get_function_mappings():
 def upsert_function_mapping(data: FunctionMappingIn):
     if not data.source_code.strip() or not data.extract_function.strip():
         raise HTTPException(status_code=400, detail="source_code e extract_function são obrigatórios.")
+    hint = data.generation_hint.strip() if data.generation_hint and data.generation_hint.strip() else None
     try:
         conn = get_operational_connection()
         cur = conn.cursor()
         cur.execute("""
-            INSERT INTO source_function_mapping (source_code, extract_function)
-            VALUES (%s, %s)
-            ON CONFLICT (source_code) DO UPDATE SET extract_function = EXCLUDED.extract_function
-        """, (data.source_code.strip(), data.extract_function.strip()))
+            INSERT INTO source_function_mapping (source_code, extract_function, generation_hint)
+            VALUES (%s, %s, %s)
+            ON CONFLICT (source_code) DO UPDATE
+              SET extract_function = EXCLUDED.extract_function,
+                  generation_hint  = COALESCE(EXCLUDED.generation_hint, source_function_mapping.generation_hint)
+        """, (data.source_code.strip(), data.extract_function.strip(), hint))
         conn.commit()
         cur.close(); conn.close()
         return {"message": f"Mapeamento '{data.source_code}' → '{data.extract_function}' guardado."}
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
+
+@app.patch("/function_mappings/{source_code}/hint")
+def update_hint(source_code: str, body: dict):
+    """Atualiza apenas o generation_hint de um source_code."""
+    hint = body.get("generation_hint", "")
+    hint = hint.strip() if hint else None
+    try:
+        conn = get_operational_connection()
+        cur = conn.cursor()
+        cur.execute("""
+            INSERT INTO source_function_mapping (source_code, generation_hint)
+            VALUES (%s, %s)
+            ON CONFLICT (source_code) DO UPDATE SET generation_hint = EXCLUDED.generation_hint
+        """, (source_code, hint))
+        conn.commit()
+        cur.close(); conn.close()
+        return {"message": f"Hint para '{source_code}' atualizado."}
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
 
@@ -1307,6 +1282,33 @@ def delete_function_mapping(source_code: str):
         conn.commit()
         cur.close(); conn.close()
         return {"deleted": source_code}
+    except HTTPException:
+        raise
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
+
+@app.delete("/function_mappings/{source_code}/ai")
+def delete_ai_function_mapping(source_code: str):
+    """Limpa apenas o mapeamento AI para um source_code."""
+    try:
+        conn = get_operational_connection()
+        cur = conn.cursor()
+        cur.execute(
+            "UPDATE source_function_mapping SET ai_extract_function = NULL WHERE source_code = %s",
+            (source_code,)
+        )
+        if cur.rowcount == 0:
+            conn.rollback(); cur.close(); conn.close()
+            raise HTTPException(status_code=404, detail=f"Mapeamento para '{source_code}' não encontrado.")
+        # Se ambas as colunas ficaram NULL, apagar a linha
+        cur.execute(
+            "DELETE FROM source_function_mapping WHERE source_code = %s AND extract_function IS NULL AND ai_extract_function IS NULL",
+            (source_code,)
+        )
+        conn.commit()
+        cur.close(); conn.close()
+        return {"cleared_ai": source_code}
     except HTTPException:
         raise
     except Exception as e:

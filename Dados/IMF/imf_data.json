@@ -1,0 +1,685 @@
+[
+    {
+        "file_url": "https://www.imf.org/external/datamapper/api/v1/indicators",
+        "extract_function": "funcao_imf_indicadores"   
+    },
+    {
+        "file_url": "https://www.imf.org/external/datamapper/api/v1/countries",
+        "extract_function": "funcao_imf_countries"
+        
+    },
+    {
+        "file_url": "https://www.imf.org/external/datamapper/api/v1/regions",
+        "extract_function": "funcao_imf_regions"
+        
+    },
+    {
+        "file_url": "https://www.imf.org/external/datamapper/api/v1/groups",
+        "extract_function": "funcao_imf_groups"
+        
+    },
+    {
+        "file_url": "https://www.imf.org/external/datamapper/api/v1/NGDP_RPCH",
+        "extract_function": "funcao_imf_values"
+        
+    },
+    {
+        "file_url": "https://www.imf.org/external/datamapper/api/v1/NGDPD",
+        "extract_function": "funcao_imf_values"
+        
+    },
+    {
+        "file_url": "https://www.imf.org/external/datamapper/api/v1/NGDPDPC",
+        "extract_function": "funcao_imf_values"
+        
+    },
+    {
+        "file_url": "https://www.imf.org/external/datamapper/api/v1/PPPGDP",
+        "extract_function": "funcao_imf_values"
+        
+    },
+    {
+        "file_url": "https://www.imf.org/external/datamapper/api/v1/PPPPC",
+        "extract_function": "funcao_imf_values"
+        
+    },
+    {
+        "file_url": "https://www.imf.org/external/datamapper/api/v1/PPPSH",
+        "extract_function": "funcao_imf_values"
+        
+    },
+    {
+        "file_url": "https://www.imf.org/external/datamapper/api/v1/PPPEX",
+        "extract_function": "funcao_imf_values"
+        
+    },
+    {
+        "file_url": "https://www.imf.org/external/datamapper/api/v1/PCPIPCH",
+        "extract_function": "funcao_imf_values"
+        
+    },
+    {
+        "file_url": "https://www.imf.org/external/datamapper/api/v1/PCPIEPCH",
+        "extract_function": "funcao_imf_values"
+        
+    },
+    {
+        "file_url": "https://www.imf.org/external/datamapper/api/v1/LP",
+        "extract_function": "funcao_imf_values"
+        
+    },
+    {
+        "file_url": "https://www.imf.org/external/datamapper/api/v1/BCA",
+        "extract_function": "funcao_imf_values"
+        
+    },
+    {
+        "file_url": "https://www.imf.org/external/datamapper/api/v1/BCA_NGDPD",
+        "extract_function": "funcao_imf_values"
+        
+    },
+    {
+        "file_url": "https://www.imf.org/external/datamapper/api/v1/",
+        "extract_function": "funcao_imf_values"
+        
+    },
+    {
+        "file_url": "https://www.imf.org/external/datamapper/api/v1/LUR",
+        "extract_function": "funcao_imf_values"
+        
+    },
+    {
+        "file_url": "https://www.imf.org/external/datamapper/api/v1/GGXCNL_NGDP",
+        "extract_function": "funcao_imf_values"
+        
+    },
+    {
+        "file_url": "https://www.imf.org/external/datamapper/api/v1/GGXWDG_NGDP",
+        "extract_function": "funcao_imf_values"
+        
+    },
+    {
+        "file_url": "https://www.imf.org/external/datamapper/api/v1/rev",
+        "extract_function": "funcao_imf_values"
+        
+    },
+    {
+        "file_url": "https://www.imf.org/external/datamapper/api/v1/exp",
+        "extract_function": "funcao_imf_values"
+        
+    },
+    {
+        "file_url": "https://www.imf.org/external/datamapper/api/v1/prim_exp",
+        "extract_function": "funcao_imf_values"
+        
+    },
+    {
+        "file_url": "https://www.imf.org/external/datamapper/api/v1/ie",
+        "extract_function": "funcao_imf_values"
+        
+    },
+    {
+        "file_url": "https://www.imf.org/external/datamapper/api/v1/pb",
+        "extract_function": "funcao_imf_values"
+        
+    },
+    {
+        "file_url": "https://www.imf.org/external/datamapper/api/v1/d",
+        "extract_function": "funcao_imf_values"
+        
+    },
+    {
+        "file_url": "https://www.imf.org/external/datamapper/api/v1/rgc",
+        "extract_function": "funcao_imf_values"
+        
+    },
+    {
+        "file_url": "https://www.imf.org/external/datamapper/api/v1/rltir",
+        "extract_function": "funcao_imf_values"
+        
+    },
+    {
+        "file_url": "https://www.imf.org/external/datamapper/api/v1/extensive",
+        "extract_function": "funcao_imf_values"
+        
+    },
+    {
+        "file_url": "https://www.imf.org/external/datamapper/api/v1/intensive",
+        "extract_function": "funcao_imf_values"
+        
+    },
+    {
+        "file_url": "https://www.imf.org/external/datamapper/api/v1/total_theil",
+        "extract_function": "funcao_imf_values"
+        
+    },
+    {
+        "file_url": "https://www.imf.org/external/datamapper/api/v1/SITC1_0",
+        "extract_function": "funcao_imf_values"
+        
+    },
+    {
+        "file_url": "https://www.imf.org/external/datamapper/api/v1/SITC1_1",
+        "extract_function": "funcao_imf_values"
+        
+    },
+    {
+        "file_url": "https://www.imf.org/external/datamapper/api/v1/SITC1_2",
+        "extract_function": "funcao_imf_values"
+        
+    },
+    {
+        "file_url": "https://www.imf.org/external/datamapper/api/v1/SITC1_3",
+        "extract_function": "funcao_imf_values"
+        
+    },
+    {
+        "file_url": "https://www.imf.org/external/datamapper/api/v1/SITC1_4",
+        "extract_function": "funcao_imf_values"
+        
+    },
+    {
+        "file_url": "https://www.imf.org/external/datamapper/api/v1/SITC1_5",
+        "extract_function": "funcao_imf_values"
+        
+    },
+    {
+        "file_url": "https://www.imf.org/external/datamapper/api/v1/SITC1_6",
+        "extract_function": "funcao_imf_values"
+        
+    },
+    {
+        "file_url": "https://www.imf.org/external/datamapper/api/v1/SITC1_7",
+        "extract_function": "funcao_imf_values"
+        
+    },
+    {
+        "file_url": "https://www.imf.org/external/datamapper/api/v1/SITC1_8",
+        "extract_function": "funcao_imf_values"
+        
+    },
+    {
+        "file_url": "https://www.imf.org/external/datamapper/api/v1/SITC1_9",
+        "extract_function": "funcao_imf_values"
+        
+    },
+    {
+        "file_url": "https://www.imf.org/external/datamapper/api/v1/SITC1_total",
+        "extract_function": "funcao_imf_values"
+        
+    },
+    {
+        "file_url": "https://www.imf.org/external/datamapper/api/v1/DirectAbroad",
+        "extract_function": "funcao_imf_values"
+        
+    },
+    {
+        "file_url": "https://www.imf.org/external/datamapper/api/v1/DirectIn",
+        "extract_function": "funcao_imf_values"
+        
+    },
+    {
+        "file_url": "https://www.imf.org/external/datamapper/api/v1/PrivInexDI",
+        "extract_function": "funcao_imf_values"
+        
+    },
+    {
+        "file_url": "https://www.imf.org/external/datamapper/api/v1/PrivInexDIGDP",
+        "extract_function": "funcao_imf_values"
+        
+    },
+    {
+        "file_url": "https://www.imf.org/external/datamapper/api/v1/PrivOutexDI",
+        "extract_function": "funcao_imf_values"
+        
+    },
+    {
+        "file_url": "https://www.imf.org/external/datamapper/api/v1/PrivOutexDIGDP",
+        "extract_function": "funcao_imf_values"
+        
+    },
+    {
+        "file_url": "https://www.imf.org/external/datamapper/api/v1/Portfa",
+        "extract_function": "funcao_imf_values"
+        
+    },
+    {
+        "file_url": "https://www.imf.org/external/datamapper/api/v1/Portfl",
+        "extract_function": "funcao_imf_values"
+        
+    },
+    {
+        "file_url": "https://www.imf.org/external/datamapper/api/v1/EquityA",
+        "extract_function": "funcao_imf_values"
+        
+    },
+    {
+        "file_url": "https://www.imf.org/external/datamapper/api/v1/EquityL",
+        "extract_function": "funcao_imf_values"
+        
+    },
+    {
+        "file_url": "https://www.imf.org/external/datamapper/api/v1/DebtA",
+        "extract_function": "funcao_imf_values"
+        
+    },
+    {
+        "file_url": "https://www.imf.org/external/datamapper/api/v1/DebtL",
+        "extract_function": "funcao_imf_values"
+        
+    },
+    {
+        "file_url": "https://www.imf.org/external/datamapper/api/v1/OtherGov",
+        "extract_function": "funcao_imf_values"
+        
+    },
+    {
+        "file_url": "https://www.imf.org/external/datamapper/api/v1/OtherA",
+        "extract_function": "funcao_imf_values"
+        
+    },
+    {
+        "file_url": "https://www.imf.org/external/datamapper/api/v1/OtherL",
+        "extract_function": "funcao_imf_values"
+        
+    },
+    {
+        "file_url": "https://www.imf.org/external/datamapper/api/v1/Deriv",
+        "extract_function": "funcao_imf_values"
+        
+    },
+    {
+        "file_url": "https://www.imf.org/external/datamapper/api/v1/DebtForg",
+        "extract_function": "funcao_imf_values"
+        
+    },
+    {
+        "file_url": "https://www.imf.org/external/datamapper/api/v1/GDP",
+        "extract_function": "funcao_imf_values"
+        
+    },
+    {
+        "file_url": "https://www.imf.org/external/datamapper/api/v1/ka_new",
+        "extract_function": "funcao_imf_values"
+        
+    },
+    {
+        "file_url": "https://www.imf.org/external/datamapper/api/v1/ka_in",
+        "extract_function": "funcao_imf_values"
+        
+    },
+    {
+        "file_url": "https://www.imf.org/external/datamapper/api/v1/ka_out",
+        "extract_function": "funcao_imf_values"
+        
+    },
+    {
+        "file_url": "https://www.imf.org/external/datamapper/api/v1/FM_ka",
+        "extract_function": "funcao_imf_values"
+        
+    },
+    {
+        "file_url": "https://www.imf.org/external/datamapper/api/v1/Nonres_ka",
+        "extract_function": "funcao_imf_values"
+        
+    },
+    {
+        "file_url": "https://www.imf.org/external/datamapper/api/v1/Res_ka",
+        "extract_function": "funcao_imf_values"
+        
+    },
+    {
+        "file_url": "https://www.imf.org/external/datamapper/api/v1/Ka_eq",
+        "extract_function": "funcao_imf_values"
+        
+    },
+    {
+        "file_url": "https://www.imf.org/external/datamapper/api/v1/Ka_bo",
+        "extract_function": "funcao_imf_values"
+        
+    },
+    {
+        "file_url": "https://www.imf.org/external/datamapper/api/v1/Ka_mm",
+        "extract_function": "funcao_imf_values"
+        
+    },
+    {
+        "file_url": "https://www.imf.org/external/datamapper/api/v1/Ka_ci",
+        "extract_function": "funcao_imf_values"
+        
+    },
+    {
+        "file_url": "https://www.imf.org/external/datamapper/api/v1/Ka_dr",
+        "extract_function": "funcao_imf_values"
+        
+    },
+    {
+        "file_url": "https://www.imf.org/external/datamapper/api/v1/Ka_cc",
+        "extract_function": "funcao_imf_values"
+        
+    },
+    {
+        "file_url": "https://www.imf.org/external/datamapper/api/v1/Ka_fc",
+        "extract_function": "funcao_imf_values"
+        
+    },
+    {
+        "file_url": "https://www.imf.org/external/datamapper/api/v1/Ka_gu",
+        "extract_function": "funcao_imf_values"
+        
+    },
+    {
+        "file_url": "https://www.imf.org/external/datamapper/api/v1/Ka_di",
+        "extract_function": "funcao_imf_values"
+        
+    },
+    {
+        "file_url": "https://www.imf.org/external/datamapper/api/v1/ka_ldi",
+        "extract_function": "funcao_imf_values"
+        
+    },
+    {
+        "file_url": "https://www.imf.org/external/datamapper/api/v1/ka_ret",
+        "extract_function": "funcao_imf_values"
+        
+    },
+    {
+        "file_url": "https://www.imf.org/external/datamapper/api/v1/ka_pct",
+        "extract_function": "funcao_imf_values"
+        
+    },
+    {
+        "file_url": "https://www.imf.org/external/datamapper/api/v1/Reserves_ARA",
+        "extract_function": "funcao_imf_values"
+        
+    },
+    {
+        "file_url": "https://www.imf.org/external/datamapper/api/v1/Reserves_M2",
+        "extract_function": "funcao_imf_values"
+        
+    },
+    {
+        "file_url": "https://www.imf.org/external/datamapper/api/v1/Reserves_STD",
+        "extract_function": "funcao_imf_values"
+        
+    },
+    {
+        "file_url": "https://www.imf.org/external/datamapper/api/v1/Reserves_M",
+        "extract_function": "funcao_imf_values"
+        
+    },
+    {
+        "file_url": "https://www.imf.org/external/datamapper/api/v1/GRB_dummy",
+        "extract_function": "funcao_imf_values"
+        
+    },
+    {
+        "file_url": "https://www.imf.org/external/datamapper/api/v1/GDI_TC",
+        "extract_function": "funcao_imf_values"
+        
+    },
+    {
+        "file_url": "https://www.imf.org/external/datamapper/api/v1/GII_TC",
+        "extract_function": "funcao_imf_values"
+        
+    },
+    {
+        "file_url": "https://www.imf.org/external/datamapper/api/v1/DEBT1",
+        "extract_function": "funcao_imf_values"
+        
+    },
+    {
+        "file_url": "https://www.imf.org/external/datamapper/api/v1/Privatedebt_all",
+        "extract_function": "funcao_imf_values"
+        
+    },
+    {
+        "file_url": "https://www.imf.org/external/datamapper/api/v1/HH_ALL",
+        "extract_function": "funcao_imf_values"
+        
+    },
+    {
+        "file_url": "https://www.imf.org/external/datamapper/api/v1/NFC_ALL",
+        "extract_function": "funcao_imf_values"
+        
+    },
+    {
+        "file_url": "https://www.imf.org/external/datamapper/api/v1/PVD_LS",
+        "extract_function": "funcao_imf_values"
+        
+    },
+    {
+        "file_url": "https://www.imf.org/external/datamapper/api/v1/HH_LS",
+        "extract_function": "funcao_imf_values"
+        
+    },
+    {
+        "file_url": "https://www.imf.org/external/datamapper/api/v1/NFC_LS",
+        "extract_function": "funcao_imf_values"
+        
+    },
+    {
+        "file_url": "https://www.imf.org/external/datamapper/api/v1/PS_DEBT_GDP",
+        "extract_function": "funcao_imf_values"
+        
+    },
+    {
+        "file_url": "https://www.imf.org/external/datamapper/api/v1/NFPS_DEBT_GDP",
+        "extract_function": "funcao_imf_values"
+        
+    },
+    {
+        "file_url": "https://www.imf.org/external/datamapper/api/v1/GG_DEBT_GDP",
+        "extract_function": "funcao_imf_values"
+        
+    },
+    {
+        "file_url": "https://www.imf.org/external/datamapper/api/v1/CG_DEBT_GDP",
+        "extract_function": "funcao_imf_values"
+        
+    },
+    {
+        "file_url": "https://www.imf.org/external/datamapper/api/v1/GGXCNL_G01_GDP_PT",
+        "extract_function": "funcao_imf_values"
+        
+    },
+    {
+        "file_url": "https://www.imf.org/external/datamapper/api/v1/GGXONLB_G01_GDP_PT",
+        "extract_function": "funcao_imf_values"
+        
+    },
+    {
+        "file_url": "https://www.imf.org/external/datamapper/api/v1/GGCB_G01_PGDP_PT",
+        "extract_function": "funcao_imf_values"
+        
+    },
+    {
+        "file_url": "https://www.imf.org/external/datamapper/api/v1/GGCBP_G01_PGDP_PT",
+        "extract_function": "funcao_imf_values"
+        
+    },
+    {
+        "file_url": "https://www.imf.org/external/datamapper/api/v1/GGR_G01_GDP_PT",
+        "extract_function": "funcao_imf_values"
+        
+    },
+    {
+        "file_url": "https://www.imf.org/external/datamapper/api/v1/G_X_G01_GDP_PT",
+        "extract_function": "funcao_imf_values"
+        
+    },
+    {
+        "file_url": "https://www.imf.org/external/datamapper/api/v1/G_XWDG_G01_GDP_PT",
+        "extract_function": "funcao_imf_values"
+        
+    },
+    {
+        "file_url": "https://www.imf.org/external/datamapper/api/v1/GGXWDN_G01_GDP_PT",
+        "extract_function": "funcao_imf_values"
+        
+    },
+    {
+        "file_url": "https://www.imf.org/external/datamapper/api/v1/NGDP_R_PCH",
+        "extract_function": "funcao_imf_values"
+        
+    },
+    {
+        "file_url": "https://www.imf.org/external/datamapper/api/v1/NGDPXO_RPCH",
+        "extract_function": "funcao_imf_values"
+        
+    },
+    {
+        "file_url": "https://www.imf.org/external/datamapper/api/v1/NGDPRPC_PCH",
+        "extract_function": "funcao_imf_values"
+        
+    },
+    {
+        "file_url": "https://www.imf.org/external/datamapper/api/v1/NI_GDP",
+        "extract_function": "funcao_imf_values"
+        
+    },
+    {
+        "file_url": "https://www.imf.org/external/datamapper/api/v1/NGS_GDP",
+        "extract_function": "funcao_imf_values"
+        
+    },
+    {
+        "file_url": "https://www.imf.org/external/datamapper/api/v1/GGXCNL_GDP",
+        "extract_function": "funcao_imf_values"
+        
+    },
+    {
+        "file_url": "https://www.imf.org/external/datamapper/api/v1/GGXCNLXG_GDP",
+        "extract_function": "funcao_imf_values"
+        
+    },
+    {
+        "file_url": "https://www.imf.org/external/datamapper/api/v1/GGRXG_GDP",
+        "extract_function": "funcao_imf_values"
+        
+    },
+    {
+        "file_url": "https://www.imf.org/external/datamapper/api/v1/GGX_GDP",
+        "extract_function": "funcao_imf_values"
+        
+    },
+    {
+        "file_url": "https://www.imf.org/external/datamapper/api/v1/GGXWDG_GDP",
+        "extract_function": "funcao_imf_values"
+        
+    },
+    {
+        "file_url": "https://www.imf.org/external/datamapper/api/v1/FMB_GDP",
+        "extract_function": "funcao_imf_values"
+        
+    },
+    {
+        "file_url": "https://www.imf.org/external/datamapper/api/v1/FDSAOP_PCH",
+        "extract_function": "funcao_imf_values"
+        
+    },
+    {
+        "file_url": "https://www.imf.org/external/datamapper/api/v1/FDSAOP_GDP",
+        "extract_function": "funcao_imf_values"
+        
+    },
+    {
+        "file_url": "https://www.imf.org/external/datamapper/api/v1/FMB_PCH",
+        "extract_function": "funcao_imf_values"
+        
+    },
+    {
+        "file_url": "https://www.imf.org/external/datamapper/api/v1/BX_GDP",
+        "extract_function": "funcao_imf_values"
+        
+    },
+    {
+        "file_url": "https://www.imf.org/external/datamapper/api/v1/BCA_GDP",
+        "extract_function": "funcao_imf_values"
+        
+    },
+    {
+        "file_url": "https://www.imf.org/external/datamapper/api/v1/BM_GDP",
+        "extract_function": "funcao_imf_values"
+        
+    },
+    {
+        "file_url": "https://www.imf.org/external/datamapper/api/v1/BT_GDP",
+        "extract_function": "funcao_imf_values"
+        
+    },
+    {
+        "file_url": "https://www.imf.org/external/datamapper/api/v1/BFD_GDP",
+        "extract_function": "funcao_imf_values"
+        
+    },
+    {
+        "file_url": "https://www.imf.org/external/datamapper/api/v1/BRASS_MI",
+        "extract_function": "funcao_imf_values"
+        
+    },
+    {
+        "file_url": "https://www.imf.org/external/datamapper/api/v1/EREER",
+        "extract_function": "funcao_imf_values"
+        
+    },
+    {
+        "file_url": "https://www.imf.org/external/datamapper/api/v1/ENEER",
+        "extract_function": "funcao_imf_values"
+        
+    },
+    {
+        "file_url": "https://www.imf.org/external/datamapper/api/v1/DG_GDP",
+        "extract_function": "funcao_imf_values"
+        
+    },
+    {
+        "file_url": "https://www.imf.org/external/datamapper/api/v1/PCPI_PCH",
+        "extract_function": "funcao_imf_values"
+        
+    },
+    {
+        "file_url": "https://www.imf.org/external/datamapper/api/v1/PCPIE_PCH",
+        "extract_function": "funcao_imf_values"
+        
+    },
+    {
+        "file_url": "https://www.imf.org/external/datamapper/api/v1/TTT",
+        "extract_function": "funcao_imf_values"
+        
+    },
+    {
+        "file_url": "https://www.imf.org/external/datamapper/api/v1/FR_ind",
+        "extract_function": "funcao_imf_values"
+        
+    },
+    {
+        "file_url": "https://www.imf.org/external/datamapper/api/v1/FC_dummy",
+        "extract_function": "funcao_imf_values"
+        
+    },
+    {
+        "file_url": "https://www.imf.org/external/datamapper/api/v1/AI_PI",
+        "extract_function": "funcao_imf_values"
+        
+    },
+    {
+        "file_url": "https://www.imf.org/external/datamapper/api/v1/DI",
+        "extract_function": "funcao_imf_values"
+        
+    },
+    {
+        "file_url": "https://www.imf.org/external/datamapper/api/v1/IEI",
+        "extract_function": "funcao_imf_values"
+        
+    },
+    {
+        "file_url": "https://www.imf.org/external/datamapper/api/v1/HCLMP",
+        "extract_function": "funcao_imf_values"
+        
+    },
+    {
+        "file_url": "https://www.imf.org/external/datamapper/api/v1/RE",
+        "extract_function": "funcao_imf_values"        
+    }
+]

@@ -1,0 +1,718 @@
+========================================================================
+RELATÓRIO DA PIPELINE DE DADOS
+Gerado em          : 2026-05-22 05:54:52
+Início da execução : 2026-05-22 05:46:03
+Estado             : CONCLUÍDA COM SUCESSO
+========================================================================
+
+------------------------------------------------------------------------
+RESUMO
+------------------------------------------------------------------------
+[1] validate_opdata      Total: 132   Válidos: 132   Inválidos: 0     → etl_logs: 0
+[2] Ingestão Bronze      Processados: 132   OK: 132   Erro: 0     → etl_logs: 0
+[3] Validação Bronze     Validados: 132   OK: 132   Inválidos: 0     → etl_logs: 0
+[4] Transformação Silver OK (SILVER_OK/DONE): 131   Erro: 1     [AI gerada: 1  AI cache: 130  manual: 0  sem função: 1]  → etl_logs: 1
+[5] Validação Silver     OK: 131   Inválidos: 0     → etl_logs: 0
+[6] Warehouse (gold)     DONE: 131   dim_report: 1  dim_location: 249  dim_indicator: 131  fact_values: 17226  Erros: 0
+
+========================================================================
+1/6 — VALIDACAO op_data
+========================================================================
+  OK        file_id=1  [IMF] AI Preparedness Index (AIPI)  mode=auto
+  OK        file_id=2  [IMF] AI Preparedness Index (AIPI)  mode=auto
+  OK        file_id=3  [IMF] AI Preparedness Index (AIPI)  mode=auto
+  OK        file_id=4  [IMF] AI Preparedness Index (AIPI)  mode=auto
+  OK        file_id=5  [IMF] AI Preparedness Index (AIPI)  mode=auto
+  OK        file_id=6  [IMF] AI Preparedness Index (AIPI)  mode=auto
+  OK        file_id=7  [IMF] AI Preparedness Index (AIPI)  mode=auto
+  OK        file_id=8  [IMF] AI Preparedness Index (AIPI)  mode=auto
+  OK        file_id=9  [IMF] AI Preparedness Index (AIPI)  mode=auto
+  OK        file_id=10  [IMF] AI Preparedness Index (AIPI)  mode=auto
+  OK        file_id=11  [IMF] AI Preparedness Index (AIPI)  mode=auto
+  OK        file_id=12  [IMF] AI Preparedness Index (AIPI)  mode=auto
+  OK        file_id=13  [IMF] AI Preparedness Index (AIPI)  mode=auto
+  OK        file_id=14  [IMF] AI Preparedness Index (AIPI)  mode=auto
+  OK        file_id=15  [IMF] AI Preparedness Index (AIPI)  mode=auto
+  OK        file_id=16  [IMF] AI Preparedness Index (AIPI)  mode=auto
+  OK        file_id=17  [IMF] AI Preparedness Index (AIPI)  mode=auto
+  OK        file_id=18  [IMF] AI Preparedness Index (AIPI)  mode=auto
+  OK        file_id=19  [IMF] AI Preparedness Index (AIPI)  mode=auto
+  OK        file_id=20  [IMF] AI Preparedness Index (AIPI)  mode=auto
+  OK        file_id=21  [IMF] AI Preparedness Index (AIPI)  mode=auto
+  OK        file_id=22  [IMF] AI Preparedness Index (AIPI)  mode=auto
+  OK        file_id=23  [IMF] AI Preparedness Index (AIPI)  mode=auto
+  OK        file_id=24  [IMF] AI Preparedness Index (AIPI)  mode=auto
+  OK        file_id=25  [IMF] AI Preparedness Index (AIPI)  mode=auto
+  OK        file_id=26  [IMF] AI Preparedness Index (AIPI)  mode=auto
+  OK        file_id=27  [IMF] AI Preparedness Index (AIPI)  mode=auto
+  OK        file_id=28  [IMF] AI Preparedness Index (AIPI)  mode=auto
+  OK        file_id=29  [IMF] AI Preparedness Index (AIPI)  mode=auto
+  OK        file_id=30  [IMF] AI Preparedness Index (AIPI)  mode=auto
+  OK        file_id=31  [IMF] AI Preparedness Index (AIPI)  mode=auto
+  OK        file_id=32  [IMF] AI Preparedness Index (AIPI)  mode=auto
+  OK        file_id=33  [IMF] AI Preparedness Index (AIPI)  mode=auto
+  OK        file_id=34  [IMF] AI Preparedness Index (AIPI)  mode=auto
+  OK        file_id=35  [IMF] AI Preparedness Index (AIPI)  mode=auto
+  OK        file_id=36  [IMF] AI Preparedness Index (AIPI)  mode=auto
+  OK        file_id=37  [IMF] AI Preparedness Index (AIPI)  mode=auto
+  OK        file_id=38  [IMF] AI Preparedness Index (AIPI)  mode=auto
+  OK        file_id=39  [IMF] AI Preparedness Index (AIPI)  mode=auto
+  OK        file_id=40  [IMF] AI Preparedness Index (AIPI)  mode=auto
+  OK        file_id=41  [IMF] AI Preparedness Index (AIPI)  mode=auto
+  OK        file_id=42  [IMF] AI Preparedness Index (AIPI)  mode=auto
+  OK        file_id=43  [IMF] AI Preparedness Index (AIPI)  mode=auto
+  OK        file_id=44  [IMF] AI Preparedness Index (AIPI)  mode=auto
+  OK        file_id=45  [IMF] AI Preparedness Index (AIPI)  mode=auto
+  OK        file_id=46  [IMF] AI Preparedness Index (AIPI)  mode=auto
+  OK        file_id=47  [IMF] AI Preparedness Index (AIPI)  mode=auto
+  OK        file_id=48  [IMF] AI Preparedness Index (AIPI)  mode=auto
+  OK        file_id=49  [IMF] AI Preparedness Index (AIPI)  mode=auto
+  OK        file_id=50  [IMF] AI Preparedness Index (AIPI)  mode=auto
+  OK        file_id=51  [IMF] AI Preparedness Index (AIPI)  mode=auto
+  OK        file_id=52  [IMF] AI Preparedness Index (AIPI)  mode=auto
+  OK        file_id=53  [IMF] AI Preparedness Index (AIPI)  mode=auto
+  OK        file_id=54  [IMF] AI Preparedness Index (AIPI)  mode=auto
+  OK        file_id=55  [IMF] AI Preparedness Index (AIPI)  mode=auto
+  OK        file_id=56  [IMF] AI Preparedness Index (AIPI)  mode=auto
+  OK        file_id=57  [IMF] AI Preparedness Index (AIPI)  mode=auto
+  OK        file_id=58  [IMF] AI Preparedness Index (AIPI)  mode=auto
+  OK        file_id=59  [IMF] AI Preparedness Index (AIPI)  mode=auto
+  OK        file_id=60  [IMF] AI Preparedness Index (AIPI)  mode=auto
+  OK        file_id=61  [IMF] AI Preparedness Index (AIPI)  mode=auto
+  OK        file_id=62  [IMF] AI Preparedness Index (AIPI)  mode=auto
+  OK        file_id=63  [IMF] AI Preparedness Index (AIPI)  mode=auto
+  OK        file_id=64  [IMF] AI Preparedness Index (AIPI)  mode=auto
+  OK        file_id=65  [IMF] AI Preparedness Index (AIPI)  mode=auto
+  OK        file_id=66  [IMF] AI Preparedness Index (AIPI)  mode=auto
+  OK        file_id=67  [IMF] AI Preparedness Index (AIPI)  mode=auto
+  OK        file_id=68  [IMF] AI Preparedness Index (AIPI)  mode=auto
+  OK        file_id=69  [IMF] AI Preparedness Index (AIPI)  mode=auto
+  OK        file_id=70  [IMF] AI Preparedness Index (AIPI)  mode=auto
+  OK        file_id=71  [IMF] AI Preparedness Index (AIPI)  mode=auto
+  OK        file_id=72  [IMF] AI Preparedness Index (AIPI)  mode=auto
+  OK        file_id=73  [IMF] AI Preparedness Index (AIPI)  mode=auto
+  OK        file_id=74  [IMF] AI Preparedness Index (AIPI)  mode=auto
+  OK        file_id=75  [IMF] AI Preparedness Index (AIPI)  mode=auto
+  OK        file_id=76  [IMF] AI Preparedness Index (AIPI)  mode=auto
+  OK        file_id=77  [IMF] AI Preparedness Index (AIPI)  mode=auto
+  OK        file_id=78  [IMF] AI Preparedness Index (AIPI)  mode=auto
+  OK        file_id=79  [IMF] AI Preparedness Index (AIPI)  mode=auto
+  OK        file_id=80  [IMF] AI Preparedness Index (AIPI)  mode=auto
+  OK        file_id=81  [IMF] AI Preparedness Index (AIPI)  mode=auto
+  OK        file_id=82  [IMF] AI Preparedness Index (AIPI)  mode=auto
+  OK        file_id=83  [IMF] AI Preparedness Index (AIPI)  mode=auto
+  OK        file_id=84  [IMF] AI Preparedness Index (AIPI)  mode=auto
+  OK        file_id=85  [IMF] AI Preparedness Index (AIPI)  mode=auto
+  OK        file_id=86  [IMF] AI Preparedness Index (AIPI)  mode=auto
+  OK        file_id=87  [IMF] AI Preparedness Index (AIPI)  mode=auto
+  OK        file_id=88  [IMF] AI Preparedness Index (AIPI)  mode=auto
+  OK        file_id=89  [IMF] AI Preparedness Index (AIPI)  mode=auto
+  OK        file_id=90  [IMF] AI Preparedness Index (AIPI)  mode=auto
+  OK        file_id=91  [IMF] AI Preparedness Index (AIPI)  mode=auto
+  OK        file_id=92  [IMF] AI Preparedness Index (AIPI)  mode=auto
+  OK        file_id=93  [IMF] AI Preparedness Index (AIPI)  mode=auto
+  OK        file_id=94  [IMF] AI Preparedness Index (AIPI)  mode=auto
+  OK        file_id=95  [IMF] AI Preparedness Index (AIPI)  mode=auto
+  OK        file_id=96  [IMF] AI Preparedness Index (AIPI)  mode=auto
+  OK        file_id=97  [IMF] AI Preparedness Index (AIPI)  mode=auto
+  OK        file_id=98  [IMF] AI Preparedness Index (AIPI)  mode=auto
+  OK        file_id=99  [IMF] AI Preparedness Index (AIPI)  mode=auto
+  OK        file_id=100  [IMF] AI Preparedness Index (AIPI)  mode=auto
+  OK        file_id=101  [IMF] AI Preparedness Index (AIPI)  mode=auto
+  OK        file_id=102  [IMF] AI Preparedness Index (AIPI)  mode=auto
+  OK        file_id=103  [IMF] AI Preparedness Index (AIPI)  mode=auto
+  OK        file_id=104  [IMF] AI Preparedness Index (AIPI)  mode=auto
+  OK        file_id=105  [IMF] AI Preparedness Index (AIPI)  mode=auto
+  OK        file_id=106  [IMF] AI Preparedness Index (AIPI)  mode=auto
+  OK        file_id=107  [IMF] AI Preparedness Index (AIPI)  mode=auto
+  OK        file_id=108  [IMF] AI Preparedness Index (AIPI)  mode=auto
+  OK        file_id=109  [IMF] AI Preparedness Index (AIPI)  mode=auto
+  OK        file_id=110  [IMF] AI Preparedness Index (AIPI)  mode=auto
+  OK        file_id=111  [IMF] AI Preparedness Index (AIPI)  mode=auto
+  OK        file_id=112  [IMF] AI Preparedness Index (AIPI)  mode=auto
+  OK        file_id=113  [IMF] AI Preparedness Index (AIPI)  mode=auto
+  OK        file_id=114  [IMF] AI Preparedness Index (AIPI)  mode=auto
+  OK        file_id=115  [IMF] AI Preparedness Index (AIPI)  mode=auto
+  OK        file_id=116  [IMF] AI Preparedness Index (AIPI)  mode=auto
+  OK        file_id=117  [IMF] AI Preparedness Index (AIPI)  mode=auto
+  OK        file_id=118  [IMF] AI Preparedness Index (AIPI)  mode=auto
+  OK        file_id=119  [IMF] AI Preparedness Index (AIPI)  mode=auto
+  OK        file_id=120  [IMF] AI Preparedness Index (AIPI)  mode=auto
+  OK        file_id=121  [IMF] AI Preparedness Index (AIPI)  mode=auto
+  OK        file_id=122  [IMF] AI Preparedness Index (AIPI)  mode=auto
+  OK        file_id=123  [IMF] AI Preparedness Index (AIPI)  mode=auto
+  OK        file_id=124  [IMF] AI Preparedness Index (AIPI)  mode=auto
+  OK        file_id=125  [IMF] AI Preparedness Index (AIPI)  mode=auto
+  OK        file_id=126  [IMF] AI Preparedness Index (AIPI)  mode=auto
+  OK        file_id=127  [IMF] AI Preparedness Index (AIPI)  mode=auto
+  OK        file_id=128  [IMF] AI Preparedness Index (AIPI)  mode=auto
+  OK        file_id=129  [IMF] AI Preparedness Index (AIPI)  mode=auto
+  OK        file_id=130  [IMF] AI Preparedness Index (AIPI)  mode=auto
+  OK        file_id=131  [IMF] AI Preparedness Index (AIPI)  mode=auto
+  OK        file_id=132  [IMF] AI Preparedness Index (AIPI)  mode=auto
+
+========================================================================
+2/6 — INGESTAO Bronze (ingest_raw)
+========================================================================
+  OK        file_id=1  URL=https://www.imf.org/external/datamapper/api/v2/AI_PI
+  OK        file_id=2  URL=https://www.imf.org/external/datamapper/api/v2/BCA
+  OK        file_id=3  URL=https://www.imf.org/external/datamapper/api/v2/BCA_GDP
+  OK        file_id=4  URL=https://www.imf.org/external/datamapper/api/v2/BCA_NGDPD
+  OK        file_id=5  URL=https://www.imf.org/external/datamapper/api/v2/BFD_GDP
+  OK        file_id=6  URL=https://www.imf.org/external/datamapper/api/v2/BM_GDP
+  OK        file_id=7  URL=https://www.imf.org/external/datamapper/api/v2/BRASS_MI
+  OK        file_id=8  URL=https://www.imf.org/external/datamapper/api/v2/BT_GDP
+  OK        file_id=9  URL=https://www.imf.org/external/datamapper/api/v2/BX_GDP
+  OK        file_id=10  URL=https://www.imf.org/external/datamapper/api/v2/CG_DEBT_GDP
+  OK        file_id=11  URL=https://www.imf.org/external/datamapper/api/v2/d
+  OK        file_id=12  URL=https://www.imf.org/external/datamapper/api/v2/DEBT1
+  OK        file_id=13  URL=https://www.imf.org/external/datamapper/api/v2/DebtA
+  OK        file_id=14  URL=https://www.imf.org/external/datamapper/api/v2/DebtForg
+  OK        file_id=15  URL=https://www.imf.org/external/datamapper/api/v2/DebtL
+  OK        file_id=16  URL=https://www.imf.org/external/datamapper/api/v2/Deriv
+  OK        file_id=17  URL=https://www.imf.org/external/datamapper/api/v2/DG_GDP
+  OK        file_id=18  URL=https://www.imf.org/external/datamapper/api/v2/DI
+  OK        file_id=19  URL=https://www.imf.org/external/datamapper/api/v2/DirectAbroad
+  OK        file_id=20  URL=https://www.imf.org/external/datamapper/api/v2/DirectIn
+  OK        file_id=21  URL=https://www.imf.org/external/datamapper/api/v2/ENEER
+  OK        file_id=22  URL=https://www.imf.org/external/datamapper/api/v2/EquityA
+  OK        file_id=23  URL=https://www.imf.org/external/datamapper/api/v2/EquityL
+  OK        file_id=24  URL=https://www.imf.org/external/datamapper/api/v2/EREER
+  OK        file_id=25  URL=https://www.imf.org/external/datamapper/api/v2/exp
+  OK        file_id=26  URL=https://www.imf.org/external/datamapper/aapi/v2/extensive
+  OK        file_id=27  URL=https://www.imf.org/external/datamapper/api/v2/FC_dummy
+  OK        file_id=28  URL=https://www.imf.org/external/datamapper/api/v2/FDSAOP_GDP
+  OK        file_id=29  URL=https://www.imf.org/external/datamapper/api/v2/FDSAOP_PCH
+  OK        file_id=30  URL=https://www.imf.org/external/datamapper/api/v2/FMB_GDP
+  OK        file_id=31  URL=https://www.imf.org/external/datamapper/api/v2/FMB_PCH
+  OK        file_id=32  URL=https://www.imf.org/external/datamapper/api/v2/FM_ka
+  OK        file_id=33  URL=https://www.imf.org/external/datamapper/api/v2/FR_ind
+  OK        file_id=34  URL=https://www.imf.org/external/datamapper/api/v2/GDI_TC
+  OK        file_id=35  URL=https://www.imf.org/external/datamapper/api/v2/GDP
+  OK        file_id=36  URL=https://www.imf.org/external/datamapper/api/v2/GGCB_G01_PGDP_PT
+  OK        file_id=37  URL=https://www.imf.org/external/datamapper/api/v2/GGCBP_G01_PGDP_PT
+  OK        file_id=38  URL=https://www.imf.org/external/datamapper/api/v2/GG_DEBT_GDP
+  OK        file_id=39  URL=https://www.imf.org/external/datamapper/api/v2/GGR_G01_GDP_PT
+  OK        file_id=40  URL=https://www.imf.org/external/datamapper/api/v2/GGRXG_GDP
+  OK        file_id=41  URL=https://www.imf.org/external/datamapper/api/v2/GGXCNL_G01_GDP_PT
+  OK        file_id=42  URL=https://www.imf.org/external/datamapper/api/v2/GGXCNL_GDP
+  OK        file_id=43  URL=https://www.imf.org/external/datamapper/api/v2/GGXCNL_NGDP
+  OK        file_id=44  URL=https://www.imf.org/external/datamapper/api/v2/GGXCNLXG_GDP
+  OK        file_id=45  URL=https://www.imf.org/external/datamapper/api/v2/GGX_GDP
+  OK        file_id=46  URL=https://www.imf.org/external/datamapper/api/v2/GGXONLB_G01_GDP_PT
+  OK        file_id=47  URL=https://www.imf.org/external/datamapper/api/v2/GGXWDG_GDP
+  OK        file_id=48  URL=https://www.imf.org/external/datamapper/api/v2/GGXWDG_NGDP
+  OK        file_id=49  URL=https://www.imf.org/external/datamapper/api/v2/GGXWDN_G01_GDP_PT
+  OK        file_id=50  URL=https://www.imf.org/external/datamapper/api/v2/GII_TC
+  OK        file_id=51  URL=https://www.imf.org/external/datamapper/api/v2/GRB_dummy
+  OK        file_id=52  URL=https://www.imf.org/external/datamapper/api/v2/G_X_G01_GDP_PT
+  OK        file_id=53  URL=https://www.imf.org/external/datamapper/api/v2/G_XWDG_G01_GDP_PT
+  OK        file_id=54  URL=https://www.imf.org/external/datamapper/api/v2/HCLMP
+  OK        file_id=55  URL=https://www.imf.org/external/datamapper/api/v2/HH_ALL
+  OK        file_id=56  URL=https://www.imf.org/external/datamapper/api/v2/HH_LS
+  OK        file_id=57  URL=https://www.imf.org/external/datamapper/api/v2/ie
+  OK        file_id=58  URL=https://www.imf.org/external/datamapper/api/v2/IEI
+  OK        file_id=59  URL=https://www.imf.org/external/datamapper/api/v2/intensive
+  OK        file_id=60  URL=https://www.imf.org/external/datamapper/api/v2/Ka_bo
+  OK        file_id=61  URL=https://www.imf.org/external/datamapper/api/v2/Ka_cc
+  OK        file_id=62  URL=https://www.imf.org/external/datamapper/api/v2/Ka_ci
+  OK        file_id=63  URL=https://www.imf.org/external/datamapper/api/v2/Ka_di
+  OK        file_id=64  URL=https://www.imf.org/external/datamapper/api/v2/Ka_dr
+  OK        file_id=65  URL=https://www.imf.org/external/datamapper/api/v2/Ka_eq
+  OK        file_id=66  URL=https://www.imf.org/external/datamapper/api/v2/Ka_fc
+  OK        file_id=67  URL=https://www.imf.org/external/datamapper/api/v2/Ka_gu
+  OK        file_id=68  URL=https://www.imf.org/external/datamapper/api/v2/ka_in
+  OK        file_id=69  URL=https://www.imf.org/external/datamapper/api/v2/ka_ldi
+  OK        file_id=70  URL=https://www.imf.org/external/datamapper/api/v2/Ka_mm
+  OK        file_id=71  URL=https://www.imf.org/external/datamapper/api/v2/ka_new
+  OK        file_id=72  URL=https://www.imf.org/external/datamapper/api/v2/ka_out
+  OK        file_id=73  URL=https://www.imf.org/external/datamapper/api/v2/ka_pct
+  OK        file_id=74  URL=https://www.imf.org/external/datamapper/api/v2/ka_ret
+  OK        file_id=75  URL=https://www.imf.org/external/datamapper/api/v2/LP
+  OK        file_id=76  URL=https://www.imf.org/external/datamapper/api/v2/LUR
+  OK        file_id=77  URL=https://www.imf.org/external/datamapper/api/v2/NFC_ALL
+  OK        file_id=78  URL=https://www.imf.org/external/datamapper/api/v2/NFC_LS
+  OK        file_id=79  URL=https://www.imf.org/external/datamapper/api/v2/NFPS_DEBT_GDP
+  OK        file_id=80  URL=https://www.imf.org/external/datamapper/api/v2/NGDPD
+  OK        file_id=81  URL=https://www.imf.org/external/datamapper/api/v2/NGDPDPC
+  OK        file_id=82  URL=https://www.imf.org/external/datamapper/api/v2/NGDP_R_PCH
+  OK        file_id=83  URL=https://www.imf.org/external/datamapper/api/v2/NGDP_RPCH
+  OK        file_id=84  URL=https://www.imf.org/external/datamapper/api/v2/NGDPRPC_PCH
+  OK        file_id=85  URL=https://www.imf.org/external/datamapper/api/v2/NGDPXO_RPCH
+  OK        file_id=86  URL=https://www.imf.org/external/datamapper/api/v2/NGS_GDP
+  OK        file_id=87  URL=https://www.imf.org/external/datamapper/api/v2/NI_GDP
+  OK        file_id=88  URL=https://www.imf.org/external/datamapper/api/v2/Nonres_ka
+  OK        file_id=89  URL=https://www.imf.org/external/datamapper/api/v2/OtherA
+  OK        file_id=90  URL=https://www.imf.org/external/datamapper/api/v2/OtherGov
+  OK        file_id=91  URL=https://www.imf.org/external/datamapper/api/v2/OtherL
+  OK        file_id=92  URL=https://www.imf.org/external/datamapper/api/v2/pb
+  OK        file_id=93  URL=https://www.imf.org/external/datamapper/api/v2/PCPIE_PCH
+  OK        file_id=94  URL=https://www.imf.org/external/datamapper/api/v2/PCPIEPCH
+  OK        file_id=95  URL=https://www.imf.org/external/datamapper/api/v2/PCPI_PCH
+  OK        file_id=96  URL=https://www.imf.org/external/datamapper/api/v2/PCPIPCH
+  OK        file_id=97  URL=https://www.imf.org/external/datamapper/api/v2/Portfa
+  OK        file_id=98  URL=https://www.imf.org/external/datamapper/api/v2/Portfl
+  OK        file_id=99  URL=https://www.imf.org/external/datamapper/api/v2/PPPEX
+  OK        file_id=100  URL=https://www.imf.org/external/datamapper/api/v2/PPPGDP
+  OK        file_id=101  URL=https://www.imf.org/external/datamapper/api/v2/PPPPC
+  OK        file_id=102  URL=https://www.imf.org/external/datamapper/api/v2/PPPSH
+  OK        file_id=103  URL=https://www.imf.org/external/datamapper/api/v2/prim_exp
+  OK        file_id=104  URL=https://www.imf.org/external/datamapper/api/v2/Privatedebt_all
+  OK        file_id=105  URL=https://www.imf.org/external/datamapper/api/v2/PrivInexDI
+  OK        file_id=106  URL=https://www.imf.org/external/datamapper/api/v2/PrivInexDIGDP
+  OK        file_id=107  URL=https://www.imf.org/external/datamapper/api/v2/PrivOutexDI
+  OK        file_id=108  URL=https://www.imf.org/external/datamapper/api/v2/PrivOutexDIGDP
+  OK        file_id=109  URL=https://www.imf.org/external/datamapper/api/v2/PS_DEBT_GDP
+  OK        file_id=110  URL=https://www.imf.org/external/datamapper/api/v2/PVD_LS
+  OK        file_id=111  URL=https://www.imf.org/external/datamapper/api/v2/RE
+  OK        file_id=112  URL=https://www.imf.org/external/datamapper/api/v2/Reserves_ARA
+  OK        file_id=113  URL=https://www.imf.org/external/datamapper/api/v2/Reserves_M
+  OK        file_id=114  URL=https://www.imf.org/external/datamapper/api/v2/Reserves_M2
+  OK        file_id=115  URL=https://www.imf.org/external/datamapper/api/v2/Reserves_STD
+  OK        file_id=116  URL=https://www.imf.org/external/datamapper/api/v2/Res_ka
+  OK        file_id=117  URL=https://www.imf.org/external/datamapper/api/v2/rev
+  OK        file_id=118  URL=https://www.imf.org/external/datamapper/api/v2/rgc
+  OK        file_id=119  URL=https://www.imf.org/external/datamapper/api/v2/rltir
+  OK        file_id=120  URL=https://www.imf.org/external/datamapper/api/v2/SITC1_0
+  OK        file_id=121  URL=https://www.imf.org/external/datamapper/api/v2/SITC1_1
+  OK        file_id=122  URL=https://www.imf.org/external/datamapper/api/v2/SITC1_2
+  OK        file_id=123  URL=https://www.imf.org/external/datamapper/api/v2/SITC1_3
+  OK        file_id=124  URL=https://www.imf.org/external/datamapper/api/v2/SITC1_4
+  OK        file_id=125  URL=https://www.imf.org/external/datamapper/api/v2/SITC1_5
+  OK        file_id=126  URL=https://www.imf.org/external/datamapper/api/v2/SITC1_6
+  OK        file_id=127  URL=https://www.imf.org/external/datamapper/api/v2/SITC1_7
+  OK        file_id=128  URL=https://www.imf.org/external/datamapper/api/v2/SITC1_8
+  OK        file_id=129  URL=https://www.imf.org/external/datamapper/api/v2/SITC1_9
+  OK        file_id=130  URL=https://www.imf.org/external/datamapper/api/v2/SITC1_total
+  OK        file_id=131  URL=https://www.imf.org/external/datamapper/api/v2/total_theil
+  OK        file_id=132  URL=https://www.imf.org/external/datamapper/api/v2/TTT
+
+========================================================================
+3/6 — VALIDACAO Bronze (validate_bronze)
+========================================================================
+  OK        file_id=1
+  OK        file_id=2
+  OK        file_id=3
+  OK        file_id=4
+  OK        file_id=5
+  OK        file_id=6
+  OK        file_id=7
+  OK        file_id=8
+  OK        file_id=9
+  OK        file_id=10
+  OK        file_id=11
+  OK        file_id=12
+  OK        file_id=13
+  OK        file_id=14
+  OK        file_id=15
+  OK        file_id=16
+  OK        file_id=17
+  OK        file_id=18
+  OK        file_id=19
+  OK        file_id=20
+  OK        file_id=21
+  OK        file_id=22
+  OK        file_id=23
+  OK        file_id=24
+  OK        file_id=25
+  OK        file_id=26
+  OK        file_id=27
+  OK        file_id=28
+  OK        file_id=29
+  OK        file_id=30
+  OK        file_id=31
+  OK        file_id=32
+  OK        file_id=33
+  OK        file_id=34
+  OK        file_id=35
+  OK        file_id=36
+  OK        file_id=37
+  OK        file_id=38
+  OK        file_id=39
+  OK        file_id=40
+  OK        file_id=41
+  OK        file_id=42
+  OK        file_id=43
+  OK        file_id=44
+  OK        file_id=45
+  OK        file_id=46
+  OK        file_id=47
+  OK        file_id=48
+  OK        file_id=49
+  OK        file_id=50
+  OK        file_id=51
+  OK        file_id=52
+  OK        file_id=53
+  OK        file_id=54
+  OK        file_id=55
+  OK        file_id=56
+  OK        file_id=57
+  OK        file_id=58
+  OK        file_id=59
+  OK        file_id=60
+  OK        file_id=61
+  OK        file_id=62
+  OK        file_id=63
+  OK        file_id=64
+  OK        file_id=65
+  OK        file_id=66
+  OK        file_id=67
+  OK        file_id=68
+  OK        file_id=69
+  OK        file_id=70
+  OK        file_id=71
+  OK        file_id=72
+  OK        file_id=73
+  OK        file_id=74
+  OK        file_id=75
+  OK        file_id=76
+  OK        file_id=77
+  OK        file_id=78
+  OK        file_id=79
+  OK        file_id=80
+  OK        file_id=81
+  OK        file_id=82
+  OK        file_id=83
+  OK        file_id=84
+  OK        file_id=85
+  OK        file_id=86
+  OK        file_id=87
+  OK        file_id=88
+  OK        file_id=89
+  OK        file_id=90
+  OK        file_id=91
+  OK        file_id=92
+  OK        file_id=93
+  OK        file_id=94
+  OK        file_id=95
+  OK        file_id=96
+  OK        file_id=97
+  OK        file_id=98
+  OK        file_id=99
+  OK        file_id=100
+  OK        file_id=101
+  OK        file_id=102
+  OK        file_id=103
+  OK        file_id=104
+  OK        file_id=105
+  OK        file_id=106
+  OK        file_id=107
+  OK        file_id=108
+  OK        file_id=109
+  OK        file_id=110
+  OK        file_id=111
+  OK        file_id=112
+  OK        file_id=113
+  OK        file_id=114
+  OK        file_id=115
+  OK        file_id=116
+  OK        file_id=117
+  OK        file_id=118
+  OK        file_id=119
+  OK        file_id=120
+  OK        file_id=121
+  OK        file_id=122
+  OK        file_id=123
+  OK        file_id=124
+  OK        file_id=125
+  OK        file_id=126
+  OK        file_id=127
+  OK        file_id=128
+  OK        file_id=129
+  OK        file_id=130
+  OK        file_id=131
+  OK        file_id=132
+
+========================================================================
+4/6 — TRANSFORMACAO Silver (transform)
+========================================================================
+  OK        file_id=1  fn=valores_dcff [AI gerada]  -> 1.parquet
+  OK        file_id=2  fn=valores_dcff [AI cache]  -> 2.parquet
+  OK        file_id=3  fn=valores_dcff [AI cache]  -> 3.parquet
+  OK        file_id=4  fn=valores_dcff [AI cache]  -> 4.parquet
+  OK        file_id=5  fn=valores_dcff [AI cache]  -> 5.parquet
+  OK        file_id=6  fn=valores_dcff [AI cache]  -> 6.parquet
+  OK        file_id=7  fn=valores_dcff [AI cache]  -> 7.parquet
+  OK        file_id=8  fn=valores_dcff [AI cache]  -> 8.parquet
+  OK        file_id=9  fn=valores_dcff [AI cache]  -> 9.parquet
+  OK        file_id=10  fn=valores_dcff [AI cache]  -> 10.parquet
+  OK        file_id=11  fn=valores_dcff [AI cache]  -> 11.parquet
+  OK        file_id=12  fn=valores_dcff [AI cache]  -> 12.parquet
+  OK        file_id=13  fn=valores_dcff [AI cache]  -> 13.parquet
+  OK        file_id=14  fn=valores_dcff [AI cache]  -> 14.parquet
+  OK        file_id=15  fn=valores_dcff [AI cache]  -> 15.parquet
+  OK        file_id=16  fn=valores_dcff [AI cache]  -> 16.parquet
+  OK        file_id=17  fn=valores_dcff [AI cache]  -> 17.parquet
+  OK        file_id=18  fn=valores_dcff [AI cache]  -> 18.parquet
+  OK        file_id=19  fn=valores_dcff [AI cache]  -> 19.parquet
+  OK        file_id=20  fn=valores_dcff [AI cache]  -> 20.parquet
+  OK        file_id=21  fn=valores_dcff [AI cache]  -> 21.parquet
+  OK        file_id=22  fn=valores_dcff [AI cache]  -> 22.parquet
+  OK        file_id=23  fn=valores_dcff [AI cache]  -> 23.parquet
+  OK        file_id=24  fn=valores_dcff [AI cache]  -> 24.parquet
+  OK        file_id=25  fn=valores_dcff [AI cache]  -> 25.parquet
+  ERRO      file_id=26  fn=—
+            Erro: Expecting value: line 1 column 1 (char 0)
+  OK        file_id=27  fn=valores_dcff [AI cache]  -> 27.parquet
+  OK        file_id=28  fn=valores_dcff [AI cache]  -> 28.parquet
+  OK        file_id=29  fn=valores_dcff [AI cache]  -> 29.parquet
+  OK        file_id=30  fn=valores_dcff [AI cache]  -> 30.parquet
+  OK        file_id=31  fn=valores_dcff [AI cache]  -> 31.parquet
+  OK        file_id=32  fn=valores_dcff [AI cache]  -> 32.parquet
+  OK        file_id=33  fn=valores_dcff [AI cache]  -> 33.parquet
+  OK        file_id=34  fn=valores_dcff [AI cache]  -> 34.parquet
+  OK        file_id=35  fn=valores_dcff [AI cache]  -> 35.parquet
+  OK        file_id=36  fn=valores_dcff [AI cache]  -> 36.parquet
+  OK        file_id=37  fn=valores_dcff [AI cache]  -> 37.parquet
+  OK        file_id=38  fn=valores_dcff [AI cache]  -> 38.parquet
+  OK        file_id=39  fn=valores_dcff [AI cache]  -> 39.parquet
+  OK        file_id=40  fn=valores_dcff [AI cache]  -> 40.parquet
+  OK        file_id=41  fn=valores_dcff [AI cache]  -> 41.parquet
+  OK        file_id=42  fn=valores_dcff [AI cache]  -> 42.parquet
+  OK        file_id=43  fn=valores_dcff [AI cache]  -> 43.parquet
+  OK        file_id=44  fn=valores_dcff [AI cache]  -> 44.parquet
+  OK        file_id=45  fn=valores_dcff [AI cache]  -> 45.parquet
+  OK        file_id=46  fn=valores_dcff [AI cache]  -> 46.parquet
+  OK        file_id=47  fn=valores_dcff [AI cache]  -> 47.parquet
+  OK        file_id=48  fn=valores_dcff [AI cache]  -> 48.parquet
+  OK        file_id=49  fn=valores_dcff [AI cache]  -> 49.parquet
+  OK        file_id=50  fn=valores_dcff [AI cache]  -> 50.parquet
+  OK        file_id=51  fn=valores_dcff [AI cache]  -> 51.parquet
+  OK        file_id=52  fn=valores_dcff [AI cache]  -> 52.parquet
+  OK        file_id=53  fn=valores_dcff [AI cache]  -> 53.parquet
+  OK        file_id=54  fn=valores_dcff [AI cache]  -> 54.parquet
+  OK        file_id=55  fn=valores_dcff [AI cache]  -> 55.parquet
+  OK        file_id=56  fn=valores_dcff [AI cache]  -> 56.parquet
+  OK        file_id=57  fn=valores_dcff [AI cache]  -> 57.parquet
+  OK        file_id=58  fn=valores_dcff [AI cache]  -> 58.parquet
+  OK        file_id=59  fn=valores_dcff [AI cache]  -> 59.parquet
+  OK        file_id=60  fn=valores_dcff [AI cache]  -> 60.parquet
+  OK        file_id=61  fn=valores_dcff [AI cache]  -> 61.parquet
+  OK        file_id=62  fn=valores_dcff [AI cache]  -> 62.parquet
+  OK        file_id=63  fn=valores_dcff [AI cache]  -> 63.parquet
+  OK        file_id=64  fn=valores_dcff [AI cache]  -> 64.parquet
+  OK        file_id=65  fn=valores_dcff [AI cache]  -> 65.parquet
+  OK        file_id=66  fn=valores_dcff [AI cache]  -> 66.parquet
+  OK        file_id=67  fn=valores_dcff [AI cache]  -> 67.parquet
+  OK        file_id=68  fn=valores_dcff [AI cache]  -> 68.parquet
+  OK        file_id=69  fn=valores_dcff [AI cache]  -> 69.parquet
+  OK        file_id=70  fn=valores_dcff [AI cache]  -> 70.parquet
+  OK        file_id=71  fn=valores_dcff [AI cache]  -> 71.parquet
+  OK        file_id=72  fn=valores_dcff [AI cache]  -> 72.parquet
+  OK        file_id=73  fn=valores_dcff [AI cache]  -> 73.parquet
+  OK        file_id=74  fn=valores_dcff [AI cache]  -> 74.parquet
+  OK        file_id=75  fn=valores_dcff [AI cache]  -> 75.parquet
+  OK        file_id=76  fn=valores_dcff [AI cache]  -> 76.parquet
+  OK        file_id=77  fn=valores_dcff [AI cache]  -> 77.parquet
+  OK        file_id=78  fn=valores_dcff [AI cache]  -> 78.parquet
+  OK        file_id=79  fn=valores_dcff [AI cache]  -> 79.parquet
+  OK        file_id=80  fn=valores_dcff [AI cache]  -> 80.parquet
+  OK        file_id=81  fn=valores_dcff [AI cache]  -> 81.parquet
+  OK        file_id=82  fn=valores_dcff [AI cache]  -> 82.parquet
+  OK        file_id=83  fn=valores_dcff [AI cache]  -> 83.parquet
+  OK        file_id=84  fn=valores_dcff [AI cache]  -> 84.parquet
+  OK        file_id=85  fn=valores_dcff [AI cache]  -> 85.parquet
+  OK        file_id=86  fn=valores_dcff [AI cache]  -> 86.parquet
+  OK        file_id=87  fn=valores_dcff [AI cache]  -> 87.parquet
+  OK        file_id=88  fn=valores_dcff [AI cache]  -> 88.parquet
+  OK        file_id=89  fn=valores_dcff [AI cache]  -> 89.parquet
+  OK        file_id=90  fn=valores_dcff [AI cache]  -> 90.parquet
+  OK        file_id=91  fn=valores_dcff [AI cache]  -> 91.parquet
+  OK        file_id=92  fn=valores_dcff [AI cache]  -> 92.parquet
+  OK        file_id=93  fn=valores_dcff [AI cache]  -> 93.parquet
+  OK        file_id=94  fn=valores_dcff [AI cache]  -> 94.parquet
+  OK        file_id=95  fn=valores_dcff [AI cache]  -> 95.parquet
+  OK        file_id=96  fn=valores_dcff [AI cache]  -> 96.parquet
+  OK        file_id=97  fn=valores_dcff [AI cache]  -> 97.parquet
+  OK        file_id=98  fn=valores_dcff [AI cache]  -> 98.parquet
+  OK        file_id=99  fn=valores_dcff [AI cache]  -> 99.parquet
+  OK        file_id=100  fn=valores_dcff [AI cache]  -> 100.parquet
+  OK        file_id=101  fn=valores_dcff [AI cache]  -> 101.parquet
+  OK        file_id=102  fn=valores_dcff [AI cache]  -> 102.parquet
+  OK        file_id=103  fn=valores_dcff [AI cache]  -> 103.parquet
+  OK        file_id=104  fn=valores_dcff [AI cache]  -> 104.parquet
+  OK        file_id=105  fn=valores_dcff [AI cache]  -> 105.parquet
+  OK        file_id=106  fn=valores_dcff [AI cache]  -> 106.parquet
+  OK        file_id=107  fn=valores_dcff [AI cache]  -> 107.parquet
+  OK        file_id=108  fn=valores_dcff [AI cache]  -> 108.parquet
+  OK        file_id=109  fn=valores_dcff [AI cache]  -> 109.parquet
+  OK        file_id=110  fn=valores_dcff [AI cache]  -> 110.parquet
+  OK        file_id=111  fn=valores_dcff [AI cache]  -> 111.parquet
+  OK        file_id=112  fn=valores_dcff [AI cache]  -> 112.parquet
+  OK        file_id=113  fn=valores_dcff [AI cache]  -> 113.parquet
+  OK        file_id=114  fn=valores_dcff [AI cache]  -> 114.parquet
+  OK        file_id=115  fn=valores_dcff [AI cache]  -> 115.parquet
+  OK        file_id=116  fn=valores_dcff [AI cache]  -> 116.parquet
+  OK        file_id=117  fn=valores_dcff [AI cache]  -> 117.parquet
+  OK        file_id=118  fn=valores_dcff [AI cache]  -> 118.parquet
+  OK        file_id=119  fn=valores_dcff [AI cache]  -> 119.parquet
+  OK        file_id=120  fn=valores_dcff [AI cache]  -> 120.parquet
+  OK        file_id=121  fn=valores_dcff [AI cache]  -> 121.parquet
+  OK        file_id=122  fn=valores_dcff [AI cache]  -> 122.parquet
+  OK        file_id=123  fn=valores_dcff [AI cache]  -> 123.parquet
+  OK        file_id=124  fn=valores_dcff [AI cache]  -> 124.parquet
+  OK        file_id=125  fn=valores_dcff [AI cache]  -> 125.parquet
+  OK        file_id=126  fn=valores_dcff [AI cache]  -> 126.parquet
+  OK        file_id=127  fn=valores_dcff [AI cache]  -> 127.parquet
+  OK        file_id=128  fn=valores_dcff [AI cache]  -> 128.parquet
+  OK        file_id=129  fn=valores_dcff [AI cache]  -> 129.parquet
+  OK        file_id=130  fn=valores_dcff [AI cache]  -> 130.parquet
+  OK        file_id=131  fn=valores_dcff [AI cache]  -> 131.parquet
+  OK        file_id=132  fn=valores_dcff [AI cache]  -> 132.parquet
+
+========================================================================
+5/6 — VALIDACAO Silver (validate_silver)
+========================================================================
+  OK        file_id=1
+  OK        file_id=2
+  OK        file_id=3
+  OK        file_id=4
+  OK        file_id=5
+  OK        file_id=6
+  OK        file_id=7
+  OK        file_id=8
+  OK        file_id=9
+  OK        file_id=10
+  OK        file_id=11
+  OK        file_id=12
+  OK        file_id=13
+  OK        file_id=14
+  OK        file_id=15
+  OK        file_id=16
+  OK        file_id=17
+  OK        file_id=18
+  OK        file_id=19
+  OK        file_id=20
+  OK        file_id=21
+  OK        file_id=22
+  OK        file_id=23
+  OK        file_id=24
+  OK        file_id=25
+  OK        file_id=27
+  OK        file_id=28
+  OK        file_id=29
+  OK        file_id=30
+  OK        file_id=31
+  OK        file_id=32
+  OK        file_id=33
+  OK        file_id=34
+  OK        file_id=35
+  OK        file_id=36
+  OK        file_id=37
+  OK        file_id=38
+  OK        file_id=39
+  OK        file_id=40
+  OK        file_id=41
+  OK        file_id=42
+  OK        file_id=43
+  OK        file_id=44
+  OK        file_id=45
+  OK        file_id=46
+  OK        file_id=47
+  OK        file_id=48
+  OK        file_id=49
+  OK        file_id=50
+  OK        file_id=51
+  OK        file_id=52
+  OK        file_id=53
+  OK        file_id=54
+  OK        file_id=55
+  OK        file_id=56
+  OK        file_id=57
+  OK        file_id=58
+  OK        file_id=59
+  OK        file_id=60
+  OK        file_id=61
+  OK        file_id=62
+  OK        file_id=63
+  OK        file_id=64
+  OK        file_id=65
+  OK        file_id=66
+  OK        file_id=67
+  OK        file_id=68
+  OK        file_id=69
+  OK        file_id=70
+  OK        file_id=71
+  OK        file_id=72
+  OK        file_id=73
+  OK        file_id=74
+  OK        file_id=75
+  OK        file_id=76
+  OK        file_id=77
+  OK        file_id=78
+  OK        file_id=79
+  OK        file_id=80
+  OK        file_id=81
+  OK        file_id=82
+  OK        file_id=83
+  OK        file_id=84
+  OK        file_id=85
+  OK        file_id=86
+  OK        file_id=87
+  OK        file_id=88
+  OK        file_id=89
+  OK        file_id=90
+  OK        file_id=91
+  OK        file_id=92
+  OK        file_id=93
+  OK        file_id=94
+  OK        file_id=95
+  OK        file_id=96
+  OK        file_id=97
+  OK        file_id=98
+  OK        file_id=99
+  OK        file_id=100
+  OK        file_id=101
+  OK        file_id=102
+  OK        file_id=103
+  OK        file_id=104
+  OK        file_id=105
+  OK        file_id=106
+  OK        file_id=107
+  OK        file_id=108
+  OK        file_id=109
+  OK        file_id=110
+  OK        file_id=111
+  OK        file_id=112
+  OK        file_id=113
+  OK        file_id=114
+  OK        file_id=115
+  OK        file_id=116
+  OK        file_id=117
+  OK        file_id=118
+  OK        file_id=119
+  OK        file_id=120
+  OK        file_id=121
+  OK        file_id=122
+  OK        file_id=123
+  OK        file_id=124
+  OK        file_id=125
+  OK        file_id=126
+  OK        file_id=127
+  OK        file_id=128
+  OK        file_id=129
+  OK        file_id=130
+  OK        file_id=131
+  OK        file_id=132
+
+========================================================================
+6/6 — CARREGAMENTO Warehouse (gold)
+========================================================================
+  Sem erros de carregamento registados.
+
+  ESTADO DO DATA WAREHOUSE (após esta run):
+  dim_report               desta run : 1         total DW : 1
+  dim_location             total DW  : 249
+  dim_indicator            total DW  : 131
+  fact_values              desta run : 17226     total DW : 17226
+
+========================================================================
+REGISTOS etl_logs_dados DESTA EXECUCAO
+========================================================================
+  file_id    step                   log_time               erro
+  ----------------------------------------------------------------------
+  26         transform              2026-05-22 05:54:14    Expecting value: line 1 column 1 (char 0)
+
+========================================================================
+FIM DO RELATORIO
+========================================================================

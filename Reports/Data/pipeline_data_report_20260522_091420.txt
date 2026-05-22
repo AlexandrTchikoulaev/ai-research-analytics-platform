@@ -1,0 +1,71 @@
+========================================================================
+RELATÓRIO DA PIPELINE DE DADOS
+Gerado em          : 2026-05-22 09:14:43
+Início da execução : 2026-05-22 09:14:20
+Estado             : CONCLUÍDA COM SUCESSO
+========================================================================
+
+------------------------------------------------------------------------
+RESUMO
+------------------------------------------------------------------------
+[1] validate_opdata      Total: 3     Válidos: 3     Inválidos: 0     → etl_logs: 0
+[2] Ingestão Bronze      Processados: 3     OK: 3     Erro: 0     → etl_logs: 0
+[3] Validação Bronze     Validados: 3     OK: 3     Inválidos: 0     → etl_logs: 0
+[4] Transformação Silver OK (SILVER_OK/DONE): 3     Erro: 0     [AI gerada: 0  AI cache: 0  manual: 3  sem função: 0]  → etl_logs: 0
+[5] Validação Silver     OK: 3     Inválidos: 0     → etl_logs: 0
+[6] Warehouse (gold)     DONE: 3     dim_report: 3  dim_location: 249  dim_indicator: 144  fact_values: 251392  Erros: 0
+
+========================================================================
+1/6 — VALIDACAO op_data
+========================================================================
+  OK        file_id=1  [The Heritage Foundation] Index of Economic Freedom  mode=manual
+  OK        file_id=2  [Portulans] Network Readiness Index 2025  mode=manual
+  OK        file_id=3  [Fraser Institute] Economic Freedom of the World, 2024  mode=manual
+
+========================================================================
+2/6 — INGESTAO Bronze (ingest_raw)
+========================================================================
+  UPLOAD    file_id=1  [ficheiro carregado via upload — ja no MinIO]
+  UPLOAD    file_id=2  [ficheiro carregado via upload — ja no MinIO]
+  UPLOAD    file_id=3  [ficheiro carregado via upload — ja no MinIO]
+
+========================================================================
+3/6 — VALIDACAO Bronze (validate_bronze)
+========================================================================
+  OK        file_id=1
+  OK        file_id=2
+  OK        file_id=3
+
+========================================================================
+4/6 — TRANSFORMACAO Silver (transform)
+========================================================================
+  OK        file_id=1  fn=heritage [manual]  -> 1.parquet
+  OK        file_id=2  fn=nri [manual]  -> 2.parquet
+  OK        file_id=3  fn=fraser [manual]  -> 3.parquet
+
+========================================================================
+5/6 — VALIDACAO Silver (validate_silver)
+========================================================================
+  OK        file_id=1
+  OK        file_id=2
+  OK        file_id=3
+
+========================================================================
+6/6 — CARREGAMENTO Warehouse (gold)
+========================================================================
+  Sem erros de carregamento registados.
+
+  ESTADO DO DATA WAREHOUSE (após esta run):
+  dim_report               desta run : 3         total DW : 3
+  dim_location             total DW  : 249
+  dim_indicator            total DW  : 144
+  fact_values              desta run : 251392    total DW : 251392
+
+========================================================================
+REGISTOS etl_logs_dados DESTA EXECUCAO
+========================================================================
+  Nenhum erro registado.
+
+========================================================================
+FIM DO RELATORIO
+========================================================================

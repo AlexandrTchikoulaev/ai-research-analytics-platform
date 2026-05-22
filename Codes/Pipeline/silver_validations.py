@@ -25,7 +25,7 @@ def validate():
     s3 = boto3.client("s3", **MINIO_CONFIG)
 
     cur.execute("""
-        SELECT file_id, report_id, extract_function
+        SELECT file_id, report_id
         FROM op_data
         WHERE pipeline_status = 'BRONZE_OK'
     """)
@@ -34,7 +34,7 @@ def validate():
     ok_count = 0
     err_count = 0
 
-    for file_id, db_report_id, db_extract_fn in rows:
+    for file_id, db_report_id in rows:
         key = str(file_id)
         errors = []
 
@@ -47,7 +47,6 @@ def validate():
 
         if not errors:
             report_id_str = metadata.get("report_id", "")
-            extract_function = metadata.get("extract_function", "")
 
             try:
                 report_id = int(report_id_str) if report_id_str else None
@@ -58,10 +57,6 @@ def validate():
             if report_id is not None and db_report_id != report_id:
                 errors.append(
                     f"report_id inconsistente: metadata={report_id}, db={db_report_id}"
-                )
-            if extract_function and db_extract_fn and extract_function != db_extract_fn:
-                errors.append(
-                    f"extract_function inconsistente: metadata={extract_function}, db={db_extract_fn}"
                 )
 
         if errors:

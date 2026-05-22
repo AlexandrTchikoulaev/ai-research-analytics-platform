@@ -10,5 +10,9 @@
   "funcao_auto_json_indicator_d12ea4": {
     "code": "def funcao_auto_json_indicator_d12ea4(data):\n    items = data.get(\"indicators\", {})\n    return pd.DataFrame({\n        \"code\": list(items.keys()),\n        \"name\": [v.get(\"label\") for v in items.values()],\n    })",
     "created_at": "2026-05-11T21:47:41.710694"
+  },
+  "valores_dcff": {
+    "code": "import json\nfrom typing import Dict, Any\nimport pandas as pd\n\ndef valores_dcff(data):\n    inds = data.get(\"indicators\", {})\n    rows = []\n    for ind, locs in data.get(\"values\", {}).items():\n        if isinstance(locs, dict):\n            for loc, yrs in locs.items():\n                if isinstance(yrs, dict):\n                    ind_name = inds.get(ind, {}).get(\"label\", ind)\n                    year = int(list(yrs.keys())[0])\n                    for yr, v in yrs.items():\n                        rows.append({\"location_code\": loc, \"indicator_code\": ind, \"indicator_name\": ind_name, \"year\": year, \"value\": float(v)})\n    return pd.DataFrame(rows).dropna(subset=[\"location_code\",\"indicator_code\",\"year\",\"value\"])",
+    "created_at": "2026-05-22T04:54:11.720064"
   }
 }

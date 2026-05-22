@@ -1,0 +1,64 @@
+========================================================================
+RELATÓRIO DA PIPELINE DE DADOS
+Gerado em          : 2026-05-22 06:39:19
+Início da execução : 2026-05-22 06:32:02
+Estado             : CONCLUÍDA COM SUCESSO
+========================================================================
+
+------------------------------------------------------------------------
+RESUMO
+------------------------------------------------------------------------
+[1] validate_opdata      Total: 1     Válidos: 1     Inválidos: 0     → etl_logs: 0
+[2] Ingestão Bronze      Processados: 1     OK: 1     Erro: 0     → etl_logs: 0
+[3] Validação Bronze     Validados: 1     OK: 1     Inválidos: 0     → etl_logs: 0
+[4] Transformação Silver OK (SILVER_OK/DONE): 1     Erro: 0     [AI gerada: 0  AI cache: 0  manual: 1  sem função: 0]  → etl_logs: 0
+[5] Validação Silver     OK: 1     Inválidos: 0     → etl_logs: 0
+[6] Warehouse (gold)     DONE: 1     dim_report: 1  dim_location: 249  dim_indicator: 13  fact_values: 0  Erros: 1
+
+========================================================================
+1/6 — VALIDACAO op_data
+========================================================================
+  OK        file_id=1  [The Heritage Foundation] Index of Economic Freedom  mode=auto
+
+========================================================================
+2/6 — INGESTAO Bronze (ingest_raw)
+========================================================================
+  UPLOAD    file_id=1  [ficheiro carregado via upload — ja no MinIO]
+
+========================================================================
+3/6 — VALIDACAO Bronze (validate_bronze)
+========================================================================
+  OK        file_id=1
+
+========================================================================
+4/6 — TRANSFORMACAO Silver (transform)
+========================================================================
+  OK        file_id=1  fn=heritage [manual]  -> 1.parquet
+
+========================================================================
+5/6 — VALIDACAO Silver (validate_silver)
+========================================================================
+  OK        file_id=1
+
+========================================================================
+6/6 — CARREGAMENTO Warehouse (gold)
+========================================================================
+  ERRO      step=load  ficheiro=2026_indexofeconomicfreedom_data.xlsx
+            Erro: 0 linhas válidas de 2351 — location_sk em falta: 2351, indicator_sk em falta: 0, date_id em falta: 0
+
+  ESTADO DO DATA WAREHOUSE (após esta run):
+  dim_report               desta run : 1         total DW : 1
+  dim_location             total DW  : 249
+  dim_indicator            total DW  : 13
+  fact_values              desta run : 0         total DW : 0
+
+========================================================================
+REGISTOS etl_logs_dados DESTA EXECUCAO
+========================================================================
+  file_id    step                   log_time               erro
+  ----------------------------------------------------------------------
+  1          load                   2026-05-22 06:39:19    0 linhas válidas de 2351 — location_sk em falta: 2351, indicator_sk em falta: 0, date_id em falta: 0
+
+========================================================================
+FIM DO RELATORIO
+========================================================================

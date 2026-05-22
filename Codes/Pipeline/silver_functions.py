@@ -62,6 +62,129 @@ def hfi(data) -> pd.DataFrame:
     )
 
 
+def nri(data) -> pd.DataFrame:
+    # Row 2 = nomes legíveis (Technology, Access, Mobile tariffs, ...)
+    # Row 4 = códigos das colunas (NRI.score, 1.score, 1.1.1.score, ...)
+    # Row 5+ = dados
+    name_row = data.iloc[2].values
+    code_row = data.iloc[4].values
+    name_map = {
+        str(code): str(name)
+        for code, name in zip(code_row, name_row)
+        if pd.notna(code) and pd.notna(name)
+    }
+
+    df = data.iloc[5:].copy()
+    df.columns = [str(c) for c in code_row]
+    df = df.reset_index(drop=True)
+
+    meta = {"Economy", "ISO3Code", "region", "inc.group", "gdp.capita", "population", "ISO2code"}
+    score_cols = [c for c in df.columns if "score" in c.lower() and c not in meta]
+
+    rows = []
+    for _, row in df.iterrows():
+        loc = row.get("ISO3Code")
+        if pd.isna(loc):
+            continue
+        for col in score_cols:
+            val = row[col]
+            if pd.isna(val):
+                continue
+            try:
+                ind_code = col.replace(".score", "").replace("Score", "").strip(".")
+                ind_name = name_map.get(col, col)
+                rows.append({
+                    "location_code": str(loc),
+                    "indicator_code": ind_code,
+                    "indicator_name": ind_name,
+                    "year": 2025,
+                    "value": float(val),
+                })
+            except (ValueError, TypeError):
+                continue
+
+    return pd.DataFrame(rows).dropna(subset=["location_code", "indicator_code", "year", "value"])
+
+
+def heritage(data) -> pd.DataFrame:
+    import pycountry as _pycountry
+
+    def _to_iso3(name: str):
+        try:
+            return _pycountry.countries.search_fuzzy(name)[0].alpha_3
+        except LookupError:
+            return None
+
+    # Row 0 = título "COMPONENT SCORES"; row 1 = headers reais; dados a partir de row 2
+    # Quando lido com header=0 (default): data.iloc[0] = headers reais, data.iloc[1:] = dados
+    df = data.iloc[1:].copy()
+    df.columns = [str(c) for c in data.iloc[0].values]
+    df = df.reset_index(drop=True)
+
+    meta = {"Country", "Region"}
+    value_cols = [c for c in df.columns if c not in meta and not str(c).startswith("Unnamed")]
+
+    rows = []
+    for _, row in df.iterrows():
+        country = row.get("Country")
+        if pd.isna(country) or str(country).strip() == "":
+            continue
+        iso3 = _to_iso3(str(country).strip())
+        if iso3 is None:
+            continue
+        for col in value_cols:
+            val = row[col]
+            if pd.isna(val):
+                continue
+            try:
+                rows.append({
+                    "location_code": iso3,
+                    "indicator_code": col,
+                    "indicator_name": col,
+                    "year": 2026,
+                    "value": float(val),
+                })
+            except (ValueError, TypeError):
+                continue
+
+    return pd.DataFrame(rows).dropna(subset=["location_code", "indicator_code", "year", "value"])
+
+
+def fraser(data) -> pd.DataFrame:
+    # iloc[3] = headers reais; iloc[4:] = dados (4 linhas de metadados antes)
+    df = data.iloc[4:].copy()
+    df.columns = [str(c) for c in data.iloc[3].values]
+    df = df.reset_index(drop=True)
+
+    meta = {"nan", "Year", "ISO Code 2", "ISO Code 3", "Countries", "Rank", "Quartile",
+            "World Bank Region", "World Bank Current Income Classification, 1990-Present"}
+    value_cols = [c for c in df.columns
+                  if c not in meta and c != "data" and "Rank" not in c and c.strip() != "nan"]
+
+    rows = []
+    for _, row in df.iterrows():
+        iso  = row.get("ISO Code 3")
+        year = row.get("Year")
+        if pd.isna(iso) or pd.isna(year):
+            continue
+        for col in value_cols:
+            val = row[col]
+            if pd.isna(val):
+                continue
+            try:
+                rows.append({
+                    "location_code": str(iso).strip(),
+                    "indicator_code": col.strip(),
+                    "indicator_name": col.strip(),
+                    "year": int(float(year)),
+                    "value": float(val),
+                })
+            except (ValueError, TypeError):
+                continue
+
+    return pd.DataFrame(rows).dropna(subset=["location_code", "indicator_code", "year", "value"])
+
+
 def epi(data) -> pd.DataFrame:
     df = data if isinstance(data, pd.DataFrame) else pd.DataFrame(data)
 

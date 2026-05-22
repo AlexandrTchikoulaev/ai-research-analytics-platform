@@ -1,0 +1,221 @@
+"code","iso","country","PFA.raw.2001"
+4,"AFG","Afghanistan",NA
+8,"ALB","Albania",NA
+12,"DZA","Algeria",NA
+20,"AND","Andorra",NA
+24,"AGO","Angola",2457477.85112519
+660,"AIA","Anguilla",NA
+28,"ATG","Antigua and Barbuda",58.8475930223425
+32,"ARG","Argentina",4412127.12485912
+51,"ARM","Armenia",NA
+533,"ABW","Aruba",7.51631835594672
+36,"AUS","Australia",12674.7608083371
+40,"AUT","Austria",NA
+31,"AZE","Azerbaijan",NA
+44,"BHS","Bahamas",11265.2579070399
+48,"BHR","Bahrain",NA
+50,"BGD","Bangladesh",96621.2858583109
+52,"BRB","Barbados",NA
+112,"BLR","Belarus",NA
+56,"BEL","Belgium",NA
+84,"BLZ","Belize",1164465.74318593
+204,"BEN","Benin",1870.91972175519
+60,"BMU","Bermuda",NA
+64,"BTN","Bhutan",1605449.19991375
+68,"BOL","Bolivia",40817156.0163455
+70,"BIH","Bosnia and Herzegovina",NA
+72,"BWA","Botswana",NA
+76,"BRA","Brazil",343229983.066321
+92,"VGB","British Virgin Islands",3022.79850752656
+96,"BRN","Brunei Darussalam",431455.22776917
+100,"BGR","Bulgaria",NA
+854,"BFA","Burkina Faso",NA
+108,"BDI","Burundi",24848.8802564073
+132,"CPV","Cabo Verde",NA
+116,"KHM","Cambodia",4284047.08256091
+120,"CMR","Cameroon",19075628.658854
+124,"CAN","Canada",NA
+136,"CYM","Cayman Islands",6199.19541270849
+140,"CAF","Central African Republic",7363125.76102441
+148,"TCD","Chad",NA
+152,"CHL","Chile",NA
+156,"CHN","China",1736513.626743
+170,"COL","Colombia",54763585.6993761
+174,"COM","Comoros",NA
+184,"COK","Cook Islands",NA
+188,"CRI","Costa Rica",1485835.10087978
+384,"CIV","Cote d'Ivoire",1365239.67649174
+191,"HRV","Croatia",NA
+192,"CUB","Cuba",400819.125109522
+531,"CUW","Curacao",NA
+196,"CYP","Cyprus",NA
+203,"CZE","Czech Republic",NA
+180,"COD","Dem. Rep. Congo",104580066.632122
+208,"DNK","Denmark",NA
+262,"DJI","Djibouti",NA
+212,"DMA","Dominica",35963.2681322505
+214,"DOM","Dominican Republic",316879.652568328
+218,"ECU","Ecuador",10627032.0359652
+818,"EGY","Egypt",NA
+222,"SLV","El Salvador",50573.0433413144
+226,"GNQ","Equatorial Guinea",2246143.71826515
+232,"ERI","Eritrea",NA
+233,"EST","Estonia",NA
+748,"SWZ","Eswatini",NA
+231,"ETH","Ethiopia",1890183.85911577
+234,"FRO","Faeroe Islands",NA
+238,"FLK","Falkland Islands",NA
+242,"FJI","Fiji",533104.042611297
+246,"FIN","Finland",NA
+250,"FRA","France",NA
+258,"PYF","French Polynesia",NA
+266,"GAB","Gabon",22669525.2819728
+270,"GMB","Gambia",NA
+268,"GEO","Georgia",NA
+276,"DEU","Germany",NA
+288,"GHA","Ghana",1090290.34530117
+300,"GRC","Greece",NA
+304,"GRL","Greenland",NA
+308,"GRD","Grenada",NA
+320,"GTM","Guatemala",2583218.75289234
+831,"GGY","Guernsey",NA
+324,"GIN","Guinea",233461.103485864
+624,"GNB","Guinea-Bissau",71370.5723454277
+328,"GUY","Guyana",17293018.2251039
+332,"HTI","Haiti",8682.05454945331
+336,"VAT","Holy See",NA
+340,"HND","Honduras",2150089.78598125
+344,"HKG","Hong Kong",NA
+348,"HUN","Hungary",NA
+352,"ISL","Iceland",NA
+356,"IND","India",10185416.9895369
+360,"IDN","Indonesia",93837980.8918926
+364,"IRN","Iran",NA
+368,"IRQ","Iraq",NA
+372,"IRL","Ireland",NA
+833,"IMN","Isle of Man",NA
+376,"ISR","Israel",NA
+380,"ITA","Italy",NA
+388,"JAM","Jamaica",237094.132985177
+392,"JPN","Japan",NA
+832,"JEY","Jersey",NA
+400,"JOR","Jordan",NA
+398,"KAZ","Kazakhstan",NA
+404,"KEN","Kenya",649579.402793538
+296,"KIR","Kiribati",NA
+689,"XKX","Kosovo",NA
+414,"KWT","Kuwait",NA
+417,"KGZ","Kyrgyzstan",NA
+418,"LAO","Laos",8322187.68979519
+428,"LVA","Latvia",NA
+422,"LBN","Lebanon",NA
+426,"LSO","Lesotho",NA
+430,"LBR","Liberia",4429048.62732132
+434,"LBY","Libya",NA
+438,"LIE","Liechtenstein",NA
+440,"LTU","Lithuania",NA
+442,"LUX","Luxembourg",NA
+446,"MAC","Macao",NA
+450,"MDG","Madagascar",4853676.74651556
+454,"MWI","Malawi",5236.46643938003
+458,"MYS","Malaysia",15939453.8524597
+462,"MDV","Maldives",830.455468532754
+466,"MLI","Mali",NA
+470,"MLT","Malta",NA
+584,"MHL","Marshall Islands",NA
+478,"MRT","Mauritania",NA
+480,"MUS","Mauritius",NA
+484,"MEX","Mexico",9213380.71863656
+583,"FSM","Micronesia",NA
+498,"MDA","Moldova",NA
+492,"MCO","Monaco",NA
+496,"MNG","Mongolia",NA
+499,"MNE","Montenegro",NA
+504,"MAR","Morocco",NA
+508,"MOZ","Mozambique",119683.577310652
+104,"MMR","Myanmar",14035360.5302401
+516,"NAM","Namibia",NA
+520,"NRU","Nauru",NA
+524,"NPL","Nepal",725083.750019292
+528,"NLD","Netherlands",NA
+540,"NCL","New Caledonia",NA
+554,"NZL","New Zealand",NA
+558,"NIC","Nicaragua",2020207.11106104
+562,"NER","Niger",NA
+566,"NGA","Nigeria",1903123.84285452
+570,"NIU","Niue",NA
+408,"PRK","North Korea",NA
+807,"MKD","North Macedonia",NA
+578,"NOR","Norway",NA
+512,"OMN","Oman",NA
+586,"PAK","Pakistan",NA
+585,"PLW","Palau",19014.724287773
+591,"PAN","Panama",2902228.64970506
+598,"PNG","Papua New Guinea",32595230.7216313
+600,"PRY","Paraguay",3481100.08285431
+604,"PER","Peru",69125435.4544633
+608,"PHL","Philippines",4585030.74952115
+616,"POL","Poland",NA
+620,"PRT","Portugal",NA
+634,"QAT","Qatar",NA
+178,"COG","Republic of Congo",21153179.3707097
+642,"ROU","Romania",NA
+643,"RUS","Russia",NA
+646,"RWA","Rwanda",53730.7296537578
+652,"BLM","Saint Barthelemy",NA
+659,"KNA","Saint Kitts and Nevis",5844.24772902311
+662,"LCA","Saint Lucia",13935.3592215001
+670,"VCT","Saint Vincent and the Grenadines",6274.50657790149
+882,"WSM","Samoa",NA
+674,"SMR","San Marino",NA
+678,"STP","Sao Tome and Principe",NA
+682,"SAU","Saudi Arabia",NA
+686,"SEN","Senegal",3480.83992479828
+688,"SRB","Serbia",NA
+690,"SYC","Seychelles",NA
+694,"SLE","Sierra Leone",276388.13260215
+702,"SGP","Singapore",844.09448072411
+534,"SXM","Sint Maarten",255.752784773977
+703,"SVK","Slovakia",NA
+705,"SVN","Slovenia",NA
+90,"SLB","Solomon Islands",1992883.89802173
+706,"SOM","Somalia",NA
+710,"ZAF","South Africa",125516.427336394
+410,"KOR","South Korea",NA
+728,"SSD","South Sudan",83749.5042701928
+724,"ESP","Spain",NA
+144,"LKA","Sri Lanka",596014.558488947
+275,"PSE","State of Palestine",NA
+729,"SDN","Sudan",NA
+740,"SUR","Suriname",12770374.5750781
+752,"SWE","Sweden",NA
+756,"CHE","Switzerland",NA
+760,"SYR","Syria",NA
+158,"TWN","Taiwan",606711.378643004
+762,"TJK","Tajikistan",NA
+834,"TZA","Tanzania",732170.593121211
+764,"THA","Thailand",5936848.61677842
+626,"TLS","Timor-Leste",NA
+768,"TGO","Togo",1625.66387929182
+776,"TON","Tonga",NA
+780,"TTO","Trinidad and Tobago",153656.699228312
+788,"TUN","Tunisia",NA
+792,"TUR","Turkiye",NA
+795,"TKM","Turkmenistan",NA
+796,"TCA","Turks and Caicos Islands",2806.40593211833
+798,"TUV","Tuvalu",NA
+800,"UGA","Uganda",509095.174343559
+804,"UKR","Ukraine",NA
+784,"ARE","United Arab Emirates",NA
+826,"GBR","United Kingdom",NA
+840,"USA","United States of America",264463.040195594
+858,"URY","Uruguay",NA
+860,"UZB","Uzbekistan",NA
+548,"VUT","Vanuatu",367518.925674241
+862,"VEN","Venezuela",38611292.222339
+704,"VNM","Viet Nam",6731710.6838897
+876,"WLF","Wallis and Futuna Islands",NA
+732,"ESH","Western Sahara",NA
+887,"YEM","Yemen",NA
+894,"ZMB","Zambia",330618.552495804
+716,"ZWE","Zimbabwe",7601.29361577546

@@ -1034,6 +1034,33 @@
     .section-toggle button:not(.active):hover { color: var(--text-secondary); }
     .section-toggle.sm button { padding: 0.28rem 0.85rem; font-size: 0.65rem; }
 
+    .map-section-title {
+      font-size: 0.7rem; font-weight: 600; letter-spacing: 0.08em;
+      text-transform: uppercase; color: var(--text-muted);
+      margin-bottom: 0.75rem;
+    }
+
+    .ai-toggle {
+      display: inline-flex; align-items: center; gap: 0.35rem;
+      padding: 0.3rem 0.7rem 0.3rem 0.45rem;
+      border-radius: 99px; border: 1px solid var(--border);
+      background: var(--surface-2); color: var(--text-muted);
+      font-size: 0.7rem; font-weight: 600; letter-spacing: 0.04em;
+      cursor: pointer; transition: background 0.15s, color 0.15s, border-color 0.15s;
+      user-select: none;
+    }
+    .ai-toggle-dot {
+      width: 6px; height: 6px; border-radius: 50%;
+      background: var(--text-muted); transition: background 0.15s;
+      flex-shrink: 0;
+    }
+    .ai-toggle.active {
+      background: color-mix(in srgb, var(--accent) 12%, transparent);
+      border-color: var(--accent); color: var(--accent);
+    }
+    .ai-toggle.active .ai-toggle-dot { background: var(--accent); }
+    .ai-toggle:hover:not(.active) { border-color: var(--text-muted); color: var(--text-secondary); }
+
     /* TABS */
     .tab-btn {
       background: none;
@@ -1377,6 +1404,9 @@
     <div class="form-actions">
       <button class="btn-primary" id="btn-data-submit" onclick="submitDataAuto()">Adicionar Ficheiro</button>
       <button class="btn-ghost" onclick="clearDataForm()">Limpar</button>
+      <button type="button" id="dtog-ai" class="ai-toggle active" onclick="setAutoGenerate(!_autoGenerate)" title="A AI gera a função de extração automaticamente">
+        <span class="ai-toggle-dot"></span><span class="ai-toggle-label">AI</span>
+      </button>
       <span id="upload-summary" style="font-size:0.78rem;color:var(--text-muted);"></span>
     </div>
     <div id="upload-preview" style="display:none;">
@@ -1418,12 +1448,15 @@
     <div class="form-group full" style="margin-bottom:1rem;">
       <label>JSON</label>
       <textarea id="d-batch-json" style="min-height:180px;font-size:0.78rem;" placeholder='[
-  { "link": "https://api.imf.org/indicadores" },
-  { "link": "https://api.imf.org/valores" }
+  "https://api.imf.org/indicadores",
+  "https://api.imf.org/valores"
 ]'></textarea>
     </div>
     <div class="form-actions">
       <button class="btn-primary" id="btn-dbatch" onclick="submitBatchData()">Importar Lote</button>
+      <button type="button" id="dtog-ai-batch" class="ai-toggle active" onclick="setAutoGenerate(!_autoGenerate)" title="A AI gera a função de extração automaticamente">
+        <span class="ai-toggle-dot"></span><span class="ai-toggle-label">AI</span>
+      </button>
     </div>
   </div>
 
@@ -1510,7 +1543,6 @@
           <th>Fonte</th>
           <th>Nome</th>
           <th>Ficheiro</th>
-          <th>Função</th>
           <th>Criação</th>
         </tr>
       </thead>
@@ -1759,71 +1791,78 @@
 </div><!-- end page-dash -->
 <div class="page" id="page-etl">
 
-  <!-- Page header com switch -->
   <div class="page-header">
     <div>
-      <h1>Ficheiros Inválidos</h1>
+      <h1>Painel de Controlo</h1>
+      <div class="sub">Logs de erros e configuração de mapeamentos</div>
     </div>
-    <div style="display:flex;align-items:center;gap:1rem;">
-      <button class="btn-ghost" id="btn-rebuild-thumbs" onclick="rebuildThumbnails()" title="Gera thumbnails em falta para PDFs já no MinIO">Thumbnails</button>
-      <button class="btn-ghost" id="btn-reset-pipeline" onclick="resetPipeline()" title="Apaga todos os dados do pipeline — MinIO, warehouse e logs" style="color:var(--red);border-color:var(--red);opacity:0.7;">Reset Pipeline</button>
+  </div>
+
+  <!-- ── Secção: Logs de Erros ── -->
+  <div style="margin-bottom:3rem;">
+    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:1.2rem;padding-bottom:0.5rem;border-bottom:1px solid var(--border);">
+      <span style="font-family:var(--mono);font-size:0.65rem;color:var(--text-muted);letter-spacing:0.14em;text-transform:uppercase;">Logs de Erros</span>
       <div class="section-toggle">
         <button class="active" id="etog-relatorios" onclick="switchEtlLog('relatorios')">Relatórios</button>
         <button id="etog-dados" onclick="switchEtlLog('dados')">Dados</button>
-        <button id="etog-mapeamentos" onclick="switchEtlLog('mapeamentos')">Mapeamentos</button>
+      </div>
+    </div>
+
+    <!-- Secção Dados -->
+    <div id="etl-section-dados" style="display:none;">
+      <div class="table-controls">
+        <div class="table-search">
+          <input type="text" id="search-etl-logs-dados" placeholder="Filtrar registos..." oninput="filterEtlLogsTable('dados')"/>
+        </div>
+        <div class="record-count" id="record-count-etl-logs-dados"></div>
+        <button class="btn-ghost" style="color:var(--red);font-size:0.78rem;" onclick="clearAllEtlLogs('dados')">Apagar tudo</button>
+      </div>
+      <div class="table-wrapper">
+        <table>
+          <thead>
+            <tr id="etl-logs-dados-thead-row">
+              <th>A carregar colunas...</th>
+            </tr>
+          </thead>
+          <tbody id="table-body-etl-logs-dados">
+            <tr><td colspan="7"><div class="state-box"><p>A carregar dados...</p></div></td></tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+
+    <!-- Secção PDFs (Relatórios) -->
+    <div id="etl-section-pdfs">
+      <div class="table-controls">
+        <div class="table-search">
+          <input type="text" id="search-etl-logs-pdfs" placeholder="Filtrar registos..." oninput="filterEtlLogsTable('pdfs')"/>
+        </div>
+        <div class="record-count" id="record-count-etl-logs-pdfs"></div>
+        <button class="btn-ghost" style="color:var(--red);font-size:0.78rem;" onclick="clearAllEtlLogs('pdfs')">Apagar tudo</button>
+      </div>
+      <div class="table-wrapper">
+        <table>
+          <thead>
+            <tr id="etl-logs-pdfs-thead-row">
+              <th>A carregar colunas...</th>
+            </tr>
+          </thead>
+          <tbody id="table-body-etl-logs-pdfs">
+            <tr><td colspan="7"><div class="state-box"><p>A carregar dados...</p></div></td></tr>
+          </tbody>
+        </table>
       </div>
     </div>
   </div>
 
-  <!-- Secção Dados -->
-  <div id="etl-section-dados" style="display:none;">
-    <div class="table-controls">
-      <div class="table-search">
-        <input type="text" id="search-etl-logs-dados" placeholder="Filtrar registos..." oninput="filterEtlLogsTable('dados')"/>
-      </div>
-      <div class="record-count" id="record-count-etl-logs-dados"></div>
-      <button class="btn-ghost" style="color:var(--red);font-size:0.78rem;" onclick="clearAllEtlLogs('dados')">Apagar tudo</button>
+  <!-- ── Secção: Mapeamentos ── -->
+  <div style="margin-bottom:3rem;">
+    <div style="display:flex;align-items:center;margin-bottom:1.2rem;padding-bottom:0.5rem;border-bottom:1px solid var(--border);">
+      <span style="font-family:var(--mono);font-size:0.65rem;color:var(--text-muted);letter-spacing:0.14em;text-transform:uppercase;">Mapeamentos</span>
     </div>
-    <div class="table-wrapper">
-      <table>
-        <thead>
-          <tr id="etl-logs-dados-thead-row">
-            <th>A carregar colunas...</th>
-          </tr>
-        </thead>
-        <tbody id="table-body-etl-logs-dados">
-          <tr><td colspan="7"><div class="state-box"><p>A carregar dados...</p></div></td></tr>
-        </tbody>
-      </table>
-    </div>
-  </div>
 
-  <!-- Secção PDFs (Relatórios) -->
-  <div id="etl-section-pdfs">
-    <div class="table-controls">
-      <div class="table-search">
-        <input type="text" id="search-etl-logs-pdfs" placeholder="Filtrar registos..." oninput="filterEtlLogsTable('pdfs')"/>
-      </div>
-      <div class="record-count" id="record-count-etl-logs-pdfs"></div>
-      <button class="btn-ghost" style="color:var(--red);font-size:0.78rem;" onclick="clearAllEtlLogs('pdfs')">Apagar tudo</button>
-    </div>
-    <div class="table-wrapper">
-      <table>
-        <thead>
-          <tr id="etl-logs-pdfs-thead-row">
-            <th>A carregar colunas...</th>
-          </tr>
-        </thead>
-        <tbody id="table-body-etl-logs-pdfs">
-          <tr><td colspan="7"><div class="state-box"><p>A carregar dados...</p></div></td></tr>
-        </tbody>
-      </table>
-    </div>
-  </div>
-
-  <!-- Secção Mapeamentos -->
-  <div id="etl-section-mapeamentos" style="display:none;">
-    <div class="form-card" style="margin-bottom:1.5rem;">
+    <div class="map-section-title">Mapeamento Manual</div>
+    <div class="form-card" style="margin-bottom:1rem;">
       <div class="form-grid" style="grid-template-columns:1fr 1fr auto;align-items:end;gap:0.75rem;">
         <div class="form-group" style="margin:0;">
           <label>source code</label>
@@ -1839,20 +1878,50 @@
         </div>
         <button class="btn-primary" onclick="saveFunctionMapping()" style="white-space:nowrap;">Guardar</button>
       </div>
+      <div class="form-group" style="margin-top:0.75rem;margin-bottom:0;">
+        <label>hint para gerador AI <span style="color:var(--text-muted);font-weight:400;">(opcional — descreve a estrutura do ficheiro para ajudar o gerador automático)</span></label>
+        <textarea id="map-generation_hint" rows="2" style="width:100%;resize:vertical;font-family:var(--mono);font-size:0.8rem;" placeholder="Ex: Excel com 5 linhas de metadados antes do cabeçalho real; coluna ISO3Code = país; coluna NRI Score = valor; ano fixo 2025"></textarea>
+      </div>
     </div>
-    <div class="table-wrapper">
+    <div class="table-wrapper" style="margin-bottom:2.5rem;">
       <table>
         <thead>
           <tr>
             <th>Source Code</th>
             <th>Função</th>
+            <th>Hint AI</th>
             <th style="width:60px;"></th>
           </tr>
         </thead>
-        <tbody id="table-body-mapeamentos">
+        <tbody id="table-body-mapeamentos-manual">
+          <tr><td colspan="4"><div class="state-box"><p>A carregar...</p></div></td></tr>
+        </tbody>
+      </table>
+    </div>
+
+    <div class="map-section-title">Mapeamento AI</div>
+    <div class="table-wrapper">
+      <table>
+        <thead>
+          <tr>
+            <th>Source Code</th>
+            <th>Função gerada</th>
+            <th style="width:60px;"></th>
+          </tr>
+        </thead>
+        <tbody id="table-body-mapeamentos-ai">
           <tr><td colspan="3"><div class="state-box"><p>A carregar...</p></div></td></tr>
         </tbody>
       </table>
+    </div>
+  </div>
+
+  <!-- ── Secção: Ferramentas ── -->
+  <div style="border-top:1px solid var(--border);padding-top:1.5rem;">
+    <div style="font-family:var(--mono);font-size:0.65rem;color:var(--text-muted);letter-spacing:0.14em;text-transform:uppercase;margin-bottom:1rem;">Ferramentas</div>
+    <div style="display:flex;gap:0.8rem;">
+      <button class="btn-ghost" id="btn-rebuild-thumbs" onclick="rebuildThumbnails()" title="Gera thumbnails em falta para PDFs já no MinIO">Thumbnails</button>
+      <button class="btn-ghost" id="btn-reset-pipeline" onclick="resetPipeline()" title="Apaga todos os dados do pipeline — MinIO, warehouse e logs" style="color:var(--red);border-color:var(--red);opacity:0.7;">Reset Pipeline</button>
     </div>
   </div>
 
@@ -2097,12 +2166,6 @@
         <label>nome do ficheiro</label>
         <input type="text" id="data-edit-file_name" placeholder="nome_ficheiro.json"/>
       </div>
-      <div class="form-group">
-        <label>extract_function</label>
-        <select id="data-edit-extract_function">
-          <option value="">— Nenhuma —</option>
-        </select>
-      </div>
     </div>
     <div class="etl-modal-footer">
       <button class="btn-ghost" onclick="closeDataEditModal()">Cancelar</button>
@@ -2131,12 +2194,6 @@
       <div class="form-group" id="etl-edit-file_url-group">
         <label>file_url</label>
         <input type="text" id="etl-edit-file_url" placeholder="https://..."/>
-      </div>
-      <div class="form-group">
-        <label>extract_function</label>
-        <select id="etl-edit-extract_function">
-          <option value="">— Nenhuma —</option>
-        </select>
       </div>
     </div>
     <div class="etl-modal-footer">
@@ -2382,6 +2439,7 @@
     if (name === 'etl') {
       const activeEtlTab = document.getElementById('etog-dados').classList.contains('active') ? 'dados' : 'pdfs';
       loadEtlLogsTable(activeEtlTab);
+      loadMappings();
     }
   }
 
@@ -2519,18 +2577,24 @@
   }
 
   // ── FORM: OP_DATA ──
+  let _autoGenerate = true;
+
+  function setAutoGenerate(val) {
+    _autoGenerate = val;
+    for (const id of ['dtog-ai', 'dtog-ai-batch']) {
+      const btn = document.getElementById(id);
+      if (!btn) continue;
+      btn.classList.toggle('active', val);
+      btn.title = val ? 'AI ativa — clica para desativar' : 'AI desativada — clica para ativar';
+    }
+  }
+
   async function loadExtractFunctions() {
     try {
       const res = await fetch(`${API_BASE}/extract_functions`);
       if (!res.ok) return;
       const fns = await res.json();
-      // Single-select (URL mode)
-      const elSingle = document.getElementById('d-extract_function');
-      if (elSingle) {
-        elSingle.innerHTML = '<option value="">— Seleciona —</option>' +
-          fns.map(f => `<option value="${f.name}">${f.name}</option>`).join('');
-      }
-      // Checkbox dropdown (upload mode)
+      // Preencher dropdown de mapeamentos manuais (Painel de Controlo)
       const menuEl = document.getElementById('fn-dropdown-menu');
       if (menuEl) {
         menuEl.innerHTML = fns.map(f => `
@@ -2737,35 +2801,6 @@
     updateUploadPreview();
   }
 
-  async function submitOpData() {
-    const report_id        = document.getElementById('d-report_id').value;
-    const file_url         = document.getElementById('d-file_url').value.trim();
-    const extract_function = document.getElementById('d-extract_function').value;
-
-    if (!report_id) {
-      showToast('O campo report_id é obrigatório.', 'error'); return;
-    }
-
-    const btn = document.getElementById('btn-add-data');
-    btn.disabled = true; btn.textContent = 'A inserir...';
-    _showLeftIndicator('A armazenar dados');
-    try {
-      const res = await fetch(ENDPOINT_OP_DATA, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ report_id: parseInt(report_id), file_url, extract_function })
-      });
-      if (!res.ok) {
-        const err = await res.json().catch(() => ({ detail: `HTTP ${res.status}` }));
-        throw new Error(err.detail || `HTTP ${res.status}`);
-      }
-      _hideLeftIndicator();
-      showToast('Dados Armazenados');
-      _watchDadosPipeline();
-      clearDataForm();
-    } catch (e) { _hideLeftIndicator(); showToast(e.message, 'error'); }
-    finally { btn.disabled = false; btn.textContent = 'Adicionar Ficheiro'; }
-  }
 
   // ── TABELAS ──
   async function loadTable(type) {
@@ -2866,7 +2901,6 @@
           <td><span class="badge">${escHtml(r.source_code || '—')}</span></td>
           <td class="td-wide">${escHtml(r.file_name || '—')}</td>
           <td class="url-cell">${url}</td>
-          <td>${escHtml(r.extract_function || '—')}</td>
           <td style="white-space:nowrap;">${createdAt}</td>
         </tr>`;
       }).join('');
@@ -3863,22 +3897,21 @@
 
   // ── ETL ──
   function switchEtlLog(tipo) {
-    const isMaps = tipo === 'mapeamentos';
-    const isRel  = tipo === 'relatorios';
-    document.getElementById('etl-section-pdfs').style.display        = isRel  ? '' : 'none';
-    document.getElementById('etl-section-dados').style.display       = (!isRel && !isMaps) ? '' : 'none';
-    document.getElementById('etl-section-mapeamentos').style.display = isMaps ? '' : 'none';
+    const isRel = tipo === 'relatorios';
+    document.getElementById('etl-section-pdfs').style.display  = isRel ? '' : 'none';
+    document.getElementById('etl-section-dados').style.display = isRel ? 'none' : '';
     document.getElementById('etog-relatorios').classList.toggle('active', isRel);
-    document.getElementById('etog-dados').classList.toggle('active', !isRel && !isMaps);
-    document.getElementById('etog-mapeamentos').classList.toggle('active', isMaps);
-    if (isMaps) loadMappings();
-    else loadEtlLogsTable(isRel ? 'pdfs' : 'dados');
+    document.getElementById('etog-dados').classList.toggle('active', !isRel);
+    loadEtlLogsTable(isRel ? 'pdfs' : 'dados');
   }
 
   // ── MAPEAMENTOS ──
   async function loadMappings() {
-    const tbody = document.getElementById('table-body-mapeamentos');
-    tbody.innerHTML = '<tr><td colspan="3"><div class="state-box"><div class="spinner"></div><p>A carregar...</p></div></td></tr>';
+    const tbodyManual = document.getElementById('table-body-mapeamentos-manual');
+    const tbodyAi     = document.getElementById('table-body-mapeamentos-ai');
+    const loading = '<tr><td colspan="4"><div class="state-box"><div class="spinner"></div><p>A carregar...</p></div></td></tr>';
+    tbodyManual.innerHTML = loading;
+    tbodyAi.innerHTML     = loading;
     try {
       const [mapsRes, fnsRes, srcsRes] = await Promise.all([
         fetch(`${API_BASE}/function_mappings`),
@@ -3889,7 +3922,7 @@
       const fns  = await fnsRes.json();
       const srcs = await srcsRes.json();
 
-      // Preencher dropdowns do formulário
+      // Preencher dropdowns do formulário manual
       const srcSel = document.getElementById('map-source_code');
       const fnSel  = document.getElementById('map-extract_function');
       srcSel.innerHTML = '<option value="">— Seleciona —</option>' +
@@ -3897,29 +3930,47 @@
       fnSel.innerHTML = '<option value="">— Seleciona —</option>' +
         fns.map(f => `<option value="${escHtml(f.name)}">${escHtml(f.name)}</option>`).join('');
 
-      // Preencher selects com valor atual do mapeamento existente
-      const mapped = Object.fromEntries(maps.map(m => [m.source_code, m.extract_function]));
-      if (maps.length === 0) {
-        tbody.innerHTML = '<tr><td colspan="3"><div class="state-box"><p>Sem mapeamentos definidos.</p></div></td></tr>';
-        return;
-      }
-      tbody.innerHTML = maps.map(m => `
-        <tr>
-          <td><span class="badge">${escHtml(m.source_code)}</span></td>
-          <td style="font-family:var(--mono);font-size:0.8rem;">${escHtml(m.extract_function)}</td>
-          <td style="text-align:center;">
-            <button class="btn-ghost" style="font-size:0.72rem;padding:0.15rem 0.45rem;color:var(--red);border-color:var(--red);"
-              onclick="deleteFunctionMapping('${escHtml(m.source_code)}', this)">Apagar</button>
-          </td>
-        </tr>`).join('');
+      // Tabela manual
+      const manualRows = maps.filter(m => m.extract_function);
+      tbodyManual.innerHTML = manualRows.length === 0
+        ? '<tr><td colspan="4"><div class="state-box"><p>Sem mapeamentos manuais.</p></div></td></tr>'
+        : manualRows.map(m => `
+          <tr>
+            <td><span class="badge">${escHtml(m.source_code)}</span></td>
+            <td style="font-family:var(--mono);font-size:0.8rem;">${escHtml(m.extract_function)}</td>
+            <td style="font-size:0.78rem;color:var(--text-muted);max-width:280px;white-space:pre-wrap;word-break:break-word;">
+              ${m.generation_hint ? `<span title="${escHtml(m.generation_hint)}">${escHtml(m.generation_hint.length > 80 ? m.generation_hint.slice(0, 80) + '…' : m.generation_hint)}</span>
+              <button class="btn-ghost" style="font-size:0.68rem;padding:0.1rem 0.35rem;margin-left:0.4rem;" onclick="editHint('${escHtml(m.source_code)}', this)">Editar</button>` : `<button class="btn-ghost" style="font-size:0.68rem;padding:0.1rem 0.35rem;" onclick="editHint('${escHtml(m.source_code)}', this)">+ Hint</button>`}
+            </td>
+            <td style="text-align:center;">
+              <button class="btn-ghost" style="font-size:0.72rem;padding:0.15rem 0.45rem;color:var(--red);border-color:var(--red);"
+                onclick="deleteFunctionMapping('${escHtml(m.source_code)}', this)">Apagar</button>
+            </td>
+          </tr>`).join('');
+
+      // Tabela AI
+      const aiRows = maps.filter(m => m.ai_extract_function);
+      tbodyAi.innerHTML = aiRows.length === 0
+        ? '<tr><td colspan="3"><div class="state-box"><p>Sem mapeamentos AI gerados.</p></div></td></tr>'
+        : aiRows.map(m => `
+          <tr>
+            <td><span class="badge">${escHtml(m.source_code)}</span></td>
+            <td style="font-family:var(--mono);font-size:0.8rem;">${escHtml(m.ai_extract_function)}</td>
+            <td style="text-align:center;">
+              <button class="btn-ghost" style="font-size:0.72rem;padding:0.15rem 0.45rem;color:var(--red);border-color:var(--red);"
+                onclick="deleteAiMapping('${escHtml(m.source_code)}', this)" title="Apagar mapeamento AI (a AI irá regenerar na próxima execução)">Apagar</button>
+            </td>
+          </tr>`).join('');
     } catch (e) {
-      tbody.innerHTML = `<tr><td colspan="3"><div class="state-box"><p>Erro: ${escHtml(e.message)}</p></div></td></tr>`;
+      tbodyManual.innerHTML = `<tr><td colspan="3"><div class="state-box"><p>Erro: ${escHtml(e.message)}</p></div></td></tr>`;
+      tbodyAi.innerHTML = '';
     }
   }
 
   async function saveFunctionMapping() {
-    const source_code      = document.getElementById('map-source_code').value;
-    const extract_function = document.getElementById('map-extract_function').value;
+    const source_code       = document.getElementById('map-source_code').value;
+    const extract_function  = document.getElementById('map-extract_function').value;
+    const generation_hint   = document.getElementById('map-generation_hint').value.trim() || null;
     if (!source_code || !extract_function) {
       showToast('Seleciona um source code e uma função.', 'error'); return;
     }
@@ -3927,25 +3978,60 @@
       const res = await fetch(`${API_BASE}/function_mappings`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ source_code, extract_function }),
+        body: JSON.stringify({ source_code, extract_function, generation_hint }),
       });
       if (!res.ok) throw new Error((await res.json()).detail || `HTTP ${res.status}`);
       showToast(`Mapeamento '${source_code}' → '${extract_function}' guardado.`);
       document.getElementById('map-source_code').value = '';
       document.getElementById('map-extract_function').value = '';
+      document.getElementById('map-generation_hint').value = '';
       loadMappings();
     } catch (e) {
       showToast(e.message, 'error');
     }
   }
 
+  async function editHint(source_code, btn) {
+    const current = btn.closest('td').querySelector('span')?.title || '';
+    const novo = prompt(`Hint AI para '${source_code}':\n(Descreve a estrutura do ficheiro para o gerador automático)`, current);
+    if (novo === null) return;
+    btn.disabled = true;
+    try {
+      const res = await fetch(`${API_BASE}/function_mappings/${encodeURIComponent(source_code)}/hint`, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ generation_hint: novo.trim() || null }),
+      });
+      if (!res.ok) throw new Error((await res.json()).detail || `HTTP ${res.status}`);
+      showToast(`Hint para '${source_code}' atualizado.`);
+      loadMappings();
+    } catch (e) {
+      showToast(e.message, 'error');
+      btn.disabled = false;
+    }
+  }
+
   async function deleteFunctionMapping(source_code, btn) {
-    if (!confirm(`Apagar mapeamento para '${source_code}'?`)) return;
+    if (!confirm(`Apagar mapeamento manual para '${source_code}'?`)) return;
     btn.disabled = true;
     try {
       const res = await fetch(`${API_BASE}/function_mappings/${encodeURIComponent(source_code)}`, { method: 'DELETE' });
       if (!res.ok) throw new Error((await res.json()).detail || `HTTP ${res.status}`);
-      showToast(`Mapeamento '${source_code}' apagado.`);
+      showToast(`Mapeamento manual '${source_code}' apagado.`);
+      loadMappings();
+    } catch (e) {
+      showToast(e.message, 'error');
+      btn.disabled = false;
+    }
+  }
+
+  async function deleteAiMapping(source_code, btn) {
+    if (!confirm(`Apagar mapeamento AI para '${source_code}'?\nA AI irá regenerar a função na próxima execução.`)) return;
+    btn.disabled = true;
+    try {
+      const res = await fetch(`${API_BASE}/function_mappings/${encodeURIComponent(source_code)}/ai`, { method: 'DELETE' });
+      if (!res.ok) throw new Error((await res.json()).detail || `HTTP ${res.status}`);
+      showToast(`Mapeamento AI '${source_code}' apagado.`);
       loadMappings();
     } catch (e) {
       showToast(e.message, 'error');
@@ -3954,28 +4040,8 @@
   }
 
 
-  let _etlEditFnsLoaded = false;
-  async function _loadEtlEditFunctions() {
-    if (_etlEditFnsLoaded) return;
-    try {
-      const res = await fetch(`${API_BASE}/extract_functions`);
-      if (!res.ok) return;
-      const fns = await res.json();
-      ['etl-edit-extract_function', 'data-edit-extract_function'].forEach(selId => {
-        const sel = document.getElementById(selId);
-        if (!sel) return;
-        fns.forEach(f => {
-          const opt = document.createElement('option');
-          opt.value = f.name; opt.textContent = f.name;
-          sel.appendChild(opt);
-        });
-      });
-      _etlEditFnsLoaded = true;
-    } catch (_) {}
-  }
 
   async function openEtlEditModal(fileId) {
-    await _loadEtlEditFunctions();
     try {
       const res = await fetch(`${API_BASE}/op_data/${fileId}`);
       if (!res.ok) throw new Error(`HTTP ${res.status}`);
@@ -3984,7 +4050,6 @@
       document.getElementById('etl-edit-file_name').value        = row.file_name ?? '';
       document.getElementById('etl-edit-report_name').value      = row.report_name ? `${row.report_name} (${row.source_code || row.report_id})` : (row.report_id ?? '—');
       document.getElementById('etl-edit-file_url').value         = row.file_url  ?? '';
-      document.getElementById('etl-edit-extract_function').value = row.extract_function ?? '';
       document.getElementById('etl-edit-file_url-group').style.display = row.file_url ? '' : 'none';
     } catch (e) {
       showToast(`Erro ao carregar ficheiro: ${escHtml(e.message)}`, 'error');
@@ -4020,14 +4085,12 @@
   }
 
   async function openDataEditModal(fileId) {
-    await _loadEtlEditFunctions();
     try {
       const res = await fetch(`${API_BASE}/op_data/${fileId}`);
       if (!res.ok) throw new Error(`HTTP ${res.status}`);
       const row = await res.json();
-      document.getElementById('data-edit-file_id').value          = row.file_id;
-      document.getElementById('data-edit-file_name').value        = row.file_name ?? '';
-      document.getElementById('data-edit-extract_function').value = row.extract_function ?? '';
+      document.getElementById('data-edit-file_id').value   = row.file_id;
+      document.getElementById('data-edit-file_name').value = row.file_name ?? '';
     } catch (e) {
       showToast(`Erro ao carregar ficheiro: ${escHtml(e.message)}`, 'error');
       return;
@@ -4047,8 +4110,7 @@
     btn.disabled = true; btn.textContent = 'A guardar...';
     try {
       const payload = {
-        file_name:        document.getElementById('data-edit-file_name').value.trim() || null,
-        extract_function: document.getElementById('data-edit-extract_function').value || null,
+        file_name: document.getElementById('data-edit-file_name').value.trim() || null,
       };
       const res = await fetch(`${API_BASE}/op_data/${fileId}/edit`, {
         method: 'PATCH',
@@ -4088,9 +4150,8 @@
     btn.disabled = true; btn.textContent = 'A guardar...';
     try {
       const payload = {
-        file_url:         document.getElementById('etl-edit-file_url').value.trim()  || null,
-        file_name:        document.getElementById('etl-edit-file_name').value.trim() || null,
-        extract_function: document.getElementById('etl-edit-extract_function').value || null,
+        file_url:  document.getElementById('etl-edit-file_url').value.trim()  || null,
+        file_name: document.getElementById('etl-edit-file_name').value.trim() || null,
       };
       const res = await fetch(`${API_BASE}/op_data/${fileId}`, {
         method: 'PATCH',
@@ -4562,7 +4623,7 @@
       const res = await fetch(ENDPOINT_OP_DATA, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ report_id: parseInt(report_id), file_url, file_name })
+        body: JSON.stringify({ report_id: parseInt(report_id), file_url, file_name, auto_generate: _autoGenerate })
       });
       if (!res.ok) {
         const err = await res.json().catch(() => ({ detail: `HTTP ${res.status}` }));
@@ -4867,6 +4928,7 @@
         const fd = new FormData();
         fd.append('file', file);
         fd.append('report_id', reportId);
+        fd.append('auto_generate', _autoGenerate);
         const res = await fetch(`${API_BASE}/op_data/upload`, { method: 'POST', body: fd });
         if (!res.ok) throw new Error((await res.json()).detail || `HTTP ${res.status}`);
       }
@@ -4890,13 +4952,15 @@
       parsed = JSON.parse(sanitizeJson(raw));
       if (!Array.isArray(parsed)) throw new Error('O JSON deve ser um array.');
       for (let i = 0; i < parsed.length; i++) {
-        if (!parsed[i].link) throw new Error(`Item ${i + 1}: campo "link" é obrigatório.`);
+        const url = typeof parsed[i] === 'string' ? parsed[i] : parsed[i].link;
+        if (!url) throw new Error(`Item ${i + 1}: URL em falta (string ou objeto com "link").`);
       }
     } catch (e) { showToast(`JSON inválido: ${e.message}`, 'error'); return; }
 
     const payload = parsed.map(item => ({
       report_id: parseInt(reportId),
-      file_url: item.link,
+      file_url: typeof item === 'string' ? item : item.link,
+      auto_generate: _autoGenerate,
     }));
 
     const btn = document.getElementById('btn-dbatch');
