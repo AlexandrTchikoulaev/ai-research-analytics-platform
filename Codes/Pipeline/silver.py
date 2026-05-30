@@ -1,75 +1,153 @@
+import csv
 import json
 import io
 import os
 import pandas as pd
 import boto3
 import psycopg2
+from botocore.exceptions import ClientError
+from concurrent.futures import ThreadPoolExecutor, as_completed
 
 from silver_functions import EXTRACT_FUNCTIONS, clean_dataframe
 from silver_function_generator import generate_and_validate, save_to_auto_store
+from config import DB_CONFIG, MINIO_CONFIG, BUCKET_RAW
 
-DB_CONFIG = {
-    "host": "localhost", "port": 5433, "dbname": "gestao_db",
-    "user": "projeto_utilizador", "password": "projeto",
-}
-
-MINIO_CONFIG = {
-    "endpoint_url": "http://localhost:9002",
-    "aws_access_key_id": "admin",
-    "aws_secret_access_key": "admin123",
-}
-
-BUCKET_RAW    = "bronze"
 BUCKET_SILVER = "silver"
 
+MAX_WORKERS = 8
 
 _FALLBACK_LOG = os.path.join(os.path.dirname(os.path.abspath(__file__)), "silver_errors_fallback.log")
 
+
 def _log_error(cur, conn, file_id, step: str, message: str):
-    """Regista um erro em etl_logs_dados na conexão principal."""
-    fid_str = str(file_id) if file_id is not None else None
     try:
         cur.execute(
             "INSERT INTO etl_logs_dados (file_id, step, error_message) VALUES (%s, %s, %s)",
-            (fid_str, step, message),
+            (file_id, step, message),
         )
     except Exception as log_exc:
-        print(f"[ERRO-LOG] file_id={fid_str} step={step}: {message}")
+        print(f"[ERRO-LOG] file_id={file_id} step={step}: {message}")
         print(f"[ERRO-LOG] Falha ao registar em etl_logs: {log_exc}")
         try:
             from datetime import datetime as _dt
             with open(_FALLBACK_LOG, "a", encoding="utf-8") as _f:
-                _f.write(f"{_dt.now().isoformat()} | file_id={fid_str} step={step}: {message}\n")
+                _f.write(f"{_dt.now().isoformat()} | file_id={file_id} step={step}: {message}\n")
                 _f.write(f"  DB error: {log_exc}\n")
         except Exception:
             pass
 
 
-def detect_format(content: bytes) -> str:
-    snippet = content[:20].lstrip()
-    if snippet.startswith(b"PK"):
+def _detect_format_from_content(content: bytes) -> str:
+    """Fallback de deteção por conteúdo — usado quando o metadata Bronze não tem formato."""
+    if content[:4] == b"PK\x03\x04":
+        return "zip"
+    if content[:4] == b"\xD0\xCF\x11\xE0":
         return "excel"
-    if snippet.startswith(b"\xd0\xcf"):
-        return "excel"
-    if snippet.startswith(b"<?xml") or snippet.startswith(b"<"):
-        return "xml"
-    if snippet.startswith(b"{") or snippet.startswith(b"["):
-        return "json"
-    return "csv"
+    try:
+        snippet = content[:512].decode("utf-8", errors="strict").lstrip()
+        if snippet.startswith(("{", "[")):
+            return "json"
+        if snippet.startswith("<"):
+            return "xml"
+        if "\n" in snippet:
+            try:
+                csv.Sniffer().sniff(snippet, delimiters=",;\t|")
+                return "csv"
+            except csv.Error:
+                pass
+    except UnicodeDecodeError:
+        pass
+    return "unknown"
 
 
 def read_raw_object(s3, key: str):
     response = s3.get_object(Bucket=BUCKET_RAW, Key=key)
     content  = response["Body"].read()
-    fmt = detect_format(content)
+
+    # Usa o formato guardado no metadata pelo bronze; só re-deteta se em falta
+    fmt = response.get("Metadata", {}).get("format", "unknown")
+    if not fmt or fmt == "unknown":
+        fmt = _detect_format_from_content(content)
+
     if fmt == "json":
         return json.loads(content)
     elif fmt == "csv":
         return pd.read_csv(io.BytesIO(content))
-    elif fmt == "excel":
-        return io.BytesIO(content)
+    elif fmt in ("excel", "zip"):
+        return pd.read_excel(io.BytesIO(content))
+    elif fmt == "xml":
+        try:
+            return pd.read_xml(io.BytesIO(content))
+        except Exception as xml_err:
+            raise ValueError(
+                f"Formato 'xml' não pôde ser lido automaticamente: {xml_err}. "
+                "Configure uma função de transformação manual no Painel de Controlo."
+            )
     else:
-        return json.loads(content)
+        raise ValueError(f"Formato '{fmt}' não suportado nas funções de transformação silver.")
+
+
+def _transform_one(file_id: int, report_id, fn_name: str, fn_source: str) -> tuple:
+    """Executa a transformação de um ficheiro num thread dedicado."""
+    conn = psycopg2.connect(**DB_CONFIG)
+    cur = conn.cursor()
+    s3 = boto3.client("s3", **MINIO_CONFIG)
+    key = str(file_id)
+
+    try:
+        data = read_raw_object(s3, key)
+        df   = EXTRACT_FUNCTIONS[fn_name](data)
+
+        if df is None or df.empty:
+            raise ValueError("DataFrame vazio após transformação")
+
+        df = clean_dataframe(df)
+
+        if df is None or df.empty:
+            raise ValueError("DataFrame vazio após clean_dataframe")
+
+        buffer = io.BytesIO()
+        df.to_parquet(buffer, index=False)
+        parquet_bytes = buffer.getvalue()
+
+        if not parquet_bytes:
+            raise ValueError("Parquet gerado está vazio (0 bytes)")
+
+        s3.put_object(
+            Bucket=BUCKET_SILVER,
+            Key=f"{key}.parquet",
+            Body=parquet_bytes,
+            Metadata={
+                "report_id": str(report_id) if report_id is not None else "",
+            },
+        )
+
+        cur.execute(
+            "UPDATE op_data SET pipeline_status = 'SILVER_OK', "
+            "transform_fn_name = %s, transform_fn_source = %s WHERE file_id = %s",
+            (fn_name, fn_source, file_id)
+        )
+        conn.commit()
+        print(f"[OK]   {key} -> {key}.parquet")
+        return True, None
+
+    except Exception as e:
+        err_msg = str(e)
+        try:
+            cur.execute(
+                "UPDATE op_data SET pipeline_status = 'FAILED', pipeline_error = %s WHERE file_id = %s",
+                (err_msg, file_id)
+            )
+            _log_error(cur, conn, file_id, "transform", err_msg)
+            conn.commit()
+        except Exception:
+            pass
+        print(f"[ERRO] {key}: {e}")
+        return False, err_msg
+
+    finally:
+        cur.close()
+        conn.close()
 
 
 def transformar():
@@ -79,8 +157,11 @@ def transformar():
 
     try:
         s3.head_bucket(Bucket=BUCKET_SILVER)
-    except Exception:
-        s3.create_bucket(Bucket=BUCKET_SILVER)
+    except ClientError as e:
+        if e.response["Error"]["Code"] in ("404", "NoSuchBucket"):
+            s3.create_bucket(Bucket=BUCKET_SILVER)
+        else:
+            raise
 
     cur.execute("""
         SELECT d.file_id, d.report_id, r.source_code, d.auto_generate
@@ -98,7 +179,6 @@ def transformar():
         return
 
     file_ids = [r[0] for r in rows]
-
     cur.execute(
         "UPDATE op_data SET pipeline_status = 'PROCESSING' WHERE file_id = ANY(%s)",
         (file_ids,)
@@ -115,14 +195,18 @@ def transformar():
         if r[2]: ai_mapping[r[0]]     = r[2]
         if r[3]: hint_mapping[r[0]]   = r[3]
 
-    ok_count  = 0
     err_count = 0
+
+    # --- Fase 1: Resolução de funções (sequencial) ---
+    # Inclui geração AI e validação de mapeamentos.
+    # Todos os writes a EXTRACT_FUNCTIONS e ai_mapping acontecem aqui,
+    # antes do pool de threads — sem necessidade de locks.
+    ready_to_transform = []  # (file_id, report_id, fn_name, fn_source)
 
     for file_id, report_id, source_code, auto_generate in rows:
         key = str(file_id)
-
         extract_function = None
-        fn_source = None  # 'ai_gerada' | 'ai_cache' | 'manual'
+        fn_source = None
 
         if not auto_generate:
             # Modo manual: ignora AI
@@ -159,20 +243,39 @@ def transformar():
 
                 if gen["valid"]:
                     fn_name = gen["function_name"]
-                    save_to_auto_store(fn_name, gen["code"])
-                    ns = {"pd": pd}
-                    exec(compile(gen["code"], "<auto>", "exec"), ns)
-                    EXTRACT_FUNCTIONS[fn_name] = ns[fn_name]
-                    cur.execute("""
-                        INSERT INTO source_function_mapping (source_code, ai_extract_function)
-                        VALUES (%s, %s)
-                        ON CONFLICT (source_code) DO UPDATE SET ai_extract_function = EXCLUDED.ai_extract_function
-                    """, (source_code, fn_name))
-                    conn.commit()
-                    ai_mapping[source_code] = fn_name
-                    extract_function = fn_name
-                    fn_source = "ai_gerada"
-                    print(f"[AI] Função '{fn_name}' gerada e registada para '{source_code}'")
+                    try:
+                        save_to_auto_store(fn_name, gen["code"])
+                        ns = {"pd": pd}
+                        exec(compile(gen["code"], "<auto>", "exec"), ns)
+                        EXTRACT_FUNCTIONS[fn_name] = ns[fn_name]
+                        cur.execute("""
+                            INSERT INTO source_function_mapping (source_code, ai_extract_function)
+                            VALUES (%s, %s)
+                            ON CONFLICT (source_code) DO UPDATE SET ai_extract_function = EXCLUDED.ai_extract_function
+                        """, (source_code, fn_name))
+                        conn.commit()
+                        ai_mapping[source_code] = fn_name
+                        extract_function = fn_name
+                        fn_source = "ai_gerada"
+                        print(f"[AI] Função '{fn_name}' gerada e registada para '{source_code}'")
+                    except Exception as exec_err:
+                        print(f"[AI] Erro ao carregar função gerada '{fn_name}': {exec_err}. A tentar mapeamento manual.")
+                        extract_function = manual_mapping.get(source_code)
+                        if extract_function:
+                            fn_source = "manual"
+                        else:
+                            err_msg = (
+                                f"AI gerou função mas falhou ao carregá-la para '{source_code}': {exec_err}. "
+                                f"Configure um mapeamento manual no Painel de Controlo."
+                            )
+                            cur.execute(
+                                "UPDATE op_data SET pipeline_status = 'FAILED', pipeline_error = %s WHERE file_id = %s",
+                                (err_msg, file_id)
+                            )
+                            _log_error(cur, conn, file_id, "transform", err_msg)
+                            conn.commit()
+                            err_count += 1
+                            continue
                 else:
                     # AI falhou — cair no mapeamento manual
                     extract_function = manual_mapping.get(source_code)
@@ -207,57 +310,32 @@ def transformar():
             continue
 
         print(f"A transformar: {key} ({extract_function})")
-
-        try:
-            data = read_raw_object(s3, key)
-            df   = EXTRACT_FUNCTIONS[extract_function](data)
-
-            if df is None or df.empty:
-                raise ValueError("DataFrame vazio após transformação")
-
-            df = clean_dataframe(df)
-
-            if df is None or df.empty:
-                raise ValueError("DataFrame vazio após clean_dataframe")
-
-            buffer = io.BytesIO()
-            df.to_parquet(buffer, index=False)
-            parquet_bytes = buffer.getvalue()
-
-            if not parquet_bytes:
-                raise ValueError("Parquet gerado está vazio (0 bytes)")
-
-            s3.put_object(
-                Bucket=BUCKET_SILVER,
-                Key=f"{key}.parquet",
-                Body=parquet_bytes,
-                Metadata={
-                    "report_id": str(report_id) if report_id is not None else "",
-                },
-            )
-
-            cur.execute(
-                "UPDATE op_data SET pipeline_status = 'SILVER_OK', "
-                "transform_fn_name = %s, transform_fn_source = %s WHERE file_id = %s",
-                (extract_function, fn_source, file_id)
-            )
-            conn.commit()
-            print(f"[OK]   {key} -> {key}.parquet")
-            ok_count += 1
-
-        except Exception as e:
-            err_msg = str(e)
-            cur.execute(
-                "UPDATE op_data SET pipeline_status = 'FAILED', pipeline_error = %s WHERE file_id = %s",
-                (err_msg, file_id)
-            )
-            _log_error(cur, conn, file_id, "transform", err_msg)
-            conn.commit()
-            print(f"[ERRO] {key}: {e}")
-            err_count += 1
+        ready_to_transform.append((file_id, report_id, extract_function, fn_source))
 
     cur.close()
     conn.close()
+
+    # --- Fase 2: Transformação paralela ---
+    # EXTRACT_FUNCTIONS está completo neste ponto — leituras seguras nos threads.
+    ok_count = 0
+
+    with ThreadPoolExecutor(max_workers=MAX_WORKERS) as executor:
+        futures = {
+            executor.submit(_transform_one, file_id, report_id, fn_name, fn_source): file_id
+            for file_id, report_id, fn_name, fn_source in ready_to_transform
+        }
+        for future in as_completed(futures):
+            try:
+                success, _ = future.result()
+            except Exception as e:
+                file_id = futures[future]
+                print(f"[ERRO] file_id={file_id} exceção não tratada: {e}")
+                success = False
+            if success:
+                ok_count += 1
+            else:
+                err_count += 1
+
     print(f"transform concluído — {ok_count} OK, {err_count} erros")
 
 

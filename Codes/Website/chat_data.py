@@ -3,11 +3,11 @@ SQL Chatbot — Data Warehouse (tabular data).
 
 Routing tiers:
   meta:<sub>          → Python puro (SQL fixo, 0 LLM)
-  simple              → Ollama + template + fuzzy hint (1 país, 1 indicador, 1 ano)
-  simple_inferred     → Ollama + template, ano = MAX(year) da BD
-  existence           → Ollama + template de contagem
+  simple              → LLM + template + fuzzy hint (1 país, 1 indicador, 1 ano)
+  simple_inferred     → LLM + template, ano = MAX(year) da BD
+  existence           → LLM + template de contagem
   existence_inferred  → idem, ano inferido
-  complex / uncertain → Ollama + prompt de schema completo
+  complex / uncertain → LLM + prompt de schema completo
 """
 
 import re
@@ -16,7 +16,6 @@ import warnings
 
 import psycopg2
 import psycopg2.pool
-from langchain_community.llms.ollama import Ollama
 from langchain_core.prompts import PromptTemplate
 from rapidfuzz import process, fuzz
 
@@ -31,16 +30,44 @@ _DB_CONFIG = {
     "password": "projeto",
 }
 
-_OLLAMA_MODEL    = "mistral:latest"
+_DB_SETTINGS = {
+    "host":     "localhost",
+    "port":     5433,
+    "dbname":   "gestao_db",
+    "user":     "projeto_utilizador",
+    "password": "projeto",
+}
+
 _FUZZY_THRESHOLD = 72
 
-_ollama: Ollama | None = None
 
-def _get_ollama() -> Ollama:
-    global _ollama
-    if _ollama is None:
-        _ollama = Ollama(model=_OLLAMA_MODEL, temperature=0)
-    return _ollama
+def _get_setting(key: str, default: str) -> str:
+    try:
+        conn = psycopg2.connect(**_DB_SETTINGS)
+        try:
+            with conn.cursor() as cur:
+                cur.execute("SELECT value FROM pipeline_settings WHERE key = %s", (key,))
+                row = cur.fetchone()
+                return row[0] if row else default
+        finally:
+            conn.close()
+    except Exception:
+        return default
+
+
+def _get_llm():
+    provider = _get_setting("llm_provider", "ollama")
+    if provider == "google":
+        api_key = _get_setting("google_api_key", "")
+        from langchain_google_genai import ChatGoogleGenerativeAI
+        return ChatGoogleGenerativeAI(model="gemini-2.0-flash", google_api_key=api_key, temperature=0)
+    from langchain_community.llms.ollama import Ollama
+    return Ollama(model="mistral:latest", temperature=0)
+
+
+def _llm_invoke(prompt_str: str) -> str:
+    result = _get_llm().invoke(prompt_str)
+    return result.content if hasattr(result, "content") else str(result)
 
 
 # ── Connection pool ─────────────────────────────────────────────────────────
@@ -508,7 +535,7 @@ def _gen_sql(question: str, tier: str) -> str:
     is_ranking   = tmpl is _T_RANKING
     hint         = _indicator_hint(question)
     prompt       = PromptTemplate.from_template(tmpl)
-    response     = _get_ollama().invoke(prompt.format(question=q, indicator_hint=hint))
+    response     = _llm_invoke(prompt.format(question=q, indicator_hint=hint))
     sql          = _extract_sql(response)
 
     try:

@@ -1,6 +1,10 @@
 import re as _re
 import pandas as pd
 
+# Anos hardcoded para datasets sem coluna de ano
+_NRI_YEAR      = 2025
+_HERITAGE_YEAR = 2026
+
 
 def imf(data):
     indicators = data.get("indicators", {})
@@ -17,7 +21,8 @@ def imf(data):
         for indicator_code, countries_data in values.items()
         if countries_data is not None
         for location_code, years_data in countries_data.items()
-        if years_data is not None
+        # Filtra agregados IMF (ex: ADVEC, EMEDE) — só mantém ISO3
+        if years_data is not None and len(location_code) == 3 and location_code.isalpha() and location_code.isupper()
         for year, value in years_data.items()
     ]
 
@@ -25,41 +30,58 @@ def imf(data):
 
 
 def hfi(data) -> pd.DataFrame:
-    df = data if isinstance(data, pd.DataFrame) else pd.read_excel(data)
-    df.columns = df.columns.str.lower().str.strip()
+    if not isinstance(data, pd.DataFrame):
+        data = pd.read_excel(data)
 
-    if "iso" not in df.columns:
-        # Caso 1: dois cabeçalhos — códigos de máquina na primeira linha de dados
-        new_cols = [str(v).lower().strip() for v in df.iloc[0]]
-        if "iso" in new_cols and "year" in new_cols:
-            df.columns = new_cols
-            df = df.iloc[1:].reset_index(drop=True)
-        # Caso 2: primeiras colunas sem cabeçalho (unnamed: 0 = year, unnamed: 1 = iso)
-        elif "human freedom" in df.columns:
-            unnamed = [c for c in df.columns if c.startswith("unnamed:")]
-            if len(unnamed) >= 2:
-                df = df.rename(columns={unnamed[0]: "year", unnamed[1]: "iso"})
-            if "human freedom" in df.columns:
-                df = df.rename(columns={"human freedom": "hf_score"})
+    df = data.copy()
+    all_cols = list(df.columns)
 
-    missing = [c for c in ["iso", "year", "hf_score"] if c not in df.columns]
-    if missing:
+    # Cols 0–3 são Unnamed: X (year, iso, country, region)
+    unnamed = [c for c in all_cols if str(c).startswith("Unnamed:")]
+    if len(unnamed) < 2:
         raise ValueError(
-            f"Colunas em falta: {missing} | "
-            f"Colunas disponíveis ({len(df.columns)}): {list(df.columns[:15])}"
+            f"Colunas de ano/país não encontradas. Presentes: {all_cols[:8]}"
         )
+    year_col = unnamed[0]
+    iso_col  = unnamed[1]
 
-    result = df[["iso", "year", "hf_score"]].copy()
-    result = result.rename(columns={"iso": "location_code", "hf_score": "value"})
-    result["indicator_code"] = "hf"
-    result["indicator_name"] = "Human Freedom"
-    result["year"]  = pd.to_numeric(result["year"],  errors="coerce").astype("Int64")
-    result["value"] = pd.to_numeric(result["value"], errors="coerce")
+    # Saltar colunas meta, raw-data, rank e quartile
+    skip = set(unnamed)
+    for c in all_cols:
+        s = str(c).strip()
+        if s.startswith("data") or "RANK" in s or "QUARTILE" in s or s == "Rank":
+            skip.add(c)
 
-    return (
-        result[["location_code", "indicator_code", "indicator_name", "year", "value"]]
-        .dropna(subset=["location_code", "year", "value"])
-    )
+    indicator_cols = [c for c in all_cols if c not in skip]
+    if not indicator_cols:
+        raise ValueError("Nenhuma coluna de indicador encontrada após filtragem.")
+
+    rows = []
+    for _, row in df.iterrows():
+        iso  = row[iso_col]
+        year = row[year_col]
+        if pd.isna(iso) or pd.isna(year):
+            continue
+        iso = str(iso).strip()
+        if len(iso) != 3 or not iso.isalpha() or not iso.isupper():
+            continue
+        for col in indicator_cols:
+            val = row[col]
+            if pd.isna(val):
+                continue
+            try:
+                ind_code = str(col).strip()
+                rows.append({
+                    "location_code": iso,
+                    "indicator_code": ind_code,
+                    "indicator_name": ind_code,
+                    "year": int(float(year)),
+                    "value": float(val),
+                })
+            except (ValueError, TypeError):
+                continue
+
+    return pd.DataFrame(rows).dropna(subset=["location_code", "indicator_code", "year", "value"])
 
 
 def nri(data) -> pd.DataFrame:
@@ -99,7 +121,7 @@ def nri(data) -> pd.DataFrame:
                     "location_code": str(loc),
                     "indicator_code": ind_code,
                     "indicator_name": ind_name,
-                    "year": 2025,
+                    "year": _NRI_YEAR,
                     "value": float(val),
                 })
             except (ValueError, TypeError):
@@ -145,7 +167,7 @@ def heritage(data) -> pd.DataFrame:
                     "location_code": iso3,
                     "indicator_code": col,
                     "indicator_name": col,
-                    "year": 2026,
+                    "year": _HERITAGE_YEAR,
                     "value": float(val),
                 })
             except (ValueError, TypeError):
@@ -246,8 +268,6 @@ def epi(data) -> pd.DataFrame:
     if not value_cols:
         raise ValueError(f"Nenhuma coluna INDICADOR.raw.ANO encontrada. Colunas: {list(df.columns[:10])}")
 
-    indicator_code = value_cols[0].split(".")[0].upper()
-
     iso_col = next((c for c in df.columns if c.lower() == "iso"), None)
     if iso_col is None:
         raise ValueError("Coluna 'iso' não encontrada.")
@@ -256,8 +276,8 @@ def epi(data) -> pd.DataFrame:
     melted["year"]           = melted["_col"].str.extract(r'(\d{4})$').astype(int)
     melted["value"]          = pd.to_numeric(melted["value"], errors="coerce")
     melted["location_code"]  = melted[iso_col]
-    melted["indicator_code"] = indicator_code
-    melted["indicator_name"] = indicator_code
+    melted["indicator_code"] = melted["_col"].str.split(".").str[0].str.upper()
+    melted["indicator_name"] = melted["indicator_code"]
 
     return (
         melted[["location_code", "indicator_code", "indicator_name", "year", "value"]]
@@ -318,6 +338,10 @@ EXTRACT_FUNCTIONS.update(_auto)
 # ══════════════════════════════════════════════════════════════
 
 def clean_dataframe(df: pd.DataFrame) -> pd.DataFrame:
+    _REQUIRED = ["location_code", "indicator_code", "indicator_name", "year", "value"]
+    missing = [c for c in _REQUIRED if c not in df.columns]
+    if missing:
+        raise ValueError(f"Colunas obrigatórias em falta: {missing}. Presentes: {list(df.columns)}")
     df = df.drop_duplicates()
     df = df.dropna(subset=["location_code", "indicator_code", "year", "value"])
     df["indicator_name"] = df["indicator_name"].fillna(df["indicator_code"])

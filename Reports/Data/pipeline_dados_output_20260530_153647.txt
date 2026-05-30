@@ -1,0 +1,51 @@
+ PIPELINE DE DADOS INICIADO
+ 2026-05-30 15:36:51
+==================================================
+ 1/6 — validate_opdata
+==================================================
+validate_opdata — 1 válidos, 0 inválidos
+[OK] 1/6 — validate_opdata concluído.
+==================================================
+ 2/6 — ingest_raw
+==================================================
+A correr bronze...
+[OK]   file_id=134  [upload direto]
+ingest_raw concluído — 1 OK, 0 erros
+[OK] 2/6 — ingest_raw concluído.
+==================================================
+ 3/6 — validate_bronze
+==================================================
+validate_bronze — 1 válidos, 0 inválidos
+[OK] 3/6 — validate_bronze concluído.
+==================================================
+ 4/6 — transform
+==================================================
+A transformar: 134 (fraser)
+[OK]   134 -> 134.parquet
+transform concluído — 1 OK, 0 erros
+[OK] 4/6 — transform concluído.
+==================================================
+ 5/6 — validate_silver
+==================================================
+validate_silver — 1 válidos, 0 inválidos
+[OK] 5/6 — validate_silver concluído.
+==================================================
+ 6/6 — load
+==================================================
+1. Source + Reports
+Source + Reports carregados
+2. A ler parquets e a recolher indicadores...
+3. Dimensões — a inserir indicadores em lote...
+4. Facts — a inserir em paralelo (4 workers)...
+  [OK]   134.parquet
+5. Views
+Views atualizadas
+ETL concluído — 1 OK, 0 erros
+[OK] 6/6 — load concluído.
+ PIPELINE DE DADOS CONCLUÍDO COM SUCESSO
+[AVISO] Não foi possível gerar o relatório: operator does not exist: integer = text
+LINE 9:                 WHERE d.file_id = ANY(ARRAY['134'])
+                                        ^
+HINT:  No operator matches the given name and argument types. You might need to add explicit type casts.
+[AVISO] Detalhe do erro guardado em: C:\Users\Alexandr\Desktop\Universidade\3º Ano\Projeto\Projeto-Final-Eu\Codes\Pipeline\pipeline_report_error.log
+✓ Concluído

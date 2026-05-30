@@ -8,10 +8,40 @@ Executa sequencialmente:
 """
 import sys
 import os
+import time
+import json
 import psycopg2
 from datetime import datetime
 
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
+
+_STEP_FILE = os.path.normpath(os.path.join(
+    os.path.dirname(os.path.abspath(__file__)),
+    "..", "..", "Reports", "PDFs", "meta", "pipeline_pdfs_status.json",
+))
+
+
+def _set_step(step: str):
+    try:
+        os.makedirs(os.path.dirname(_STEP_FILE), exist_ok=True)
+        with open(_STEP_FILE, "w", encoding="utf-8") as f:
+            json.dump({"step": step}, f)
+    except Exception:
+        pass
+
+
+def _try_report(run_start):
+    """Escreve/atualiza o relatório com estado 'A EXECUTAR...' — silencioso se falhar."""
+    try:
+        report_pipeline_pdfs.generate(run_start, None)
+    except Exception:
+        pass
+
+import bronze_validations as validate_op_report
+import bronze
+import silver_validations as validate_bronze_unstructured
+import silver
+import pipeline_reports_report as report_pipeline_pdfs
 
 DB_CONFIG = {
     "host": "localhost",
@@ -26,47 +56,64 @@ def run_step(label: str, fn):
     print(f"\n{'='*50}")
     print(f" {label}")
     print(f"{'='*50}")
+    t0 = time.monotonic()
     try:
         result = fn()
-        print(f"[OK] {label} concluído.")
+        elapsed = time.monotonic() - t0
+        print(f"[OK] {label} concluído em {elapsed:.1f}s.")
         return result
     except Exception as e:
-        print(f"[ERRO] {label} falhou: {e}")
+        elapsed = time.monotonic() - t0
+        print(f"[ERRO] {label} falhou após {elapsed:.1f}s: {e}")
         raise
 
 
 def run_pipeline():
-    import bronze_validations as validate_op_report
-    import bronze
-    import silver_validations as validate_bronze_unstructured
-    import silver
-    import pipeline_reports_report as report_pipeline_pdfs
-
     run_start = datetime.now()
+    success   = False
 
-    # Crash recovery: reset PROCESSING → PENDING (relatórios que ficaram a meio num crash anterior)
-    conn_reset = psycopg2.connect(**DB_CONFIG)
-    cur_reset  = conn_reset.cursor()
-    cur_reset.execute("UPDATE op_report SET pipeline_status = 'PENDING' WHERE pipeline_status = 'PROCESSING'")
-    conn_reset.commit()
-    cur_reset.close(); conn_reset.close()
-
-    print("\n PIPELINE DE PDFs INICIADO")
-    print(f" {run_start.strftime('%Y-%m-%d %H:%M:%S')}\n")
-
-    success = False
     try:
-        run_step("1/4 — validate_op_report",        validate_op_report.validate)
-        run_step("2/4 — bronze",                     bronze.main)
+        # Crash recovery: reset PROCESSING → PENDING (relatórios que ficaram a meio num crash anterior)
+        try:
+            conn_reset = psycopg2.connect(**DB_CONFIG)
+            try:
+                cur_reset = conn_reset.cursor()
+                cur_reset.execute(
+                    "UPDATE op_report SET pipeline_status = 'PENDING' WHERE pipeline_status = 'PROCESSING'"
+                )
+                conn_reset.commit()
+                cur_reset.close()
+            finally:
+                conn_reset.close()
+        except Exception as e:
+            print(f"[AVISO] Crash recovery falhou (Postgres em baixo?): {e}")
+
+        print("\n PIPELINE DE PDFs INICIADO")
+        print(f" {run_start.strftime('%Y-%m-%d %H:%M:%S')}\n")
+
+        report_pipeline_pdfs.write_initial(run_start)  # ficheiro criado imediatamente
+
+        _set_step("validate")
+        run_step("1/4 — validate_op_report",          validate_op_report.validate)
+
+        _set_step("bronze")
+        run_step("2/4 — bronze",                       bronze.main)
+        _try_report(run_start)  # relatório parcial após bronze (PDFs armazenados)
+
+        _set_step("validate_bronze")
         run_step("3/4 — validate_bronze_unstructured", validate_bronze_unstructured.validate)
-        run_step("4/4 — silver",                     silver.main)
+
+        _set_step("silver")
+        run_step("4/4 — silver",                       silver.main)
 
         success = True
-        print("\n PIPELINE DE PDFs CONCLUÍDO COM SUCESSO")
+        elapsed = (datetime.now() - run_start).total_seconds()
+        print(f"\n PIPELINE DE PDFs CONCLUÍDO COM SUCESSO (duração total: {elapsed:.1f}s)")
 
     finally:
+        _set_step("idle")
         try:
-            report_pipeline_pdfs.generate(run_start, success)
+            report_pipeline_pdfs.generate(run_start, success)  # relatório final
         except Exception as e:
             print(f"[AVISO] Não foi possível gerar o relatório: {e}")
 

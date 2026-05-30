@@ -1873,6 +1873,23 @@
     </div>
   </div>
 
+  <!-- ── Secção: Output das Pipelines ── -->
+  <div style="margin-bottom:3rem;">
+    <div style="display:flex;align-items:center;margin-bottom:1.2rem;padding-bottom:0.5rem;border-bottom:1px solid var(--border);">
+      <span style="font-family:var(--mono);font-size:0.65rem;color:var(--text-muted);letter-spacing:0.14em;text-transform:uppercase;">Output das Pipelines</span>
+    </div>
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:1rem;">
+      <div>
+        <div style="font-family:var(--mono);font-size:0.6rem;color:var(--text-muted);letter-spacing:0.12em;text-transform:uppercase;margin-bottom:0.4rem;">pipeline · dados</div>
+        <pre id="ctrl-log-output-dados" style="margin:0;padding:0.55rem 0.75rem;font-family:var(--mono);font-size:0.67rem;line-height:1.55;overflow-y:auto;height:210px;color:var(--text-secondary);white-space:pre-wrap;word-break:break-all;background:var(--surface2);border:1px solid var(--border);border-radius:4px;">Sem output — execute a pipeline de dados para ver o log.</pre>
+      </div>
+      <div>
+        <div style="font-family:var(--mono);font-size:0.6rem;color:var(--text-muted);letter-spacing:0.12em;text-transform:uppercase;margin-bottom:0.4rem;">pipeline · pdfs</div>
+        <pre id="ctrl-log-output-pdfs" style="margin:0;padding:0.55rem 0.75rem;font-family:var(--mono);font-size:0.67rem;line-height:1.55;overflow-y:auto;height:210px;color:var(--text-secondary);white-space:pre-wrap;word-break:break-all;background:var(--surface2);border:1px solid var(--border);border-radius:4px;">Sem output — execute a pipeline de PDFs para ver o log.</pre>
+      </div>
+    </div>
+  </div>
+
   <!-- ── Secção: Logs de Erros ── -->
   <div style="margin-bottom:3rem;">
     <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:1.2rem;padding-bottom:0.5rem;border-bottom:1px solid var(--border);">
@@ -1973,6 +1990,56 @@
           <tr><td colspan="5"><div class="state-box"><p>A carregar...</p></div></td></tr>
         </tbody>
       </table>
+    </div>
+  </div>
+
+  <!-- ── Secção: Configurações ── -->
+  <div style="margin-bottom:3rem;">
+    <div style="display:flex;align-items:center;margin-bottom:1.2rem;padding-bottom:0.5rem;border-bottom:1px solid var(--border);">
+      <span style="font-family:var(--mono);font-size:0.65rem;color:var(--text-muted);letter-spacing:0.14em;text-transform:uppercase;">Configurações</span>
+    </div>
+    <div class="form-card">
+      <div style="display:flex;align-items:center;justify-content:space-between;">
+        <div>
+          <div style="font-family:var(--mono);font-size:0.8rem;">Embeddings</div>
+          <div style="font-family:var(--mono);font-size:0.7rem;color:var(--text-muted);margin-top:0.25rem;">Fornecedor de embeddings usado pelo silver na pipeline de PDFs</div>
+        </div>
+        <div class="section-toggle sm" id="embed-provider-toggle">
+          <button id="embed-btn-ollama" onclick="setEmbeddingProvider('ollama')">Ollama (Local)</button>
+          <button id="embed-btn-google" onclick="setEmbeddingProvider('google')">Google (API)</button>
+        </div>
+      </div>
+    </div>
+    <div class="form-card">
+      <div style="display:flex;align-items:center;justify-content:space-between;">
+        <div>
+          <div style="font-family:var(--mono);font-size:0.8rem;">Geração de Respostas</div>
+          <div style="font-family:var(--mono);font-size:0.7rem;color:var(--text-muted);margin-top:0.25rem;">Modelo usado pelos chatbots para gerar respostas</div>
+        </div>
+        <div class="section-toggle sm" id="llm-provider-toggle">
+          <button id="llm-btn-ollama" onclick="setLlmProvider('ollama')">Ollama (Local)</button>
+          <button id="llm-btn-google" onclick="setLlmProvider('google')">Google (API)</button>
+        </div>
+      </div>
+    </div>
+    <div class="form-card">
+      <div style="display:flex;align-items:center;justify-content:space-between;">
+        <div>
+          <div style="font-family:var(--mono);font-size:0.8rem;">Geração de Funções</div>
+          <div style="font-family:var(--mono);font-size:0.7rem;color:var(--text-muted);margin-top:0.25rem;">Modelo usado para gerar funções de transformação na inserção de dados</div>
+        </div>
+        <div class="section-toggle sm" id="func-provider-toggle">
+          <button id="func-btn-ollama" onclick="setFunctionProvider('ollama')">Ollama (Local)</button>
+          <button id="func-btn-google" onclick="setFunctionProvider('google')">Google (API)</button>
+        </div>
+      </div>
+    </div>
+    <div class="form-card" id="google-api-key-card">
+      <div style="font-family:var(--mono);font-size:0.8rem;margin-bottom:0.75rem;">Google API Key</div>
+      <div style="display:flex;gap:0.5rem;align-items:center;">
+        <input type="password" id="google-api-key-input" style="flex:1;font-family:var(--mono);font-size:0.8rem;padding:0.4rem 0.6rem;background:var(--input-bg,var(--surface));border:1px solid var(--border);border-radius:4px;color:var(--text);" placeholder="AIza...">
+        <button class="btn-ghost" onclick="saveGoogleApiKey()">Guardar</button>
+      </div>
     </div>
   </div>
 
@@ -2419,25 +2486,34 @@
   </div>
 </div>
 
-<!-- ══ Modal editar hint de mapeamento ══ -->
+<!-- ══ Modal editar mapeamento ══ -->
 <div id="hint-edit-modal" class="etl-modal-overlay" style="display:none;" onclick="closeHintModal(event)">
   <div class="etl-modal-card" onclick="event.stopPropagation()" style="max-width:560px;width:100%;">
     <div class="etl-modal-header">
-      <span>Editar Hint — <span id="hint-modal-source"></span></span>
+      <span>Editar — <span id="hint-modal-source"></span></span>
       <button class="btn-ghost" style="padding:0.25rem 0.55rem;font-size:0.85rem;line-height:1;" onclick="closeHintModal()">×</button>
     </div>
     <div style="display:flex;flex-direction:column;gap:0.9rem;">
       <div class="form-group">
         <label>função manual</label>
-        <input type="text" id="hint-modal-fn-manual" disabled style="opacity:0.55;"/>
+        <div style="display:flex;gap:0.4rem;align-items:center;">
+          <input type="text" id="hint-modal-fn-manual" placeholder="ex: hfi" style="flex:1;"/>
+          <button class="btn-ghost" style="padding:0.2rem 0.5rem;font-size:1rem;line-height:1;flex-shrink:0;" onclick="document.getElementById('hint-modal-fn-manual').value=''" title="Limpar campo">×</button>
+        </div>
       </div>
       <div class="form-group">
         <label>função AI</label>
-        <input type="text" id="hint-modal-fn-ai" disabled style="opacity:0.55;"/>
+        <div style="display:flex;gap:0.4rem;align-items:center;">
+          <input type="text" id="hint-modal-fn-ai" placeholder="ex: valores_4c72" style="flex:1;"/>
+          <button class="btn-ghost" style="padding:0.2rem 0.5rem;font-size:1rem;line-height:1;flex-shrink:0;" onclick="document.getElementById('hint-modal-fn-ai').value=''" title="Limpar campo">×</button>
+        </div>
       </div>
       <div class="form-group">
         <label>hint para o gerador AI</label>
-        <textarea id="hint-modal-hint" rows="6" style="width:100%;resize:vertical;font-family:var(--mono);font-size:0.8rem;" placeholder="Descreve a estrutura do ficheiro para ajudar o gerador automático..."></textarea>
+        <div style="display:flex;gap:0.4rem;align-items:flex-start;">
+          <textarea id="hint-modal-hint" rows="6" style="flex:1;resize:vertical;font-family:var(--mono);font-size:0.8rem;" placeholder="Descreve a estrutura do ficheiro para ajudar o gerador automático..."></textarea>
+          <button class="btn-ghost" style="padding:0.2rem 0.5rem;font-size:1rem;line-height:1;flex-shrink:0;margin-top:2px;" onclick="document.getElementById('hint-modal-hint').value=''" title="Limpar campo">×</button>
+        </div>
       </div>
     </div>
     <div class="etl-modal-footer">
@@ -2455,11 +2531,9 @@
   <pre id="err-hover-text" style="margin:0;white-space:pre-wrap;word-break:break-all;font-family:var(--mono);font-size:0.8rem;max-height:260px;overflow-y:auto;"></pre>
 </div>
 
+
 <div id="toast"></div>
-<div id="pipeline-left-indicator" style="display:none;position:fixed;bottom:1.5rem;left:1.5rem;z-index:999;background:var(--surface);border:1px solid var(--border);border-radius:20px;padding:0.35rem 0.8rem;font-size:0.76rem;color:var(--text-muted);align-items:center;gap:0.5rem;box-shadow:0 2px 8px rgba(0,0,0,0.15);">
-  <div class="spinner" style="width:11px;height:11px;border-width:1.5px;flex-shrink:0;"></div>
-  <span id="pipeline-left-text"></span>
-</div>
+<div id="pipeline-left-indicator" style="display:none;position:fixed;bottom:1.5rem;left:1.5rem;z-index:999;background:var(--surface);border:1px solid var(--border);border-radius:8px;padding:0.45rem 0.85rem;font-size:0.76rem;color:var(--text-muted);flex-direction:column;gap:0.35rem;box-shadow:0 2px 8px rgba(0,0,0,0.15);"></div>
 
 <script>
   const API_BASE              = 'http://localhost:8000';
@@ -2528,11 +2602,163 @@
       const activeEtlTab = document.getElementById('etog-dados').classList.contains('active') ? 'dados' : 'pdfs';
       loadEtlLogsTable(activeEtlTab);
       loadMappings();
+      loadEmbeddingProvider();
+      loadLlmProvider();
+      loadFunctionProvider();
+      loadGoogleApiKey();
     }
   }
 
   loadExtractFunctions();
   loadTable('report');
+
+  // Verificar se as pipelines já estão a correr ao abrir a página
+  (async () => {
+    try {
+      const res = await fetch(`${API_BASE}/etl/status/dados`);
+      if (!res.ok) return;
+      const { running, pending } = await res.json();
+      if (running || pending) _watchDadosPipeline();
+    } catch (_) {}
+  })();
+  (async () => {
+    try {
+      const res = await fetch(`${API_BASE}/etl/status/pdfs`);
+      if (!res.ok) return;
+      const { running, pending } = await res.json();
+      if (running || pending) _watchPdfsPipeline();
+    } catch (_) {}
+  })();
+
+  // ── Configurações de AI ─────────────────────────────────
+
+  const _aiProviders = { embedding: 'ollama', llm: 'ollama', function: 'ollama' };
+
+async function loadEmbeddingProvider() {
+    try {
+      const r = await fetch(`${API_BASE}/settings/embedding-provider`);
+      if (!r.ok) return;
+      const { provider } = await r.json();
+      _aiProviders.embedding = provider;
+      _applyEmbeddingToggle(provider);
+
+    } catch (_) {}
+  }
+
+  async function loadLlmProvider() {
+    try {
+      const r = await fetch(`${API_BASE}/settings/llm-provider`);
+      if (!r.ok) return;
+      const { provider } = await r.json();
+      _aiProviders.llm = provider;
+      _applyLlmToggle(provider);
+
+    } catch (_) {}
+  }
+
+  async function loadFunctionProvider() {
+    try {
+      const r = await fetch(`${API_BASE}/settings/function-provider`);
+      if (!r.ok) return;
+      const { provider } = await r.json();
+      _aiProviders.function = provider;
+      _applyFunctionToggle(provider);
+
+    } catch (_) {}
+  }
+
+  async function loadGoogleApiKey() {
+    try {
+      const r = await fetch(`${API_BASE}/settings/google-api-key`);
+      if (!r.ok) return;
+      const { has_key, masked } = await r.json();
+      if (has_key) document.getElementById('google-api-key-input').placeholder = masked;
+    } catch (_) {}
+  }
+
+  async function setEmbeddingProvider(provider) {
+    try {
+      const r = await fetch(`${API_BASE}/settings/embedding-provider`, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ provider }),
+      });
+      if (!r.ok) { showToast('Erro ao guardar configuração', 'error'); return; }
+      _aiProviders.embedding = provider;
+      _applyEmbeddingToggle(provider);
+
+      showToast(`Embeddings: ${provider === 'google' ? 'Google API' : 'Ollama (local)'}`, 'ok');
+    } catch (e) {
+      showToast('Erro ao comunicar com a API', 'error');
+    }
+  }
+
+  async function setLlmProvider(provider) {
+    try {
+      const r = await fetch(`${API_BASE}/settings/llm-provider`, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ provider }),
+      });
+      if (!r.ok) { showToast('Erro ao guardar configuração', 'error'); return; }
+      _aiProviders.llm = provider;
+      _applyLlmToggle(provider);
+
+      showToast(`Geração de respostas: ${provider === 'google' ? 'Google API' : 'Ollama (local)'}`, 'ok');
+    } catch (e) {
+      showToast('Erro ao comunicar com a API', 'error');
+    }
+  }
+
+  async function setFunctionProvider(provider) {
+    try {
+      const r = await fetch(`${API_BASE}/settings/function-provider`, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ provider }),
+      });
+      if (!r.ok) { showToast('Erro ao guardar configuração', 'error'); return; }
+      _aiProviders.function = provider;
+      _applyFunctionToggle(provider);
+
+      showToast(`Geração de funções: ${provider === 'google' ? 'Google API' : 'Ollama (local)'}`, 'ok');
+    } catch (e) {
+      showToast('Erro ao comunicar com a API', 'error');
+    }
+  }
+
+  async function saveGoogleApiKey() {
+    const key = document.getElementById('google-api-key-input').value.trim();
+    if (!key) { showToast('Insere uma API Key válida', 'error'); return; }
+    try {
+      const r = await fetch(`${API_BASE}/settings/google-api-key`, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ key }),
+      });
+      if (!r.ok) { showToast('Erro ao guardar API Key', 'error'); return; }
+      document.getElementById('google-api-key-input').value = '';
+      document.getElementById('google-api-key-input').placeholder = '●'.repeat(20);
+      showToast('Google API Key guardada', 'ok');
+    } catch (e) {
+      showToast('Erro ao comunicar com a API', 'error');
+    }
+  }
+
+  function _applyEmbeddingToggle(provider) {
+    document.getElementById('embed-btn-ollama').classList.toggle('active', provider === 'ollama');
+    document.getElementById('embed-btn-google').classList.toggle('active', provider === 'google');
+  }
+
+  function _applyLlmToggle(provider) {
+    document.getElementById('llm-btn-ollama').classList.toggle('active', provider === 'ollama');
+    document.getElementById('llm-btn-google').classList.toggle('active', provider === 'google');
+  }
+
+  function _applyFunctionToggle(provider) {
+    document.getElementById('func-btn-ollama').classList.toggle('active', provider === 'ollama');
+    document.getElementById('func-btn-google').classList.toggle('active', provider === 'google');
+  }
 
   function toggleTheme() {
     const html = document.documentElement;
@@ -2555,20 +2781,81 @@
     toastTimer = setTimeout(() => t.classList.remove('show'), 3500);
   }
 
-  function _showLeftIndicator(text) {
-    document.getElementById('pipeline-left-text').textContent = text;
-    document.getElementById('pipeline-left-indicator').style.display = 'flex';
-  }
-  function _hideLeftIndicator() {
-    document.getElementById('pipeline-left-indicator').style.display = 'none';
+  // Slots independentes — cada chave tem a sua própria linha com spinner.
+  // O indicador só esconde quando todos os slots estão vazios.
+  const _indicatorSlots = new Set();
+
+  function _setIndicatorLine(key, text) {
+    const container = document.getElementById('pipeline-left-indicator');
+    const slotId    = `ind-slot-${key}`;
+    let   slot      = document.getElementById(slotId);
+
+    if (text == null) {
+      _indicatorSlots.delete(key);
+      if (slot) slot.remove();
+    } else {
+      _indicatorSlots.add(key);
+      if (!slot) {
+        slot = document.createElement('div');
+        slot.id = slotId;
+        slot.style.cssText = 'display:flex;align-items:center;gap:0.5rem;';
+        slot.innerHTML = '<div class="spinner" style="width:11px;height:11px;border-width:1.5px;flex-shrink:0;margin:0;"></div>'
+                       + '<span></span>';
+        container.appendChild(slot);
+      }
+      slot.querySelector('span').textContent = text;
+    }
+
+    container.style.display = _indicatorSlots.size === 0 ? 'none' : 'flex';
   }
 
-  // ── PIPELINE DE PDFs — indicador de estado ──
-  let _pdfsPollId = null;
+  // Wrappers para compatibilidade com todas as chamadas de upload existentes
+  function _showLeftIndicator(text) { _setIndicatorLine('ops', text); }
+  function _hideLeftIndicator()     { _setIndicatorLine('ops', null); }
+
+  // ── PIPELINE DE PDFs — indicador de estado + live log ──
+  let _pdfsPollId    = null;
+  let _pdfsLogPollId = null;
+  let _pdfsLogSince  = 0;
+  let _pdfsLogRunId  = null;
+
+  function _startPdfsLogPolling() {
+    if (_pdfsLogPollId !== null) return;
+    _pdfsLogSince = 0;
+    _pdfsLogRunId = null;
+    const output = document.getElementById('ctrl-log-output-pdfs');
+    if (output) output.innerHTML = '';
+    _pdfsLogPollId = setInterval(async () => {
+      try {
+        const res = await fetch(`${API_BASE}/pipeline/pdfs/log`);
+        if (!res.ok) return;
+        const { run_id, lines } = await res.json();
+        if (run_id !== _pdfsLogRunId) {
+          _pdfsLogRunId = run_id;
+          _pdfsLogSince = 0;
+          if (output) output.innerHTML = '';
+        }
+        if (lines.length > _pdfsLogSince) {
+          const newLines = lines.slice(_pdfsLogSince);
+          _pdfsLogSince = lines.length;
+          if (output) {
+            const atBottom = output.scrollHeight - output.scrollTop <= output.clientHeight + 24;
+            newLines.forEach(text => _appendLogLine(output, text));
+            if (atBottom) output.scrollTop = output.scrollHeight;
+          }
+        }
+      } catch (_) {}
+    }, 400);
+  }
+
+  function _stopPdfsLogPolling() {
+    if (_pdfsLogPollId !== null) { clearInterval(_pdfsLogPollId); _pdfsLogPollId = null; }
+  }
 
   function _watchPdfsPipeline() {
     if (_pdfsPollId !== null) return;
-    _showLeftIndicator('A processar dados');
+    _setIndicatorLine('pdfs', 'A processar relatórios');
+    _startPdfsLogPolling();
     let seenRunning = false;
     let elapsed = 0;
     _pdfsPollId = setInterval(async () => {
@@ -2576,27 +2863,80 @@
       try {
         const res = await fetch(`${API_BASE}/etl/status/pdfs`);
         if (!res.ok) return;
-        const { running, pending } = await res.json();
-        if (running || pending) seenRunning = true;
+        const { running, pending, step } = await res.json();
+        if (running || pending) {
+          seenRunning = true;
+          const txt = step === 'bronze' ? 'A armazenar relatórios'
+                    : step === 'silver' ? 'A processar relatórios'
+                    : 'A processar relatórios';
+          _setIndicatorLine('pdfs', txt);
+        }
         if (!running && !pending && (seenRunning || elapsed >= 8)) {
           clearInterval(_pdfsPollId);
           _pdfsPollId = null;
-          _hideLeftIndicator();
-          if (seenRunning) showToast('Dados Processados');
+          _setIndicatorLine('pdfs', null);
+          _stopPdfsLogPolling();
+          if (seenRunning) showToast('Relatórios processados');
         }
       } catch (_) {}
     }, 2000);
   }
 
-  // ── PIPELINE DE DADOS — indicador de estado ──
-  let _dadosPollId = null;
+  // ── PIPELINE DE DADOS — indicador de estado + live log ──
+  let _dadosPollId    = null;
+  let _dadosLogPollId = null;
+  let _dadosLogSince  = 0;
+  let _dadosLogRunId  = null;
 
   function _setPipelineDadosRunning(running) {}
+
+  function _appendLogLine(output, text) {
+    const s = document.createElement('span');
+    s.textContent = text + '\n';
+    if      (text.startsWith('[OK]')    || text.includes('✓')) s.style.color = 'var(--green)';
+    else if (text.startsWith('[ERRO]')  || text.includes('✗')) s.style.color = 'var(--red)';
+    else if (text.startsWith('[AVISO]') || text.startsWith('[AI]')) s.style.color = 'var(--amber)';
+    output.appendChild(s);
+  }
+
+  function _startDadosLogPolling() {
+    if (_dadosLogPollId !== null) return;
+    _dadosLogSince = 0;
+    _dadosLogRunId = null;
+    const output = document.getElementById('ctrl-log-output-dados');
+    if (output) output.innerHTML = '';
+    _dadosLogPollId = setInterval(async () => {
+      try {
+        const res = await fetch(`${API_BASE}/pipeline/dados/log`);
+        if (!res.ok) return;
+        const { run_id, lines } = await res.json();
+        if (run_id !== _dadosLogRunId) {
+          _dadosLogRunId = run_id;
+          _dadosLogSince = 0;
+          if (output) output.innerHTML = '';
+        }
+        if (lines.length > _dadosLogSince) {
+          const newLines = lines.slice(_dadosLogSince);
+          _dadosLogSince = lines.length;
+          if (output) {
+            const atBottom = output.scrollHeight - output.scrollTop <= output.clientHeight + 24;
+            newLines.forEach(text => _appendLogLine(output, text));
+            if (atBottom) output.scrollTop = output.scrollHeight;
+          }
+        }
+      } catch (_) {}
+    }, 400);
+  }
+
+  function _stopDadosLogPolling() {
+    if (_dadosLogPollId !== null) { clearInterval(_dadosLogPollId); _dadosLogPollId = null; }
+  }
 
   function _watchDadosPipeline() {
     if (_dadosPollId !== null) return;
     _setPipelineDadosRunning(true);
-    _showLeftIndicator('A processar dados');
+    _setIndicatorLine('dados', 'A processar dados');
+    _startDadosLogPolling();
     let seenRunning = false;
     let elapsed = 0;
     _dadosPollId = setInterval(async () => {
@@ -2610,7 +2950,8 @@
           clearInterval(_dadosPollId);
           _dadosPollId = null;
           _setPipelineDadosRunning(false);
-          _hideLeftIndicator();
+          _setIndicatorLine('dados', null);
+          _stopDadosLogPolling();
           if (seenRunning) {
             showToast('Dados Processados');
             _refreshDashReportMenu().catch(() => {});
@@ -4025,8 +4366,10 @@
       // Preencher dropdowns do formulário manual
       const srcSel = document.getElementById('map-source_code');
       const fnSel  = document.getElementById('map-extract_function');
+      const alreadyMapped = new Set(maps.filter(m => m.extract_function).map(m => m.source_code));
+      const unmappedSrcs = srcs.filter(s => !alreadyMapped.has(s));
       srcSel.innerHTML = '<option value="">— Seleciona —</option>' +
-        srcs.map(s => `<option value="${escHtml(s)}">${escHtml(s)}</option>`).join('');
+        unmappedSrcs.map(s => `<option value="${escHtml(s)}">${escHtml(s)}</option>`).join('');
       fnSel.innerHTML = '<option value="">— Seleciona —</option>' +
         fns.map(f => `<option value="${escHtml(f.name)}">${escHtml(f.name)}</option>`).join('');
 
@@ -4078,8 +4421,8 @@
     const row = btn.closest('tr');
     const currentHint = row.querySelector('td:nth-child(4)')?.title || '';
     document.getElementById('hint-modal-source').textContent  = source_code;
-    document.getElementById('hint-modal-fn-manual').value     = fn_manual || '—';
-    document.getElementById('hint-modal-fn-ai').value         = fn_ai     || '—';
+    document.getElementById('hint-modal-fn-manual').value     = fn_manual || '';
+    document.getElementById('hint-modal-fn-ai').value         = fn_ai     || '';
     document.getElementById('hint-modal-hint').value          = currentHint;
     document.getElementById('hint-edit-modal')._source        = source_code;
     document.getElementById('hint-edit-modal').style.display  = 'flex';
@@ -4092,17 +4435,19 @@
 
   async function saveHint() {
     const source_code = document.getElementById('hint-edit-modal')._source;
-    const hint = document.getElementById('hint-modal-hint').value.trim() || null;
-    const btn  = document.getElementById('btn-hint-save');
+    const extract_function    = document.getElementById('hint-modal-fn-manual').value.trim();
+    const ai_extract_function = document.getElementById('hint-modal-fn-ai').value.trim();
+    const generation_hint     = document.getElementById('hint-modal-hint').value.trim();
+    const btn = document.getElementById('btn-hint-save');
     btn.disabled = true;
     try {
-      const res = await fetch(`${API_BASE}/function_mappings/${encodeURIComponent(source_code)}/hint`, {
+      const res = await fetch(`${API_BASE}/function_mappings/${encodeURIComponent(source_code)}`, {
         method: 'PATCH',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ generation_hint: hint }),
+        body: JSON.stringify({ extract_function, ai_extract_function, generation_hint }),
       });
       if (!res.ok) throw new Error((await res.json()).detail || `HTTP ${res.status}`);
-      showToast(`Hint para '${source_code}' atualizado.`);
+      showToast(`Mapeamento '${source_code}' atualizado.`);
       document.getElementById('hint-edit-modal').style.display = 'none';
       loadMappings();
     } catch (e) {

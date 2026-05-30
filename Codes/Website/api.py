@@ -48,15 +48,18 @@ RESET_PIPELINE_SCRIPT  = os.path.normpath(os.path.join(_HERE, "..", "..", "Extra
 # A pipeline de PDFs precisa do ambiente projeto_final (pdfplumber, langchain, etc.)
 # Procura python.exe nos locais mais comuns de instalação conda/venv
 def _find_pdfs_python() -> str:
+    # Testa com minio+langchain_community para garantir que é o env projetofinal,
+    # não o env base (que pode ter pdfplumber mas não as dependências do pipeline).
+    _CHECK = "import minio; import langchain_community; import pdfplumber; import langchain_ollama; from sqlalchemy.pool import NullPool"
     candidates = [
-        # Mesmo dir do executável atual (já no projeto_final)
+        # Caminhos absolutos do ambiente projetofinal — verificados primeiro
+        r"C:\Users\Alexandr\miniconda3\envs\projetofinal\python.exe",
+        r"C:\Users\Alexandr\anaconda3\envs\projetofinal\python.exe",
+        # Subambiente projetofinal a partir do diretório base do conda
+        os.path.join(os.path.dirname(sys.executable), "envs", "projetofinal", "python.exe"),
+        os.path.join(os.path.dirname(sys.executable), "..", "envs", "projetofinal", "python.exe"),
+        # Mesmo executável atual (último recurso)
         sys.executable,
-        # Subambiente projeto_final a partir do base conda
-        os.path.join(os.path.dirname(sys.executable), "envs", "projeto_final", "python.exe"),
-        # Subambiente a partir de Scripts/ (se sys.executable for Scripts/python.exe)
-        os.path.join(os.path.dirname(sys.executable), "..", "envs", "projeto_final", "python.exe"),
-        # Caminho absoluto conhecido
-        r"C:\Users\optil\anaconda3\envs\projeto_final\python.exe",
     ]
     for path in candidates:
         path = os.path.normpath(path)
@@ -64,7 +67,7 @@ def _find_pdfs_python() -> str:
             continue
         try:
             import subprocess as _sp
-            result = _sp.run([path, "-c", "import pdfplumber"], capture_output=True, timeout=10)
+            result = _sp.run([path, "-c", _CHECK], capture_output=True, timeout=15)
             if result.returncode == 0:
                 return path
         except Exception:
@@ -78,22 +81,53 @@ _dados_state_lock = threading.Lock()
 _dados_running    = False
 _dados_pending    = False
 
+_REPORTS_DATA_DIR = os.path.normpath(os.path.join(_HERE, "..", "..", "Reports", "Data"))
+_REPORTS_PDFS_DIR = os.path.normpath(os.path.join(_HERE, "..", "..", "Reports", "PDFs"))
+
+# Buffers em memória para o output das pipelines (acesso thread-safe via lock)
+_dados_log_lock   = threading.Lock()
+_dados_log_lines: list = []
+_dados_log_run_id: int = 0
+
+_pdfs_log_lock    = threading.Lock()
+_pdfs_log_lines: list = []
+_pdfs_log_run_id: int = 0
+
 
 def _run_dados_loop():
     """Worker em background: corre pipeline_data.py; repete se ficou execução pendente."""
-    global _dados_running, _dados_pending
+    global _dados_running, _dados_pending, _dados_log_run_id
     script_dir = os.path.dirname(PIPELINE_DADOS_SCRIPT)
     while True:
+        with _dados_log_lock:
+            _dados_log_run_id += 1
+            _dados_log_lines.clear()
         try:
-            subprocess.run(
-                [sys.executable, PIPELINE_DADOS_SCRIPT],
+            _env = os.environ.copy()
+            _env["OPENBLAS_NUM_THREADS"] = "1"
+            _env["OMP_NUM_THREADS"] = "1"
+            proc = subprocess.Popen(
+                [sys.executable, "-u", PIPELINE_DADOS_SCRIPT],
                 cwd=script_dir,
-                stdout=subprocess.DEVNULL,
-                stderr=subprocess.DEVNULL,
+                stdout=subprocess.PIPE,
+                stderr=subprocess.STDOUT,
+                text=True,
+                bufsize=1,
                 creationflags=subprocess.CREATE_NO_WINDOW,
+                env=_env,
             )
-        except Exception:
-            pass
+            for raw in proc.stdout:
+                line = raw.rstrip("\n").rstrip("\r")
+                if line:
+                    with _dados_log_lock:
+                        _dados_log_lines.append(line)
+            proc.wait()
+            status = "✓ Concluído" if proc.returncode == 0 else f"✗ Erro (código {proc.returncode})"
+            with _dados_log_lock:
+                _dados_log_lines.append(status)
+        except Exception as e:
+            with _dados_log_lock:
+                _dados_log_lines.append(f"[ERRO ao lançar] {e}")
         with _dados_state_lock:
             if _dados_pending:
                 _dados_pending = False
@@ -123,30 +157,42 @@ _pdfs_pending    = False
 _PDFS_ERROR_LOG = os.path.normpath(os.path.join(
     _HERE, "..", "..", "Reports", "PDFs", "pipeline_pdfs_stderr.log"
 ))
+_PDFS_STEP_FILE = os.path.normpath(os.path.join(
+    _HERE, "..", "..", "Reports", "PDFs", "meta", "pipeline_pdfs_status.json"
+))
 
 
 def _run_pdfs_loop():
     """Worker em background: corre pipeline_reports.py; repete se ficou execução pendente."""
-    global _pdfs_running, _pdfs_pending
+    global _pdfs_running, _pdfs_pending, _pdfs_log_run_id
     script_dir = os.path.dirname(PIPELINE_PDFS_SCRIPT)
     while True:
+        with _pdfs_log_lock:
+            _pdfs_log_run_id += 1
+            _pdfs_log_lines.clear()
+            _pdfs_log_lines.append(f"[INFO] A usar Python: {_PDFS_PYTHON}")
         try:
-            os.makedirs(os.path.dirname(_PDFS_ERROR_LOG), exist_ok=True)
-            with open(_PDFS_ERROR_LOG, "a", encoding="utf-8") as log_f:
-                log_f.write(f"[INFO] A usar Python: {_PDFS_PYTHON}\n")
-                subprocess.run(
-                    [_PDFS_PYTHON, PIPELINE_PDFS_SCRIPT],
-                    cwd=script_dir,
-                    stdout=log_f,
-                    stderr=log_f,
-                    creationflags=subprocess.CREATE_NO_WINDOW,
-                )
+            proc = subprocess.Popen(
+                [_PDFS_PYTHON, "-u", PIPELINE_PDFS_SCRIPT],
+                cwd=script_dir,
+                stdout=subprocess.PIPE,
+                stderr=subprocess.STDOUT,
+                text=True,
+                bufsize=1,
+                creationflags=subprocess.CREATE_NO_WINDOW,
+            )
+            for raw in proc.stdout:
+                line = raw.rstrip("\n").rstrip("\r")
+                if line:
+                    with _pdfs_log_lock:
+                        _pdfs_log_lines.append(line)
+            proc.wait()
+            status = "✓ Concluído" if proc.returncode == 0 else f"✗ Erro (código {proc.returncode})"
+            with _pdfs_log_lock:
+                _pdfs_log_lines.append(status)
         except Exception as e:
-            try:
-                with open(_PDFS_ERROR_LOG, "a", encoding="utf-8") as log_f:
-                    log_f.write(f"[ERRO ao lançar subprocess] {e}\n")
-            except Exception:
-                pass
+            with _pdfs_log_lock:
+                _pdfs_log_lines.append(f"[ERRO ao lançar] {e}")
         with _pdfs_state_lock:
             if _pdfs_pending:
                 _pdfs_pending = False
@@ -304,13 +350,15 @@ _SEED_HINTS = {
         "Drop rows where value is None/null."
     ),
     "Cato Institute": (
-        "Excel file from the Cato Institute Human Freedom Index. "
-        "After lowercasing all column names: columns are 'iso' (3-letter ISO country code), "
-        "'year' (int), 'hf_score' (float), plus many other indicator columns. "
-        "Some versions have a double header — real machine-code headers are in the first data row. "
-        "Only extract ONE indicator: indicator_code='hf', indicator_name='Human Freedom', "
-        "location_code='iso' column, year='year' column, value='hf_score' column. "
-        "Use pd.to_numeric(..., errors='coerce') for year and value."
+        "Excel file from the Cato Institute Human Freedom Index (146 columns). "
+        "Read with default header=0. First 4 columns are Unnamed: 0 (year), Unnamed: 1 (ISO3 code), "
+        "Unnamed: 2 (country name), Unnamed: 3 (region) — these are the meta columns. "
+        "All remaining columns are indicator names (e.g. 'HUMAN FREEDOM', 'Ai Procedural Justice', ...). "
+        "Skip columns where the name: starts with 'Unnamed:', starts with 'data' (pandas renames duplicates to data.1, data.2...), "
+        "contains 'RANK' or 'QUARTILE', or equals 'Rank'. "
+        "For each data row: location_code = Unnamed: 1 (must be 3-letter uppercase alpha), "
+        "year = int(Unnamed: 0), indicator_code = indicator_name = column name (stripped). "
+        "Extract ALL non-skip columns as separate rows. Drop rows where value is NaN."
     ),
     "Portulans": (
         "Excel file from the Network Readiness Index (Portulans Institute). "
@@ -1267,18 +1315,29 @@ def delete_op_data(file_id: int):
         conn = get_operational_connection()
         cur = conn.cursor(cursor_factory=psycopg2.extras.RealDictCursor)
 
-        cur.execute("SELECT file_id, pipeline_status FROM op_data WHERE file_id = %s", (file_id,))
+        cur.execute("SELECT file_id, report_id, pipeline_status FROM op_data WHERE file_id = %s", (file_id,))
         file_row = cur.fetchone()
         if not file_row:
             cur.close(); conn.close()
             raise HTTPException(status_code=404, detail=f"file_id {file_id} não encontrado.")
 
         if file_row["pipeline_status"] not in ("PENDING", "FAILED"):
-            cur.close(); conn.close()
-            raise HTTPException(
-                status_code=409,
-                detail="Este ficheiro já foi processado e inserido no DW. Não pode ser apagado diretamente."
-            )
+            # Permite apagar se não chegou nenhuma linha ao warehouse
+            try:
+                conn_dw = get_warehouse_connection()
+                cur_dw  = conn_dw.cursor()
+                cur_dw.execute("SELECT COUNT(*) FROM fact_values WHERE report_id = %s", (file_row["report_id"],))
+                dw_count = cur_dw.fetchone()[0]
+                cur_dw.close(); conn_dw.close()
+            except Exception:
+                dw_count = 1  # em caso de erro, bloqueia por precaução
+
+            if dw_count > 0:
+                cur.close(); conn.close()
+                raise HTTPException(
+                    status_code=409,
+                    detail=f"Este ficheiro tem {dw_count} linha(s) no DW. Não pode ser apagado diretamente."
+                )
 
         cur.execute("DELETE FROM op_data WHERE file_id = %s", (file_id,))
         cur.execute("DELETE FROM etl_logs_dados WHERE file_id = %s", (str(file_id),))
@@ -1386,6 +1445,12 @@ class FunctionMappingIn(BaseModel):
     generation_hint: Optional[str] = None
 
 
+class MappingPatchIn(BaseModel):
+    extract_function: Optional[str] = None
+    ai_extract_function: Optional[str] = None
+    generation_hint: Optional[str] = None
+
+
 @app.get("/function_mappings")
 def get_function_mappings():
     try:
@@ -1417,6 +1482,37 @@ def upsert_function_mapping(data: FunctionMappingIn):
         conn.commit()
         cur.close(); conn.close()
         return {"message": f"Mapeamento '{data.source_code}' → '{data.extract_function}' guardado."}
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
+
+@app.patch("/function_mappings/{source_code}")
+def patch_mapping(source_code: str, data: MappingPatchIn):
+    """Atualiza extract_function, ai_extract_function e/ou generation_hint."""
+    fields = {}
+    if data.extract_function is not None:
+        fields["extract_function"] = data.extract_function.strip() or None
+    if data.ai_extract_function is not None:
+        fields["ai_extract_function"] = data.ai_extract_function.strip() or None
+    if data.generation_hint is not None:
+        fields["generation_hint"] = data.generation_hint.strip() or None
+    if not fields:
+        raise HTTPException(status_code=400, detail="Nenhum campo para atualizar.")
+    set_clause = ", ".join(f"{k} = %s" for k in fields)
+    try:
+        conn = get_operational_connection()
+        cur = conn.cursor()
+        cur.execute(
+            f"UPDATE source_function_mapping SET {set_clause} WHERE source_code = %s",
+            list(fields.values()) + [source_code],
+        )
+        if cur.rowcount == 0:
+            raise HTTPException(status_code=404, detail=f"Mapeamento para '{source_code}' não encontrado.")
+        conn.commit()
+        cur.close(); conn.close()
+        return {"message": f"Mapeamento '{source_code}' atualizado."}
+    except HTTPException:
+        raise
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
 
@@ -1742,18 +1838,19 @@ def get_dashboard_timeseries(indicator_name: str, countries: str, report_id: int
 # ENDPOINTS — ETL
 # ════════════════════════════════════════════════════════════
 
-def _stream_script(script_path: str):
+def _stream_script(script_path: str, python_exe: str | None = None):
     if not os.path.exists(script_path):
         raise HTTPException(status_code=404, detail=f"Script não encontrado: {script_path}")
 
+    python_exe  = python_exe or sys.executable
     script_name = os.path.basename(script_path)
     script_dir  = os.path.dirname(script_path)
 
     def stream_output():
-        yield f"A iniciar {script_name}...\n"
+        yield f"A iniciar {script_name} ({os.path.basename(python_exe)})...\n"
         try:
             process = subprocess.Popen(
-                [sys.executable, script_path],
+                [python_exe, script_path],
                 stdout=subprocess.PIPE,
                 stderr=subprocess.STDOUT,
                 text=True,
@@ -1847,15 +1944,43 @@ def etl_status_dados():
         return {"running": _dados_running, "pending": _dados_pending}
 
 
+@app.get("/pipeline/dados/log")
+def pipeline_dados_log_endpoint():
+    with _dados_log_lock:
+        run_id = _dados_log_run_id
+        lines  = list(_dados_log_lines)
+    with _dados_state_lock:
+        running = _dados_running
+        pending = _dados_pending
+    return {"run_id": run_id, "lines": lines, "running": running, "pending": pending}
+
+
+@app.get("/pipeline/pdfs/log")
+def pipeline_pdfs_log_endpoint():
+    with _pdfs_log_lock:
+        run_id = _pdfs_log_run_id
+        lines  = list(_pdfs_log_lines)
+    with _pdfs_state_lock:
+        running = _pdfs_running
+        pending = _pdfs_pending
+    return {"run_id": run_id, "lines": lines, "running": running, "pending": pending}
+
+
 @app.get("/etl/status/pdfs")
 def etl_status_pdfs():
+    step = "idle"
+    try:
+        with open(_PDFS_STEP_FILE, encoding="utf-8") as f:
+            step = json.load(f).get("step", "idle")
+    except Exception:
+        pass
     with _pdfs_state_lock:
-        return {"running": _pdfs_running, "pending": _pdfs_pending}
+        return {"running": _pdfs_running, "pending": _pdfs_pending, "step": step}
 
 
 @app.post("/etl/run/pdfs")
 def etl_run_pdfs():
-    return _stream_script(PIPELINE_PDFS_SCRIPT)
+    return _stream_script(PIPELINE_PDFS_SCRIPT, python_exe=_PDFS_PYTHON)
 
 
 @app.post("/etl/reset")
@@ -1958,6 +2083,170 @@ def get_etl_errors_since(tipo: str = "dados", minutes: int = 15):
         cur.close()
         conn.close()
         return {"errors": count}
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
+
+# ════════════════════════════════════════════════════════════
+# ENDPOINTS — Configurações de pipeline
+# ════════════════════════════════════════════════════════════
+
+def _ensure_settings_table():
+    conn = get_pipeline_connection()
+    try:
+        cur = conn.cursor()
+        cur.execute("""
+            CREATE TABLE IF NOT EXISTS pipeline_settings (
+                key   VARCHAR(100) PRIMARY KEY,
+                value TEXT NOT NULL
+            )
+        """)
+        conn.commit()
+        cur.close()
+    finally:
+        conn.close()
+
+
+@app.get("/settings/embedding-provider")
+def get_embedding_provider():
+    try:
+        _ensure_settings_table()
+        conn = get_pipeline_connection()
+        try:
+            cur = conn.cursor()
+            cur.execute("SELECT value FROM pipeline_settings WHERE key = 'embedding_provider'")
+            row = cur.fetchone()
+            cur.close()
+            return {"provider": row[0] if row else "ollama"}
+        finally:
+            conn.close()
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
+
+class EmbeddingProviderUpdate(BaseModel):
+    provider: str
+
+
+@app.patch("/settings/embedding-provider")
+def set_embedding_provider(body: EmbeddingProviderUpdate):
+    if body.provider not in ("ollama", "google"):
+        raise HTTPException(status_code=400, detail="provider deve ser 'ollama' ou 'google'")
+    try:
+        _ensure_settings_table()
+        conn = get_pipeline_connection()
+        try:
+            cur = conn.cursor()
+            cur.execute("""
+                INSERT INTO pipeline_settings (key, value)
+                VALUES ('embedding_provider', %s)
+                ON CONFLICT (key) DO UPDATE SET value = EXCLUDED.value
+            """, (body.provider,))
+            conn.commit()
+            cur.close()
+            return {"provider": body.provider}
+        finally:
+            conn.close()
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
+
+def _get_setting(key: str, default: str) -> str:
+    try:
+        _ensure_settings_table()
+        conn = get_pipeline_connection()
+        try:
+            cur = conn.cursor()
+            cur.execute("SELECT value FROM pipeline_settings WHERE key = %s", (key,))
+            row = cur.fetchone()
+            cur.close()
+            return row[0] if row else default
+        finally:
+            conn.close()
+    except Exception:
+        return default
+
+
+def _set_setting(key: str, value: str) -> None:
+    _ensure_settings_table()
+    conn = get_pipeline_connection()
+    try:
+        cur = conn.cursor()
+        cur.execute("""
+            INSERT INTO pipeline_settings (key, value)
+            VALUES (%s, %s)
+            ON CONFLICT (key) DO UPDATE SET value = EXCLUDED.value
+        """, (key, value))
+        conn.commit()
+        cur.close()
+    finally:
+        conn.close()
+
+
+@app.get("/settings/llm-provider")
+def get_llm_provider():
+    try:
+        return {"provider": _get_setting("llm_provider", "ollama")}
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
+
+class LlmProviderUpdate(BaseModel):
+    provider: str
+
+
+@app.patch("/settings/llm-provider")
+def set_llm_provider(body: LlmProviderUpdate):
+    if body.provider not in ("ollama", "google"):
+        raise HTTPException(status_code=400, detail="provider deve ser 'ollama' ou 'google'")
+    try:
+        _set_setting("llm_provider", body.provider)
+        return {"provider": body.provider}
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
+
+@app.get("/settings/function-provider")
+def get_function_provider():
+    try:
+        return {"provider": _get_setting("function_provider", "ollama")}
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
+
+class FunctionProviderUpdate(BaseModel):
+    provider: str
+
+
+@app.patch("/settings/function-provider")
+def set_function_provider(body: FunctionProviderUpdate):
+    if body.provider not in ("ollama", "google"):
+        raise HTTPException(status_code=400, detail="provider deve ser 'ollama' ou 'google'")
+    try:
+        _set_setting("function_provider", body.provider)
+        return {"provider": body.provider}
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
+
+@app.get("/settings/google-api-key")
+def get_google_api_key():
+    try:
+        key = _get_setting("google_api_key", "")
+        return {"has_key": bool(key), "masked": ("●" * 20) if key else ""}
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
+
+class GoogleApiKeyUpdate(BaseModel):
+    key: str
+
+
+@app.patch("/settings/google-api-key")
+def set_google_api_key(body: GoogleApiKeyUpdate):
+    try:
+        _set_setting("google_api_key", body.key.strip())
+        return {"has_key": bool(body.key.strip())}
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
 

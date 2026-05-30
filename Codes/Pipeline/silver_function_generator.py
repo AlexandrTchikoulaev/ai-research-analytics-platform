@@ -20,12 +20,35 @@ import re
 import json
 import hashlib
 
+import psycopg2
 import pandas as pd
 import requests
 
 OLLAMA_URL     = "http://localhost:11434/api/generate"
 OLLAMA_MODEL   = "mistral"
 OLLAMA_TIMEOUT = 300  # segundos
+
+_DB_SETTINGS = {
+    "host":     "localhost",
+    "port":     5433,
+    "dbname":   "gestao_db",
+    "user":     "projeto_utilizador",
+    "password": "projeto",
+}
+
+
+def _get_setting(key: str, default: str) -> str:
+    try:
+        conn = psycopg2.connect(**_DB_SETTINGS)
+        try:
+            with conn.cursor() as cur:
+                cur.execute("SELECT value FROM pipeline_settings WHERE key = %s", (key,))
+                row = cur.fetchone()
+                return row[0] if row else default
+        finally:
+            conn.close()
+    except Exception:
+        return default
 
 # ── System prompts especializados (exemplos inline, curtos) ───────────────────
 
@@ -45,6 +68,12 @@ Rules:
     for ind, locs in data.get("values", {}).items() if isinstance(locs, dict)
     for loc, yrs in locs.items() if isinstance(yrs, dict)
 - Return ONLY the function code, no markdown, no comments
+
+CRITICAL for CSV/Excel files:
+- location_code MUST be a 3-letter uppercase ISO3 country code (e.g. 'AFG', 'USA', 'BRA', 'ALB', 'PRT')
+- When columns are 'Unnamed: X', read the "Unnamed column values" line to see what each column contains
+- The ISO3 column is the one whose values are exactly 3 uppercase letters (like 'ALB', 'DZA', 'AGO')
+- NEVER use region names ('Eastern Europe', 'Sub-Saharan Africa'), country names ('Albania'), or numbers as location_code
 
 JSON example:
 def f(data):
@@ -122,9 +151,16 @@ def _tabular_sample(df: pd.DataFrame, file_type: str) -> str:
         return f"Columns ({total} total): {shown}{note}"
     else:
         # value — mostra poucas colunas + poucas linhas
+        # Para colunas Unnamed, mostra os valores da primeira linha para o modelo identificar o conteúdo
+        unnamed = [c for c in cols if str(c).startswith("Unnamed:")]
+        guide = ""
+        if unnamed and not df.empty:
+            parts = [f"{c!r}={str(df.iloc[0][c])!r}" for c in unnamed[:8]]
+            guide = f"Unnamed column values (row 1): {', '.join(parts)}\n"
+
         shown_cols = cols[:_MAX_COLS_VALUE]
         note = f"\n  ... ({total - _MAX_COLS_VALUE} more columns)" if total > _MAX_COLS_VALUE else ""
-        sample = f"Columns ({total} total): {shown_cols}{note}\n\n"
+        sample = f"{guide}Columns ({total} total): {shown_cols}{note}\n\n"
         sample += df[shown_cols].head(_MAX_ROWS_VALUE).to_string(index=False)
         return sample[:_MAX_CHARS]
 
@@ -223,6 +259,29 @@ def _call_ollama(system_prompt: str, user_prompt: str, temperature: float = 0.1)
     return resp.json().get("response", "")
 
 
+def _call_google(system_prompt: str, user_prompt: str, temperature: float = 0.1) -> str:
+    from langchain_google_genai import ChatGoogleGenerativeAI
+    from langchain_core.messages import SystemMessage, HumanMessage
+    api_key = _get_setting("google_api_key", "")
+    model = ChatGoogleGenerativeAI(
+        model="gemini-2.0-flash",
+        google_api_key=api_key,
+        temperature=temperature,
+    )
+    result = model.invoke([
+        SystemMessage(content=system_prompt),
+        HumanMessage(content=user_prompt),
+    ])
+    return result.content
+
+
+def _call_llm(system_prompt: str, user_prompt: str, temperature: float = 0.1) -> str:
+    provider = _get_setting("function_provider", "ollama")
+    if provider == "google":
+        return _call_google(system_prompt, user_prompt, temperature)
+    return _call_ollama(system_prompt, user_prompt, temperature)
+
+
 # ── Validador ─────────────────────────────────────────────────────────────────
 
 _REQUIRED_COLS = {"location_code", "indicator_code", "indicator_name", "year", "value"}
@@ -237,7 +296,12 @@ def _validate(code: str, parsed_data, function_name: str) -> dict:
 
     fn = namespace.get(function_name)
     if fn is None or not callable(fn):
-        return {"valid": False, "error": "Nenhuma função encontrada no código gerado.", "preview": None}
+        found = [k for k, v in namespace.items() if callable(v) and not k.startswith("_")]
+        return {
+            "valid": False,
+            "error": f"Função '{function_name}' não encontrada no código gerado. Encontradas: {found}",
+            "preview": None,
+        }
 
     try:
         df = fn(parsed_data)
@@ -252,6 +316,22 @@ def _validate(code: str, parsed_data, function_name: str) -> dict:
     missing = _REQUIRED_COLS - set(df.columns)
     if missing:
         return {"valid": False, "error": f"Colunas em falta no output: {sorted(missing)}", "preview": None}
+
+    # Verifica que location_code tem códigos ISO3 (3 letras maiúsculas)
+    sample_locs = df["location_code"].dropna().astype(str).head(30).tolist()
+    if sample_locs:
+        iso3_count = sum(1 for v in sample_locs if len(v) == 3 and v.isalpha() and v.isupper())
+        if iso3_count < max(1, len(sample_locs) * 0.4):
+            bad = [v for v in sample_locs if not (len(v) == 3 and v.isalpha() and v.isupper())][:5]
+            return {
+                "valid": False,
+                "error": (
+                    f"location_code must be ISO3 codes (3 uppercase letters, e.g. 'AFG', 'USA', 'PRT'). "
+                    f"Got: {bad}. Identify the column whose values are exactly 3 uppercase letters "
+                    f"and use it as location_code."
+                ),
+                "preview": None,
+            }
 
     preview = df.head(3).to_dict(orient="records")
     return {"valid": True, "error": None, "preview": preview}
@@ -284,8 +364,10 @@ def generate_and_validate(content: bytes, hint: str = None) -> dict:
             "preview": None,
         }
 
+    source_hint = hint  # preserva o hint original — não pode ser sobrescrito no loop de retry
+
     def _base_user_prompt():
-        hint_block = f"\nSOURCE HINT:\n{hint.strip()}\n" if hint and hint.strip() else ""
+        hint_block = f"\nSOURCE HINT:\n{source_hint.strip()}\n" if source_hint and source_hint.strip() else ""
         return (
             f"Generate a transformation function for the following {fmt.upper()} file.\n"
             f"{hint_block}\n"
@@ -302,24 +384,24 @@ def generate_and_validate(content: bytes, hint: str = None) -> dict:
             user_prompt = _base_user_prompt()
             temperature = 0.1
         else:
-            hint = _error_hint(last_error)
+            retry_hint = _error_hint(last_error)
             user_prompt = (
                 f"{_base_user_prompt()}\n\n"
                 f"IMPORTANT — your previous attempt failed:\n"
                 f"  Error: {last_error}\n"
-                f"  {hint}\n"
+                f"  {retry_hint}\n"
                 f"Rewrite the function from scratch fixing this issue."
             )
             temperature = 0.3
 
         try:
-            raw  = _call_ollama(_SYSTEM_COMBINED, user_prompt, temperature=temperature)
+            raw  = _call_llm(_SYSTEM_COMBINED, user_prompt, temperature=temperature)
             code = _patch_items_guards(_extract_code(raw))
         except Exception as e:
             return {
                 "function_name": function_name, "code": code, "fmt": fmt,
                 "generated": attempt > 1, "valid": False,
-                "error": f"Ollama não respondeu (tentativa {attempt}): {e}",
+                "error": f"LLM não respondeu (tentativa {attempt}): {e}",
                 "preview": None,
             }
 

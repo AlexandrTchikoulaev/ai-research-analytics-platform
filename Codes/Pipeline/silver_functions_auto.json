@@ -12,11 +12,15 @@
     "created_at": "2026-05-11T21:47:41.710694"
   },
   "valores_dcff": {
-    "code": "import json\nfrom typing import Dict, Any\nimport pandas as pd\n\ndef valores_dcff(data):\n    inds = data.get(\"indicators\", {})\n    rows = []\n    for ind, locs in data.get(\"values\", {}).items():\n        if isinstance(locs, dict):\n            for loc, yrs in locs.items():\n                if isinstance(yrs, dict):\n                    ind_name = inds.get(ind, {}).get(\"label\", ind)\n                    year = int(list(yrs.keys())[0])\n                    for yr, v in yrs.items():\n                        rows.append({\"location_code\": loc, \"indicator_code\": ind, \"indicator_name\": ind_name, \"year\": year, \"value\": float(v)})\n    return pd.DataFrame(rows).dropna(subset=[\"location_code\",\"indicator_code\",\"year\",\"value\"])",
-    "created_at": "2026-05-22T04:54:11.720064"
+    "code": "def valores_dcff(data):\n    inds = data.get(\"indicators\", {})\n    rows = [{\"location_code\": loc, \"indicator_code\": ind, \"indicator_name\": inds.get(ind, {}).get(\"label\", ind), \"year\": int(yr), \"value\": float(v) if v is not None else None} for ind, locs in data.get(\"values\", {}).items() if isinstance(locs, dict) for loc, yrs in locs.items() if isinstance(yrs, dict) and len(loc) == 3 and loc.isalpha() and loc.isupper() for yr, v in yrs.items()]\n    df = pd.DataFrame(rows)\n    if df.empty:\n        return df\n    return df.dropna(subset=[\"location_code\",\"indicator_code\",\"year\",\"value\"])",
+    "created_at": "2026-05-30T12:04:18.779240"
   },
   "valores_a7bd": {
     "code": "import re\nimport pandas as pd\n\ndef valores_a7bd(data):\n    skip = {\"code\"}\n    ind_cols = [col for col in data.columns if col not in skip]\n    pattern = r'^.+\\.raw\\.\\d{4}$'\n    rows = []\n    for iso, row in data.iterrows():\n        for col in ind_cols:\n            match = re.match(pattern, col)\n            if match:\n                indicator_code = col.split('.')[0]\n                year = int(col.split('.')[-1])\n                rows.append({\"location_code\": row['iso'], \"indicator_code\": indicator_code, \"indicator_name\": indicator_code, \"year\": year, \"value\": row[col]})\n    return pd.DataFrame(rows).dropna(subset=[\"location_code\",\"indicator_code\",\"year\",\"value\"])",
     "created_at": "2026-05-22T20:28:16.364198"
+  },
+  "valores_4c72": {
+    "code": "def valores_4c72(data):\n    skip = {\"Unnamed: 0\", \"Unnamed: 1\", \"Unnamed: 2\", \"Unnamed: 3\"}\n    ind_cols = [c for c in data.columns if c not in skip]\n    rows = []\n    for _, r in data.iterrows():\n        if not pd.isna(r[\"HUMAN FREEDOM\"]):\n            loc = r[\"Unnamed: 3\"]\n            ind_code = \"Ai Procedural Justice\" if len(ind_cols) > 1 else r[\"HUMAN FREEDOM\"]\n            ind_name = ind_code\n            year = int(r[\"Unnamed: 0\"])\n            value = float(r[\"HUMAN FREEDOM\"])\n            for col in ind_cols[1:]:\n                if not pd.isna(r[col]):\n                    if col != \"HUMAN FREEDOM\":\n                        ind_name = col\n                    value = float(r[col])\n                    break\n            rows.append({\"location_code\": loc, \"indicator_code\": ind_code, \"indicator_name\": ind_name, \"year\": year, \"value\": value})\n    return pd.DataFrame(rows).dropna(subset=[\"location_code\",\"indicator_code\",\"year\",\"value\"])",
+    "created_at": "2026-05-30T00:34:01.565942"
   }
 }

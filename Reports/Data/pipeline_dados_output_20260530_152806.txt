@@ -1,0 +1,567 @@
+ PIPELINE DE DADOS INICIADO
+ 2026-05-30 15:28:10
+==================================================
+ 1/6 — validate_opdata
+==================================================
+validate_opdata — 132 válidos, 0 inválidos
+[OK] 1/6 — validate_opdata concluído.
+==================================================
+ 2/6 — ingest_raw
+==================================================
+A correr bronze...
+[OK]   file_id=6  (json)
+[OK]   file_id=4  (json)
+[OK]   file_id=2  (json)
+[OK]   file_id=1  (json)
+[OK]   file_id=8  (json)
+[OK]   file_id=5  (json)
+[OK]   file_id=3  (json)
+[OK]   file_id=7  (json)
+[OK]   file_id=13  (json)
+[OK]   file_id=16  (json)
+[OK]   file_id=9  (json)
+[OK]   file_id=11  (json)
+[OK]   file_id=10  (json)
+[OK]   file_id=14  (json)
+[OK]   file_id=18  (json)
+[OK]   file_id=12  (json)
+[OK]   file_id=15  (json)
+[OK]   file_id=17  (json)
+[OK]   file_id=19  (json)
+[OK]   file_id=25  (json)
+[OK]   file_id=26  (xml)
+[OK]   file_id=23  (json)
+[OK]   file_id=21  (json)
+[OK]   file_id=24  (json)
+[OK]   file_id=20  (json)
+[OK]   file_id=22  (json)
+[OK]   file_id=27  (json)
+[OK]   file_id=29  (json)
+[OK]   file_id=32  (json)
+[OK]   file_id=34  (json)
+[OK]   file_id=31  (json)
+[OK]   file_id=28  (json)
+[OK]   file_id=30  (json)
+[OK]   file_id=35  (json)
+[OK]   file_id=33  (json)
+[OK]   file_id=38  (json)
+[OK]   file_id=36  (json)
+[OK]   file_id=37  (json)
+[OK]   file_id=42  (json)
+[OK]   file_id=39  (json)
+[OK]   file_id=40  (json)
+[OK]   file_id=47  (json)
+[OK]   file_id=41  (json)
+[OK]   file_id=46  (json)
+[OK]   file_id=44  (json)
+[OK]   file_id=43  (json)
+[OK]   file_id=45  (json)
+[OK]   file_id=49  (json)
+[OK]   file_id=51  (json)
+[OK]   file_id=50  (json)
+[OK]   file_id=48  (json)
+[OK]   file_id=53  (json)
+[OK]   file_id=54  (json)
+[OK]   file_id=52  (json)
+[OK]   file_id=55  (json)
+[OK]   file_id=56  (json)
+[OK]   file_id=59  (json)
+[OK]   file_id=60  (json)
+[OK]   file_id=57  (json)
+[OK]   file_id=61  (json)
+[OK]   file_id=58  (json)
+[OK]   file_id=65  (json)
+[OK]   file_id=62  (json)
+[OK]   file_id=63  (json)
+[OK]   file_id=70  (json)
+[OK]   file_id=64  (json)
+[OK]   file_id=69  (json)
+[OK]   file_id=67  (json)
+[OK]   file_id=66  (json)
+[OK]   file_id=68  (json)
+[OK]   file_id=72  (json)
+[OK]   file_id=71  (json)
+[OK]   file_id=77  (json)
+[OK]   file_id=74  (json)
+[OK]   file_id=73  (json)
+[OK]   file_id=75  (json)
+[OK]   file_id=78  (json)
+[OK]   file_id=76  (json)
+[OK]   file_id=79  (json)
+[OK]   file_id=82  (json)
+[OK]   file_id=84  (json)
+[OK]   file_id=85  (json)
+[OK]   file_id=86  (json)
+[OK]   file_id=80  (json)
+[OK]   file_id=83  (json)
+[OK]   file_id=88  (json)
+[OK]   file_id=89  (json)
+[OK]   file_id=87  (json)
+[OK]   file_id=81  (json)
+[OK]   file_id=90  (json)
+[OK]   file_id=92  (json)
+[OK]   file_id=93  (json)
+[OK]   file_id=98  (json)
+[OK]   file_id=96  (json)
+[OK]   file_id=91  (json)
+[OK]   file_id=99  (json)
+[OK]   file_id=94  (json)
+[OK]   file_id=97  (json)
+[OK]   file_id=95  (json)
+[OK]   file_id=101  (json)
+[OK]   file_id=100  (json)
+[OK]   file_id=103  (json)
+[OK]   file_id=105  (json)
+[OK]   file_id=102  (json)
+[OK]   file_id=109  (json)
+[OK]   file_id=104  (json)
+[OK]   file_id=107  (json)
+[OK]   file_id=111  (json)
+[OK]   file_id=112  (json)
+[OK]   file_id=106  (json)
+[OK]   file_id=114  (json)
+[OK]   file_id=108  (json)
+[OK]   file_id=113  (json)
+[OK]   file_id=110  (json)
+[OK]   file_id=116  (json)
+[OK]   file_id=117  (json)
+[OK]   file_id=119  (json)
+[OK]   file_id=122  (json)
+[OK]   file_id=115  (json)
+[OK]   file_id=118  (json)
+[OK]   file_id=120  (json)
+[OK]   file_id=121  (json)
+[OK]   file_id=123  (json)
+[OK]   file_id=124  (json)
+[OK]   file_id=126  (json)
+[OK]   file_id=125  (json)
+[OK]   file_id=129  (json)
+[OK]   file_id=128  (json)
+[OK]   file_id=127  (json)
+[OK]   file_id=130  (json)
+[OK]   file_id=131  (json)
+[OK]   file_id=132  (json)
+ingest_raw concluído — 132 OK, 0 erros
+[OK] 2/6 — ingest_raw concluído.
+==================================================
+ 3/6 — validate_bronze
+==================================================
+validate_bronze — 132 válidos, 0 inválidos
+[OK] 3/6 — validate_bronze concluído.
+==================================================
+ 4/6 — transform
+==================================================
+A transformar: 1 (imf)
+A transformar: 2 (imf)
+A transformar: 3 (imf)
+A transformar: 4 (imf)
+A transformar: 5 (imf)
+A transformar: 6 (imf)
+A transformar: 7 (imf)
+A transformar: 8 (imf)
+A transformar: 9 (imf)
+A transformar: 10 (imf)
+A transformar: 11 (imf)
+A transformar: 12 (imf)
+A transformar: 13 (imf)
+A transformar: 14 (imf)
+A transformar: 15 (imf)
+A transformar: 16 (imf)
+A transformar: 17 (imf)
+A transformar: 18 (imf)
+A transformar: 19 (imf)
+A transformar: 20 (imf)
+A transformar: 21 (imf)
+A transformar: 22 (imf)
+A transformar: 23 (imf)
+A transformar: 24 (imf)
+A transformar: 25 (imf)
+A transformar: 26 (imf)
+A transformar: 27 (imf)
+A transformar: 28 (imf)
+A transformar: 29 (imf)
+A transformar: 30 (imf)
+A transformar: 31 (imf)
+A transformar: 32 (imf)
+A transformar: 33 (imf)
+A transformar: 34 (imf)
+A transformar: 35 (imf)
+A transformar: 36 (imf)
+A transformar: 37 (imf)
+A transformar: 38 (imf)
+A transformar: 39 (imf)
+A transformar: 40 (imf)
+A transformar: 41 (imf)
+A transformar: 42 (imf)
+A transformar: 43 (imf)
+A transformar: 44 (imf)
+A transformar: 45 (imf)
+A transformar: 46 (imf)
+A transformar: 47 (imf)
+A transformar: 48 (imf)
+A transformar: 49 (imf)
+A transformar: 50 (imf)
+A transformar: 51 (imf)
+A transformar: 52 (imf)
+A transformar: 53 (imf)
+A transformar: 54 (imf)
+A transformar: 55 (imf)
+A transformar: 56 (imf)
+A transformar: 57 (imf)
+A transformar: 58 (imf)
+A transformar: 59 (imf)
+A transformar: 60 (imf)
+A transformar: 61 (imf)
+A transformar: 62 (imf)
+A transformar: 63 (imf)
+A transformar: 64 (imf)
+A transformar: 65 (imf)
+A transformar: 66 (imf)
+A transformar: 67 (imf)
+A transformar: 68 (imf)
+A transformar: 69 (imf)
+A transformar: 70 (imf)
+A transformar: 71 (imf)
+A transformar: 72 (imf)
+A transformar: 73 (imf)
+A transformar: 74 (imf)
+A transformar: 75 (imf)
+A transformar: 76 (imf)
+A transformar: 77 (imf)
+A transformar: 78 (imf)
+A transformar: 79 (imf)
+A transformar: 80 (imf)
+A transformar: 81 (imf)
+A transformar: 82 (imf)
+A transformar: 83 (imf)
+A transformar: 84 (imf)
+A transformar: 85 (imf)
+A transformar: 86 (imf)
+A transformar: 87 (imf)
+A transformar: 88 (imf)
+A transformar: 89 (imf)
+A transformar: 90 (imf)
+A transformar: 91 (imf)
+A transformar: 92 (imf)
+A transformar: 93 (imf)
+A transformar: 94 (imf)
+A transformar: 95 (imf)
+A transformar: 96 (imf)
+A transformar: 97 (imf)
+A transformar: 98 (imf)
+A transformar: 99 (imf)
+A transformar: 100 (imf)
+A transformar: 101 (imf)
+A transformar: 102 (imf)
+A transformar: 103 (imf)
+A transformar: 104 (imf)
+A transformar: 105 (imf)
+A transformar: 106 (imf)
+A transformar: 107 (imf)
+A transformar: 108 (imf)
+A transformar: 109 (imf)
+A transformar: 110 (imf)
+A transformar: 111 (imf)
+A transformar: 112 (imf)
+A transformar: 113 (imf)
+A transformar: 114 (imf)
+A transformar: 115 (imf)
+A transformar: 116 (imf)
+A transformar: 117 (imf)
+A transformar: 118 (imf)
+A transformar: 119 (imf)
+A transformar: 120 (imf)
+A transformar: 121 (imf)
+A transformar: 122 (imf)
+A transformar: 123 (imf)
+A transformar: 124 (imf)
+A transformar: 125 (imf)
+A transformar: 126 (imf)
+A transformar: 127 (imf)
+A transformar: 128 (imf)
+A transformar: 129 (imf)
+A transformar: 130 (imf)
+A transformar: 131 (imf)
+A transformar: 132 (imf)
+[OK]   6 -> 6.parquet
+[OK]   3 -> 3.parquet
+[OK]   7 -> 7.parquet
+[OK]   1 -> 1.parquet
+[OK]   5 -> 5.parquet
+[OK]   8 -> 8.parquet
+[OK]   4 -> 4.parquet
+[OK]   2 -> 2.parquet
+[OK]   9 -> 9.parquet
+[OK]   14 -> 14.parquet
+[OK]   13 -> 13.parquet
+[OK]   16 -> 16.parquet
+[OK]   12 -> 12.parquet
+[OK]   15 -> 15.parquet
+[OK]   11 -> 11.parquet
+[OK]   10 -> 10.parquet
+[OK]   18 -> 18.parquet
+[OK]   19 -> 19.parquet
+[OK]   17 -> 17.parquet
+[OK]   22 -> 22.parquet
+[OK]   21 -> 21.parquet
+[OK]   20 -> 20.parquet[OK]   24 -> 24.parquet
+[OK]   23 -> 23.parquet
+[OK]   28 -> 28.parquet
+[ERRO] 26: Formato 'xml' não pôde ser lido automaticamente: Specification mandates value for attribute async, line 58, column 15 (<string>, line 58). Configure uma função de transformação manual no Painel de Controlo.
+[OK]   31 -> 31.parquet
+[OK]   25 -> 25.parquet
+[OK]   29 -> 29.parquet
+[OK]   30 -> 30.parquet
+[OK]   32 -> 32.parquet
+[OK]   27 -> 27.parquet
+[OK]   33 -> 33.parquet
+[OK]   34 -> 34.parquet
+[OK]   40 -> 40.parquet
+[OK]   38 -> 38.parquet
+[OK]   37 -> 37.parquet
+[OK]   41 -> 41.parquet
+[OK]   42 -> 42.parquet
+[OK]   39 -> 39.parquet
+[OK]   35 -> 35.parquet
+[OK]   36 -> 36.parquet
+[OK]   43 -> 43.parquet[OK]   44 -> 44.parquet
+[OK]   47 -> 47.parquet
+[OK]   45 -> 45.parquet
+[OK]   46 -> 46.parquet
+[OK]   49 -> 49.parquet
+[OK]   50 -> 50.parquet
+[OK]   48 -> 48.parquet
+[OK]   51 -> 51.parquet
+[OK]   52 -> 52.parquet
+[OK]   54 -> 54.parquet
+[OK]   56 -> 56.parquet
+[OK]   55 -> 55.parquet
+[OK]   53 -> 53.parquet
+[OK]   58 -> 58.parquet
+[OK]   61 -> 61.parquet
+[OK]   60 -> 60.parquet
+[OK]   64 -> 64.parquet
+[OK]   63 -> 63.parquet
+[OK]   62 -> 62.parquet
+[OK]   65 -> 65.parquet
+[OK]   59 -> 59.parquet
+[OK]   57 -> 57.parquet
+[OK]   66 -> 66.parquet
+[OK]   67 -> 67.parquet
+[OK]   69 -> 69.parquet
+[OK]   68 -> 68.parquet
+[OK]   71 -> 71.parquet
+[OK]   73 -> 73.parquet
+[OK]   72 -> 72.parquet[OK]   70 -> 70.parquet
+[OK]   77 -> 77.parquet
+[OK]   79 -> 79.parquet
+[OK]   74 -> 74.parquet
+[OK]   78 -> 78.parquet
+[OK]   76 -> 76.parquet
+[OK]   75 -> 75.parquet
+[OK]   80 -> 80.parquet
+[OK]   82 -> 82.parquet
+[OK]   81 -> 81.parquet
+[OK]   84 -> 84.parquet
+[OK]   83 -> 83.parquet
+[OK]   89 -> 89.parquet
+[OK]   90 -> 90.parquet
+[OK]   85 -> 85.parquet
+[OK]   87 -> 87.parquet
+[OK]   91 -> 91.parquet
+[OK]   86 -> 86.parquet
+[OK]   88 -> 88.parquet
+[OK]   92 -> 92.parquet
+[OK]   97 -> 97.parquet
+[OK]   98 -> 98.parquet
+[OK]   95 -> 95.parquet
+[OK]   93 -> 93.parquet
+[OK]   99 -> 99.parquet
+[OK]   94 -> 94.parquet[OK]   100 -> 100.parquet
+[OK]   96 -> 96.parquet
+[OK]   101 -> 101.parquet
+[OK]   102 -> 102.parquet
+[OK]   104 -> 104.parquet
+[OK]   108 -> 108.parquet
+[OK]   105 -> 105.parquet
+[OK]   106 -> 106.parquet
+[OK]   103 -> 103.parquet
+[OK]   107 -> 107.parquet
+[OK]   109 -> 109.parquet
+[OK]   111 -> 111.parquet
+[OK]   110 -> 110.parquet
+[OK]   112 -> 112.parquet
+[OK]   115 -> 115.parquet
+[OK]   116 -> 116.parquet
+[OK]   114 -> 114.parquet
+[OK]   113 -> 113.parquet
+[OK]   119 -> 119.parquet
+[OK]   117 -> 117.parquet
+[OK]   121 -> 121.parquet
+[OK]   118 -> 118.parquet
+[OK]   120 -> 120.parquet
+[OK]   122 -> 122.parquet
+[OK]   123 -> 123.parquet
+[OK]   124 -> 124.parquet
+[OK]   126 -> 126.parquet[OK]   125 -> 125.parquet
+[OK]   127 -> 127.parquet
+[OK]   132 -> 132.parquet
+[OK]   129 -> 129.parquet
+[OK]   130 -> 130.parquet
+[OK]   128 -> 128.parquet
+[OK]   131 -> 131.parquet
+transform concluído — 131 OK, 1 erros
+[OK] 4/6 — transform concluído.
+==================================================
+ 5/6 — validate_silver
+==================================================
+validate_silver — 131 válidos, 0 inválidos
+[OK] 5/6 — validate_silver concluído.
+==================================================
+ 6/6 — load
+==================================================
+1. Source + Reports
+Source + Reports carregados
+2. A ler parquets e a recolher indicadores...
+3. Dimensões — a inserir indicadores em lote...
+4. Facts — a inserir em paralelo (4 workers)...
+  [OK]   44.parquet
+  [OK]   47.parquet
+  [OK]   45.parquet
+  [OK]   49.parquet
+  [OK]   43.parquet
+  [OK]   39.parquet
+  [OK]   46.parquet
+  [OK]   51.parquet
+  [OK]   54.parquet
+  [OK]   50.parquet
+  [OK]   48.parquet
+  [OK]   56.parquet
+  [OK]   61.parquet
+  [OK]   52.parquet
+  [OK]   64.parquet
+  [OK]   60.parquet
+  [OK]   63.parquet
+  [OK]   62.parquet
+  [OK]   65.parquet
+  [OK]   67.parquet
+  [OK]   66.parquet
+  [OK]   68.parquet
+  [OK]   57.parquet
+  [OK]   69.parquet
+  [OK]   59.parquet
+  [OK]   71.parquet
+  [OK]   77.parquet
+  [OK]   73.parquet
+  [OK]   79.parquet
+  [OK]   74.parquet
+  [OK]   78.parquet
+  [OK]   82.parquet
+  [OK]   76.parquet
+  [OK]   84.parquet
+  [OK]   75.parquet
+  [OK]   80.parquet
+  [OK]   89.parquet
+  [OK]   90.parquet  [OK]   81.parquet
+  [OK]   83.parquet
+  [OK]   88.parquet
+  [OK]   91.parquet
+  [OK]   97.parquet
+  [OK]   95.parquet
+  [OK]   93.parquet
+  [OK]   98.parquet
+  [OK]   99.parquet
+  [OK]   94.parquet
+  [OK]   96.parquet
+  [OK]   100.parquet
+  [OK]   104.parquet
+  [OK]   108.parquet
+  [OK]   105.parquet
+  [OK]   101.parquet
+  [OK]   102.parquet
+  [OK]   106.parquet
+  [OK]   107.parquet
+  [OK]   6.parquet
+  [OK]   125.parquet
+  [OK]   3.parquet
+  [OK]   129.parquet
+  [OK]   1.parquet
+  [OK]   7.parquet
+  [OK]   5.parquet
+  [OK]   8.parquet
+  [OK]   128.parquet
+  [OK]   9.parquet
+  [OK]   14.parquet
+  [OK]   13.parquet
+  [OK]   4.parquet
+  [OK]   2.parquet
+  [OK]   12.parquet
+  [OK]   70.parquet
+  [OK]   11.parquet
+  [OK]   10.parquet
+  [OK]   132.parquet
+  [OK]   40.parquet
+  [OK]   127.parquet
+  [OK]   87.parquet
+  [OK]   29.parquet
+  [OK]   31.parquet
+  [OK]   130.parquet
+  [OK]   131.parquet
+  [OK]   30.parquet
+  [OK]   32.parquet
+  [OK]   27.parquet
+  [OK]   34.parquet
+  [OK]   37.parquet
+  [OK]   33.parquet
+  [OK]   25.parquet
+  [OK]   35.parquet
+  [OK]   16.parquet
+  [OK]   15.parquet
+  [OK]   18.parquet
+  [OK]   17.parquet
+  [OK]   19.parquet
+  [OK]   41.parquet
+  [OK]   22.parquet
+  [OK]   21.parquet
+  [OK]   24.parquet
+  [OK]   28.parquet
+  [OK]   20.parquet
+  [OK]   23.parquet
+  [OK]   85.parquet
+  [OK]   36.parquet
+  [OK]   72.parquet
+  [OK]   86.parquet
+  [OK]   92.parquet
+  [OK]   42.parquet
+  [OK]   38.parquet
+  [OK]   58.parquet
+  [OK]   53.parquet
+  [OK]   55.parquet
+  [OK]   109.parquet
+  [OK]   111.parquet
+  [OK]   112.parquet  [OK]   115.parquet
+  [OK]   103.parquet
+  [OK]   116.parquet
+  [OK]   114.parquet
+  [OK]   110.parquet
+  [OK]   113.parquet
+  [OK]   119.parquet
+  [OK]   121.parquet
+  [OK]   117.parquet
+  [OK]   120.parquet
+  [OK]   118.parquet
+  [OK]   123.parquet
+  [OK]   122.parquet
+  [OK]   124.parquet
+  [OK]   126.parquet
+5. Views
+Views atualizadas
+ETL concluído — 131 OK, 0 erros
+[OK] 6/6 — load concluído.
+ PIPELINE DE DADOS CONCLUÍDO COM SUCESSO
+[AVISO] Não foi possível gerar o relatório: operator does not exist: character varying = integer
+LINE 4:                 WHERE file_id = ANY(ARRAY[1,2,3,4,5,6,7,8,9,...
+                                      ^
+HINT:  No operator matches the given name and argument types. You might need to add explicit type casts.
+[AVISO] Detalhe do erro guardado em: C:\Users\Alexandr\Desktop\Universidade\3º Ano\Projeto\Projeto-Final-Eu\Codes\Pipeline\pipeline_report_error.log
+✓ Concluído

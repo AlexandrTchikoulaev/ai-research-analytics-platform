@@ -10,19 +10,15 @@ Executa sequencialmente:
 """
 import sys
 import os
+import traceback
 import psycopg2
 from datetime import datetime
 
-# Permitir imports diretos dos módulos na mesma pasta
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 
-DB_CONFIG = {
-    "host": "localhost",
-    "port": 5433,
-    "dbname": "gestao_db",
-    "user": "projeto_utilizador",
-    "password": "projeto",
-}
+from config import DB_CONFIG
+
+PIPELINE_LOCK_ID = 987654321
 
 
 def run_step(label: str, fn):
@@ -49,34 +45,43 @@ def run_pipeline():
 
     run_start = datetime.now()
 
-    # Crash recovery: reset PROCESSING → PENDING (ficheiros que ficaram a meio num crash anterior)
+    # Impede execuções simultâneas — o lock é libertado automaticamente ao fechar a ligação
+    conn_lock = psycopg2.connect(**DB_CONFIG)
+    cur_lock = conn_lock.cursor()
+    cur_lock.execute("SELECT pg_try_advisory_lock(%s)", (PIPELINE_LOCK_ID,))
+    locked = cur_lock.fetchone()[0]
+    if not locked:
+        print("[AVISO] Outra instância do pipeline já está em execução. A abortar.")
+        cur_lock.close()
+        conn_lock.close()
+        return
+
+    # Crash recovery: reset PROCESSING/VALIDATED → PENDING
     conn_reset = psycopg2.connect(**DB_CONFIG)
     cur_reset = conn_reset.cursor()
-    cur_reset.execute("UPDATE op_data SET pipeline_status = 'PENDING' WHERE pipeline_status = 'PROCESSING'")
+    cur_reset.execute("""
+        UPDATE op_data
+        SET pipeline_status = 'PENDING'
+        WHERE pipeline_status IN ('PROCESSING', 'VALIDATED')
+    """)
     conn_reset.commit()
-    cur_reset.close(); conn_reset.close()
+
+    # Capturar file_ids PENDING agora — define o escopo do relatório desta run
+    cur_reset.execute("SELECT file_id FROM op_data WHERE pipeline_status = 'PENDING'")
+    run_file_ids = [r[0] for r in cur_reset.fetchall()]
+    cur_reset.close()
+    conn_reset.close()
 
     print("\n PIPELINE DE DADOS INICIADO")
     print(f" {run_start.strftime('%Y-%m-%d %H:%M:%S')}\n")
 
     success = False
     try:
-        # 1. Validar op_data
         run_step("1/6 — validate_opdata", bronze_validations.validate)
-
-        # 2. Ingerir ficheiros brutos para Bronze
         run_step("2/6 — ingest_raw", bronze.main)
-
-        # 3. Validar camada Bronze
         run_step("3/6 — validate_bronze", silver_validations.validate)
-
-        # 4. Transformar para Silver
         run_step("4/6 — transform", silver.transformar)
-
-        # 5. Validar camada Silver
         run_step("5/6 — validate_silver", gold_validations.validate)
-
-        # 6. Carregar para o Data Warehouse
         run_step("6/6 — load", gold.run_etl)
 
         success = True
@@ -84,9 +89,20 @@ def run_pipeline():
 
     finally:
         try:
-            pipeline_data_report.generate(run_start, success)
+            pipeline_data_report.generate(run_start, success, run_file_ids)
         except Exception as e:
             print(f"[AVISO] Não foi possível gerar o relatório: {e}")
+            try:
+                _err_log = os.path.join(os.path.dirname(os.path.abspath(__file__)), "pipeline_report_error.log")
+                with open(_err_log, "a", encoding="utf-8") as _f:
+                    _f.write(f"\n{datetime.now().isoformat()} — ERRO ao gerar relatório: {e}\n")
+                    _f.write(traceback.format_exc())
+                print(f"[AVISO] Detalhe do erro guardado em: {_err_log}")
+            except Exception:
+                pass
+
+        cur_lock.close()
+        conn_lock.close()
 
 
 if __name__ == "__main__":
