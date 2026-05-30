@@ -558,3 +558,59 @@ LINE 9:                 WHERE d.file_id = ANY(ARRAY['1','2','3','4',...
                                         ^
 HINT:  No operator matches the given name and argument types. You might need to add explicit type casts.
 
+
+2026-05-30T17:14:06.586425 — ERRO ao gerar relatório: operator does not exist: integer = text
+LINE 9:                 WHERE d.file_id = ANY(ARRAY['133','139','145...
+                                        ^
+HINT:  No operator matches the given name and argument types. You might need to add explicit type casts.
+
+Traceback (most recent call last):
+  File "C:\Users\Alexandr\Desktop\Universidade\3º Ano\Projeto\Projeto-Final-Eu\Codes\Pipeline\pipeline_data.py", line 92, in run_pipeline
+    pipeline_data_report.generate(run_start, success, run_file_ids)
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\Alexandr\Desktop\Universidade\3º Ano\Projeto\Projeto-Final-Eu\Codes\Pipeline\pipeline_data_report.py", line 44, in generate
+    cur_op.execute("""
+    ~~~~~~~~~~~~~~^^^^
+        SELECT d.file_id, d.report_id, d.file_url,
+        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+    ...<7 lines>...
+        ORDER BY d.file_id
+        ^^^^^^^^^^^^^^^^^^
+    """, (run_file_ids,))
+    ^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\Alexandr\miniconda3\Lib\site-packages\psycopg2\extras.py", line 236, in execute
+    return super().execute(query, vars)
+           ~~~~~~~~~~~~~~~^^^^^^^^^^^^^
+psycopg2.errors.UndefinedFunction: operator does not exist: integer = text
+LINE 9:                 WHERE d.file_id = ANY(ARRAY['133','139','145...
+                                        ^
+HINT:  No operator matches the given name and argument types. You might need to add explicit type casts.
+
+
+2026-05-30T17:14:50.994397 — ERRO ao gerar relatório: operator does not exist: integer = text
+LINE 9:                 WHERE d.file_id = ANY(ARRAY['180','185','190...
+                                        ^
+HINT:  No operator matches the given name and argument types. You might need to add explicit type casts.
+
+Traceback (most recent call last):
+  File "C:\Users\Alexandr\Desktop\Universidade\3º Ano\Projeto\Projeto-Final-Eu\Codes\Pipeline\pipeline_data.py", line 92, in run_pipeline
+    pipeline_data_report.generate(run_start, success, run_file_ids)
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\Alexandr\Desktop\Universidade\3º Ano\Projeto\Projeto-Final-Eu\Codes\Pipeline\pipeline_data_report.py", line 44, in generate
+    cur_op.execute("""
+    ~~~~~~~~~~~~~~^^^^
+        SELECT d.file_id, d.report_id, d.file_url,
+        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+    ...<7 lines>...
+        ORDER BY d.file_id
+        ^^^^^^^^^^^^^^^^^^
+    """, (run_file_ids,))
+    ^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\Alexandr\miniconda3\Lib\site-packages\psycopg2\extras.py", line 236, in execute
+    return super().execute(query, vars)
+           ~~~~~~~~~~~~~~~^^^^^^^^^^^^^
+psycopg2.errors.UndefinedFunction: operator does not exist: integer = text
+LINE 9:                 WHERE d.file_id = ANY(ARRAY['180','185','190...
+                                        ^
+HINT:  No operator matches the given name and argument types. You might need to add explicit type casts.
+

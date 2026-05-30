@@ -1432,18 +1432,6 @@
   <div id="isec-dados" style="display:none;">
   <div class="form-card">
 
-    <!-- Mode cards -->
-    <div style="display:grid;grid-template-columns:repeat(2,1fr);max-width:230px;margin:0 auto 1.5rem;gap:0.4rem;">
-      <div id="dcard-form" class="report-mode-card active" onclick="setDataMode2('form')">
-        <svg viewBox="0 0 24 24"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/><line x1="10" y1="9" x2="8" y2="9"/></svg>
-        Formulário
-      </div>
-      <div id="dcard-json" class="report-mode-card" onclick="setDataMode2('json')">
-        <svg viewBox="0 0 24 24"><polyline points="16 18 22 12 16 6"/><polyline points="8 6 2 12 8 18"/></svg>
-        JSON
-      </div>
-    </div>
-
     <!-- Form section -->
     <div id="d-form-view">
       <div class="form-grid">
@@ -1467,7 +1455,7 @@
             </div>
           </div>
           <div id="dsrc-link">
-            <input type="url" id="d-file_url" placeholder="https://api.imf.org/dados"/>
+            <textarea id="d-file_url" rows="4" placeholder="https://url1.com&#10;https://url2.com&#10;&#10;(um por linha ou separados por vírgula)" style="width:100%;resize:vertical;font-family:inherit;font-size:inherit;padding:0.4rem;box-sizing:border-box;"></textarea>
           </div>
           <div id="dsrc-ficheiro" style="display:none;">
             <input type="file" id="d-up-file" accept=".json,.csv,.xlsx,.xls,.xml,.zip" multiple onchange="updateUploadPreview()"/>
@@ -1481,9 +1469,6 @@
       <div class="form-actions">
         <button class="btn-primary" id="btn-data-submit" onclick="submitDataAuto()">Adicionar Ficheiro</button>
         <button class="btn-ghost" onclick="clearDataForm()">Limpar</button>
-        <button type="button" id="dtog-ai" class="ai-toggle active" onclick="setAutoGenerate(!_autoGenerate)" title="A AI gera a função de extração automaticamente">
-          <span class="ai-toggle-dot"></span><span class="ai-toggle-label">AI</span>
-        </button>
         <span id="upload-summary" style="font-size:0.78rem;color:var(--text-muted);"></span>
       </div>
       <div id="upload-preview" style="display:none;">
@@ -1502,37 +1487,6 @@
       </div>
     </div>
 
-    <!-- JSON section -->
-    <div id="d-json-view" style="display:none;">
-      <div class="form-group full" style="margin-bottom:0.75rem;">
-        <label>relatório</label>
-        <div class="chk-dropdown" id="rep-json-dropdown">
-          <button type="button" class="chk-dropdown-toggle" id="rep-json-dropdown-toggle" onclick="toggleRepJsonDropdown()">
-            <span id="rep-json-dropdown-label">— Clica para carregar —</span>
-            <span>▾</span>
-          </button>
-          <div class="chk-dropdown-menu" id="rep-json-dropdown-menu" style="display:none;"></div>
-        </div>
-        <input type="hidden" id="d-json-rid"/>
-      </div>
-      <div class="form-group full" style="margin-bottom:0.75rem;">
-        <label>ficheiro JSON</label>
-        <input type="file" id="d-json-file" accept=".json" onchange="loadJsonFile('d-json-file','d-batch-json')"/>
-      </div>
-      <div class="form-group full" style="margin-bottom:1rem;">
-        <label>JSON</label>
-        <textarea id="d-batch-json" style="min-height:180px;font-size:0.78rem;" placeholder='[
-  "https://api.imf.org/indicadores",
-  "https://api.imf.org/valores"
-]'></textarea>
-      </div>
-      <div class="form-actions">
-        <button class="btn-primary" id="btn-dbatch" onclick="submitBatchData()">Importar Lote</button>
-        <button type="button" id="dtog-ai-batch" class="ai-toggle active" onclick="setAutoGenerate(!_autoGenerate)" title="A AI gera a função de extração automaticamente">
-          <span class="ai-toggle-dot"></span><span class="ai-toggle-label">AI</span>
-        </button>
-      </div>
-    </div>
 
   </div>
   </div><!-- end isec-dados -->
@@ -1716,7 +1670,22 @@
 
   <div id="dash-content" style="display:none;">
 
-  <div class="dash-section-title">Mapa Mundo</div>
+  <div class="report-mode-cards" style="max-width:460px;">
+    <div id="dash-tab-map" class="report-mode-card active" onclick="switchDashView('map')">
+      <svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><line x1="2" y1="12" x2="22" y2="12"/><path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"/></svg>
+      Mapa
+    </div>
+    <div id="dash-tab-ts" class="report-mode-card" onclick="switchDashView('ts')">
+      <svg viewBox="0 0 24 24"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></svg>
+      Evolução
+    </div>
+    <div id="dash-tab-rank" class="report-mode-card" onclick="switchDashView('rank')">
+      <svg viewBox="0 0 24 24"><line x1="18" y1="20" x2="18" y2="10"/><line x1="12" y1="20" x2="12" y2="4"/><line x1="6" y1="20" x2="6" y2="14"/></svg>
+      Ranking
+    </div>
+  </div>
+
+  <div id="dash-view-map">
   <div class="dash-layout">
     <!-- Sidebar de controlos -->
     <div class="dash-sidebar">
@@ -1736,9 +1705,6 @@
           <button class="year-step" id="dash-year-next" onclick="stepDashYear(1)" title="Próximo ano" disabled>&#8250;</button>
         </div>
       </div>
-      <div class="dash-control">
-        <button class="btn-apply" id="btn-apply-dash" onclick="applyDashboard()">Aplicar</button>
-      </div>
       <div class="dash-control" id="dash-stats" style="display:none;">
         <label>Estatísticas</label>
         <div style="font-family:var(--mono);font-size:0.75rem;color:var(--text-secondary);display:flex;flex-direction:column;gap:0.4rem;margin-top:0.2rem;">
@@ -1757,15 +1723,13 @@
         <span id="dash-record-count"></span>
       </div>
       <div id="dash-plotly">
-        <div class="dash-empty">Seleciona um indicador e um ano e clica em Aplicar.</div>
+        <div class="dash-empty">Seleciona um indicador e um ano.</div>
       </div>
     </div>
   </div><!-- end dash-layout -->
+  </div><!-- end dash-view-map -->
 
-  <!-- ── Gráfico Temporal ── -->
-  <hr class="dash-section-divider"/>
-  <div class="dash-section-title">Evolução Temporal</div>
-
+  <div id="dash-view-ts" style="display:none;">
   <div class="ts-layout">
     <!-- Sidebar de controlos -->
     <div class="ts-sidebar">
@@ -1785,9 +1749,6 @@
           <label style="color:var(--text-muted);cursor:default;">A carregar...</label>
         </div>
       </div>
-      <div class="dash-control">
-        <button class="btn-apply" id="btn-apply-ts" onclick="applyTimeseries()">Aplicar</button>
-      </div>
     </div>
 
     <!-- Gráfico -->
@@ -1797,15 +1758,13 @@
         <span id="ts-record-count"></span>
       </div>
       <div id="ts-plotly">
-        <div class="dash-empty">Seleciona um indicador e pelo menos um país e clica em Aplicar.</div>
+        <div class="dash-empty">Seleciona um indicador e pelo menos um país.</div>
       </div>
     </div>
   </div>
+  </div><!-- end dash-view-ts -->
 
-  <!-- ── Ranking por País ── -->
-  <hr class="dash-section-divider"/>
-  <div class="dash-section-title">Ranking de Países</div>
-
+  <div id="dash-view-rank" style="display:none;">
   <div class="ts-layout">
     <div class="ts-sidebar">
       <div class="dash-control">
@@ -1823,9 +1782,6 @@
           </select>
           <button class="year-step" id="rank-year-next" onclick="stepRankYear(1)" title="Próximo ano" disabled>&#8250;</button>
         </div>
-      </div>
-      <div class="dash-control">
-        <button class="btn-apply" id="btn-apply-rank" onclick="applyRanking()">Aplicar</button>
       </div>
       <div class="dash-control">
         <label>Procurar país</label>
@@ -1855,11 +1811,12 @@
       </div>
       <div id="rank-scroll" style="max-height:520px; overflow-y:auto; overflow-x:hidden;">
         <div id="rank-plotly" style="min-height:460px;">
-          <div class="dash-empty">Seleciona um indicador e um ano e clica em Aplicar.</div>
+          <div class="dash-empty">Seleciona um indicador e um ano.</div>
         </div>
       </div>
     </div>
   </div>
+  </div><!-- end dash-view-rank -->
 
   </div><!-- end dash-content -->
 
@@ -2032,6 +1989,17 @@
           <button id="func-btn-ollama" onclick="setFunctionProvider('ollama')">Ollama (Local)</button>
           <button id="func-btn-google" onclick="setFunctionProvider('google')">Google (API)</button>
         </div>
+      </div>
+    </div>
+    <div class="form-card">
+      <div style="display:flex;align-items:center;justify-content:space-between;">
+        <div>
+          <div style="font-family:var(--mono);font-size:0.8rem;">Geração Automática (AI)</div>
+          <div style="font-family:var(--mono);font-size:0.7rem;color:var(--text-muted);margin-top:0.25rem;">Gera automaticamente a função de extração ao inserir dados</div>
+        </div>
+        <button type="button" id="dtog-ai" class="ai-toggle active" onclick="setAutoGenerate(!_autoGenerate)" title="AI ativa — clica para desativar">
+          <span class="ai-toggle-dot"></span><span class="ai-toggle-label">AI</span>
+        </button>
       </div>
     </div>
     <div class="form-card" id="google-api-key-card">
@@ -3010,7 +2978,7 @@ async function loadEmbeddingProvider() {
 
   function setAutoGenerate(val) {
     _autoGenerate = val;
-    for (const id of ['dtog-ai', 'dtog-ai-batch']) {
+    for (const id of ['dtog-ai']) {
       const btn = document.getElementById(id);
       if (!btn) continue;
       btn.classList.toggle('active', val);
@@ -3050,12 +3018,7 @@ async function loadEmbeddingProvider() {
       const t = document.getElementById('rep-dropdown-toggle');
       if (t) t.classList.remove('open');
     }
-    const repJsonDd = document.getElementById('rep-json-dropdown');
-    if (repJsonDd && !repJsonDd.contains(e.target)) {
-      document.getElementById('rep-json-dropdown-menu').style.display = 'none';
-      const t = document.getElementById('rep-json-dropdown-toggle');
-      if (t) t.classList.remove('open');
-    }
+
     const dashRepDd = document.getElementById('dash-rep-dropdown');
     if (dashRepDd && !dashRepDd.contains(e.target)) {
       document.getElementById('dash-rep-dropdown-menu').style.display = 'none';
@@ -3739,6 +3702,13 @@ async function loadEmbeddingProvider() {
   }
 
   // ── DASHBOARD ──
+  function switchDashView(view) {
+    ['map', 'ts', 'rank'].forEach(v => {
+      document.getElementById(`dash-view-${v}`).style.display = v === view ? '' : 'none';
+      document.getElementById(`dash-tab-${v}`).classList.toggle('active', v === view);
+    });
+  }
+
   let allCountries = [];
   let selectedCountries = new Set();
   let rankSorted = [];
@@ -3920,9 +3890,9 @@ async function loadEmbeddingProvider() {
     document.getElementById('rank-year').innerHTML = '<option value="">— Primeiro seleciona um indicador —</option>';
     document.getElementById('rank-year').disabled = true;
     updateRankYearArrows();
-    document.getElementById('dash-plotly').innerHTML = '<div class="dash-empty">Seleciona um indicador e um ano e clica em Aplicar.</div>';
-    document.getElementById('ts-plotly').innerHTML = '<div class="dash-empty">Seleciona um indicador e pelo menos um país e clica em Aplicar.</div>';
-    document.getElementById('rank-plotly').innerHTML = '<div class="dash-empty">Seleciona um indicador e um ano e clica em Aplicar.</div>';
+    document.getElementById('dash-plotly').innerHTML = '<div class="dash-empty">Seleciona um indicador e um ano.</div>';
+    document.getElementById('ts-plotly').innerHTML = '<div class="dash-empty">Seleciona um indicador e pelo menos um país.</div>';
+    document.getElementById('rank-plotly').innerHTML = '<div class="dash-empty">Seleciona um indicador e um ano.</div>';
     document.getElementById('dash-stats').style.display = 'none';
     allCountries = [];
     selectedCountries.clear();
@@ -3951,10 +3921,7 @@ async function loadEmbeddingProvider() {
     const indicator = document.getElementById('rank-indicator').value;
     const year      = document.getElementById('rank-year').value;
 
-    if (!indicator || !year) { showToast('Seleciona um indicador e um ano.', 'error'); return; }
-
-    const btn = document.getElementById('btn-apply-rank');
-    btn.disabled = true; btn.textContent = 'A carregar...';
+    if (!indicator || !year) return;
 
     try {
       const report_id = document.getElementById('dash-report-select').value;
@@ -4029,9 +3996,13 @@ async function loadEmbeddingProvider() {
 
     } catch (e) {
       showToast(`Erro: ${e.message}`, 'error');
-    } finally {
-      btn.disabled = false; btn.textContent = 'Aplicar';
     }
+  }
+
+  let _tsDebouce = null;
+  function _scheduleTs() {
+    clearTimeout(_tsDebouce);
+    _tsDebouce = setTimeout(applyTimeseries, 400);
   }
 
   function renderCountryList(countries) {
@@ -4043,6 +4014,13 @@ async function loadEmbeddingProvider() {
     listEl.innerHTML = countries.map(c =>
       `<label><input type="checkbox" value="${escHtml(c)}"${selectedCountries.has(c) ? ' checked' : ''}/> ${escHtml(c)}</label>`
     ).join('');
+    listEl.querySelectorAll('input[type=checkbox]').forEach(cb => {
+      cb.addEventListener('change', () => {
+        if (cb.checked) selectedCountries.add(cb.value);
+        else selectedCountries.delete(cb.value);
+        _scheduleTs();
+      });
+    });
   }
 
   function deselectAllCountries() {
@@ -4051,7 +4029,7 @@ async function loadEmbeddingProvider() {
     renderCountryList(allCountries);
     document.getElementById('ts-chart-title').textContent = 'Seleciona um indicador e países';
     document.getElementById('ts-record-count').textContent = '';
-    document.getElementById('ts-plotly').innerHTML = '<div class="dash-empty">Seleciona um indicador e pelo menos um país e clica em Aplicar.</div>';
+    document.getElementById('ts-plotly').innerHTML = '<div class="dash-empty">Seleciona um indicador e pelo menos um país.</div>';
   }
 
   function filterCountryList() {
@@ -4064,11 +4042,7 @@ async function loadEmbeddingProvider() {
     const indicator = document.getElementById('ts-indicator').value;
     const checked = [...selectedCountries];
 
-    if (!indicator) { showToast('Seleciona um indicador.', 'error'); return; }
-    if (!checked.length) { showToast('Seleciona pelo menos um país.', 'error'); return; }
-
-    const btn = document.getElementById('btn-apply-ts');
-    btn.disabled = true; btn.textContent = 'A carregar...';
+    if (!indicator || !checked.length) return;
 
     try {
       const report_id = document.getElementById('dash-report-select').value;
@@ -4138,8 +4112,6 @@ async function loadEmbeddingProvider() {
 
     } catch (e) {
       showToast(`Erro: ${e.message}`, 'error');
-    } finally {
-      btn.disabled = false; btn.textContent = 'Aplicar';
     }
   }
 
@@ -4275,12 +4247,7 @@ async function loadEmbeddingProvider() {
     const indicator = document.getElementById('dash-indicator').value;
     const year      = document.getElementById('dash-year').value;
 
-    if (!indicator || !year) {
-      showToast('Seleciona um indicador e um ano.', 'error'); return;
-    }
-
-    const btn = document.getElementById('btn-apply-dash');
-    btn.disabled = true; btn.textContent = 'A carregar...';
+    if (!indicator || !year) return;
 
     try {
       const report_id = document.getElementById('dash-report-select').value;
@@ -4333,8 +4300,6 @@ async function loadEmbeddingProvider() {
 
     } catch (e) {
       showToast(`Erro: ${e.message}`, 'error');
-    } finally {
-      btn.disabled = false; btn.textContent = 'Aplicar';
     }
   }
 
@@ -5131,29 +5096,6 @@ async function loadEmbeddingProvider() {
   }
 
   // ── TABS MODO DADOS ──
-  function setDataMode2(mode) {
-    const isJson = mode === 'json';
-    // Sincronizar o relatório selecionado entre os dois dropdowns
-    if (isJson) {
-      const id   = document.getElementById('d-up-rid').value;
-      const name = document.getElementById('rep-dropdown-label').textContent;
-      if (id) {
-        document.getElementById('d-json-rid').value = id;
-        document.getElementById('rep-json-dropdown-label').textContent = name;
-      }
-    } else {
-      const id   = document.getElementById('d-json-rid').value;
-      const name = document.getElementById('rep-json-dropdown-label').textContent;
-      if (id) {
-        document.getElementById('d-up-rid').value = id;
-        document.getElementById('rep-dropdown-label').textContent = name;
-      }
-    }
-    document.getElementById('d-form-view').style.display = isJson ? 'none' : '';
-    document.getElementById('d-json-view').style.display = isJson ? '' : 'none';
-    document.getElementById('dcard-form').classList.toggle('active', !isJson);
-    document.getElementById('dcard-json').classList.toggle('active',  isJson);
-  }
 
   function setDataSource(type) {
     const isLink = type === 'link';
@@ -5175,27 +5117,34 @@ async function loadEmbeddingProvider() {
 
   async function submitDataLink() {
     const report_id = document.getElementById('d-up-rid').value;
-    const file_url  = document.getElementById('d-file_url').value.trim();
+    const raw       = document.getElementById('d-file_url').value.trim();
     const file_name = document.getElementById('d-file_name').value.trim();
     if (!report_id) { showToast('O campo relatório é obrigatório.', 'error'); return; }
-    if (!file_url) { showToast('O campo URL é obrigatório.', 'error'); return; }
-    try { const _u = new URL(file_url); if (!['http:', 'https:'].includes(_u.protocol)) throw 0; }
-    catch { showToast('URL inválido. Deve começar por http:// ou https://.', 'error'); return; }
+    if (!raw) { showToast('O campo URL é obrigatório.', 'error'); return; }
+    const urls = raw.split(/[\n,]/).map(u => u.trim()).filter(u => u);
+    for (const u of urls) {
+      try { const _u = new URL(u); if (!['http:', 'https:'].includes(_u.protocol)) throw 0; }
+      catch { showToast(`URL inválido: ${u}`, 'error'); return; }
+    }
     const btn = document.getElementById('btn-data-submit');
     btn.disabled = true; btn.textContent = 'A inserir...';
     _showLeftIndicator('A armazenar dados');
     try {
-      const res = await fetch(ENDPOINT_OP_DATA, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ report_id: parseInt(report_id), file_url, file_name, auto_generate: _autoGenerate })
-      });
-      if (!res.ok) {
-        const err = await res.json().catch(() => ({ detail: `HTTP ${res.status}` }));
-        throw new Error(err.detail || `HTTP ${res.status}`);
+      let inserted = 0, errors = [];
+      for (const file_url of urls) {
+        const res = await fetch(ENDPOINT_OP_DATA, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ report_id: parseInt(report_id), file_url, file_name, auto_generate: _autoGenerate })
+        });
+        if (!res.ok) {
+          const err = await res.json().catch(() => ({ detail: `HTTP ${res.status}` }));
+          errors.push(err.detail || `HTTP ${res.status}`);
+        } else { inserted++; }
       }
       _hideLeftIndicator();
-      showToast('Dados Armazenados');
+      if (errors.length === 0) showToast(inserted === 1 ? 'Dados Armazenados' : `${inserted} URLs inseridos`);
+      else showToast(`${inserted} inserido(s), ${errors.length} erro(s): ${errors[0]}`, 'error');
       _watchDadosPipeline();
       clearDataForm();
     } catch (e) { _hideLeftIndicator(); showToast(e.message, 'error'); }
@@ -5391,32 +5340,6 @@ async function loadEmbeddingProvider() {
     document.getElementById('rep-dropdown-toggle').classList.remove('open');
   }
 
-  async function toggleRepJsonDropdown() {
-    const menu   = document.getElementById('rep-json-dropdown-menu');
-    const toggle = document.getElementById('rep-json-dropdown-toggle');
-    const isOpen = menu.style.display !== 'none';
-    if (!isOpen) {
-      try {
-        const res = await fetch(ENDPOINT_REPORT);
-        if (res.ok) {
-          const reports = await res.json();
-          menu.innerHTML = reports.map(r => `
-            <div class="rep-dropdown-item" onclick="selectRepJson(${r.report_id},'${_escHtml(r.file_name)}')">
-              <span>${_escHtml(r.file_name)}</span>
-              <span class="rep-src">${_escHtml(r.source_code || '')}</span>
-            </div>`).join('');
-        }
-      } catch (e) { console.error(e); }
-    }
-    menu.style.display = isOpen ? 'none' : 'block';
-    toggle.classList.toggle('open', !isOpen);
-  }
-  function selectRepJson(id, name) {
-    document.getElementById('d-json-rid').value = id;
-    document.getElementById('rep-json-dropdown-label').textContent = name;
-    document.getElementById('rep-json-dropdown-menu').style.display = 'none';
-    document.getElementById('rep-json-dropdown-toggle').classList.remove('open');
-  }
 
   function toggleDashRepDropdown() {
     const menu   = document.getElementById('dash-rep-dropdown-menu');
@@ -5506,50 +5429,6 @@ async function loadEmbeddingProvider() {
     finally { btn.disabled = false; btn.textContent = 'Carregar Ficheiro(s)'; }
   }
 
-  // ── SUBMIT: BATCH DADOS ──
-  async function submitBatchData() {
-    const reportId = document.getElementById('d-json-rid').value;
-    if (!reportId) { showToast('Seleciona um relatório.', 'error'); return; }
-
-    const raw = document.getElementById('d-batch-json').value.trim();
-    let parsed;
-    try {
-      parsed = JSON.parse(sanitizeJson(raw));
-      if (!Array.isArray(parsed)) throw new Error('O JSON deve ser um array.');
-      for (let i = 0; i < parsed.length; i++) {
-        const url = typeof parsed[i] === 'string' ? parsed[i] : parsed[i].link;
-        if (!url) throw new Error(`Item ${i + 1}: URL em falta (string ou objeto com "link").`);
-      }
-    } catch (e) { showToast(`JSON inválido: ${e.message}`, 'error'); return; }
-
-    const payload = parsed.map(item => ({
-      report_id: parseInt(reportId),
-      file_url: typeof item === 'string' ? item : item.link,
-      auto_generate: _autoGenerate,
-    }));
-
-    const btn = document.getElementById('btn-dbatch');
-    btn.disabled = true; btn.textContent = 'A importar...';
-    _showLeftIndicator('A armazenar dados');
-    try {
-      const res = await fetch(`${API_BASE}/op_data/batch`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(payload),
-      });
-      if (!res.ok) throw new Error(`HTTP ${res.status}`);
-      const data = await res.json();
-      _hideLeftIndicator();
-      if (data.errors.length === 0) {
-        showToast('Dados Armazenados');
-      } else {
-        showToast(`${data.inserted} inseridos, ${data.errors.length} erros.`, 'error');
-      }
-      if (data.inserted > 0) _watchDadosPipeline();
-      document.getElementById('d-batch-json').value = '';
-    } catch (e) { _hideLeftIndicator(); showToast(e.message, 'error'); }
-    finally { btn.disabled = false; btn.textContent = 'Importar Lote'; }
-  }
 
   // ── DELETE RELATÓRIO (Armazenamento) ──
   async function deleteReport(reportId, btn) {
