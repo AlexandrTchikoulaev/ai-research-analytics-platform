@@ -222,11 +222,33 @@ def _extract_country(question: str) -> str | None:
     return None
 
 
+def _extract_countries(question: str) -> list[str]:
+    """Returns all English country names found, ordered by position in question."""
+    p = question.lower()
+    matches: list[tuple[int, str]] = []
+    seen: set[str] = set()
+    for pt, en in _PT_EN.items():
+        idx = p.find(pt)
+        if idx >= 0 and en not in seen:
+            matches.append((idx, en))
+            seen.add(en)
+    matches.sort(key=lambda x: x[0])
+    return [en for _, en in matches]
+
+
 # ── Classifier ──────────────────────────────────────────────────────────────
+_COMPARISON_SIGNALS = [
+    r"\bacima ou abaixo\b",
+    r"\bsuperior ou inferior\b",
+    r"\bmais alto ou mais baixo\b",
+    r"\bmais elevado ou mais baixo\b",
+]
+
 _COMPLEX_SIGNALS = [
-    r"\be\s+\w{3,}", r"\bou\s+\w{3,}", r"\bvs\.?\b", r"\bversus\b", r"\bcompar",
+    r"\be\s+\w{3,}", r"\bou\s+(?!acima|abaixo)\w{3,}", r"\bvs\.?\b", r"\bversus\b", r"\bcompar",
     r"\bmedia\b", r"\bmédia\b", r"\bmédio\b", r"\bsoma\b",
     r"\bmáximo\b", r"\bmaximo\b", r"\bmínimo\b", r"\bminimo\b",
+    r"\bmaior\s+valor\b", r"\bmenor\s+valor\b",
     r"\bcrescimento\b", r"\bdiferença\b", r"\bdiferenca\b", r"\bvariação\b",
     r"\bde \d{4} a \d{4}\b", r"\bentre \d{4} e \d{4}\b", r"\banos \d{4}",
     r"\btop\s*\d+\b", r"\bmelhores\b", r"\bpiores\b", r"\bpior\b",
@@ -236,7 +258,7 @@ _COMPLEX_SIGNALS = [
     r"\bao longo\b", r"\btendência\b",
     r"\w+,\s*\w+\s+e\s+\w+",
     r"\búltimos\s*\d+\b", r"\batual\b", r"\bactual\b", r"\bmais recente\b",
-    r"\bem que ano\b", r"\bque ano\b",
+    r"\bem que ano\b", r"\bque ano\b", r"\bano\s+em\s+que\b",
     r"\bpara quais\b", r"\bquais os\b", r"\btodos os\b",
 ]
 
@@ -260,15 +282,22 @@ _MULTI_YEAR_RE = re.compile(r"\b(?:19|20)\d{2}\b.*\b(?:19|20)\d{2}\b")
 
 
 def _classify(question: str) -> tuple[str, str]:
-    p = question.lower()
+    # Strip "Contexto anterior:" prefix so its content doesn't pollute signal matching
+    m_ctx = re.search(r'Contexto anterior:.*"\.\s+', question)
+    q_new = question[m_ctx.end():] if m_ctx else question
+    p = q_new.lower()
 
     for pattern, sub in _META_SIGNALS:
         if re.search(pattern, p):
             return f"meta:{sub}", f"meta: {pattern}"
 
+    for pattern in _COMPARISON_SIGNALS:
+        if re.search(pattern, p):
+            return "comparison", f"comparison: {pattern}"
+
     for pattern in _EXISTENCE_SIGNALS:
         if re.search(pattern, p):
-            anos = _YEAR_RE.findall(question)
+            anos = _YEAR_RE.findall(q_new)
             return ("existence", f"existence, year={anos[0]}") if len(anos) == 1 \
                 else ("existence_inferred", "existence, year inferred")
 
@@ -276,10 +305,10 @@ def _classify(question: str) -> tuple[str, str]:
         if re.search(pattern, p):
             return "complex", f"complex: {pattern}"
 
-    if _MULTI_YEAR_RE.search(question):
+    if _MULTI_YEAR_RE.search(q_new):
         return "complex", "multiple years"
 
-    anos = _YEAR_RE.findall(question)
+    anos = _YEAR_RE.findall(q_new)
     if len(anos) == 1:
         return "simple", f"simple, year={anos[0]}"
     if len(anos) == 0:
@@ -407,16 +436,41 @@ Rules:
 Question: {question}
 SQL:"""
 
+_T_COMPARISON = """\
+Output ONLY a valid SQL SELECT query. No explanation, no markdown, no Chinese, no other language.
+{indicator_hint}
+
+The view vw_indicator_location_year has columns: indicator_name, location_name, value, year.
+
+Return the value for BOTH countries so they can be compared.
+Template:
+SELECT location_name, year, value
+FROM vw_indicator_location_year
+WHERE indicator_name ILIKE '%[INDICATOR_NAME]%'
+  AND location_name IN ('[COUNTRY_1_EN]', '[COUNTRY_2_EN]')
+  AND year = [YEAR]
+ORDER BY location_name;
+
+Rules:
+- Replace [INDICATOR_NAME] with the indicator from the hint.
+- Translate both country names to English.
+- Replace [YEAR] with the 4-digit year.
+Question: {question}
+SQL:"""
+
 _RANKING_WORDS = [
     "lugar", "posição", "posicao", "ranking", "rank", "classificação", "classificacao",
     "maior valor", "menor valor", "mais alto", "mais baixo",
     "país com maior", "país com menor", "nação com maior", "nação com menor",
+    "acima", "abaixo", "acima ou abaixo", "melhor", "pior",
 ]
 
 
 def _pick_template(tier: str, question: str) -> str:
     if tier in ("existence", "existence_inferred"):
         return _T_EXISTENCE
+    if tier == "comparison":
+        return _T_COMPARISON
     if tier in ("complex", "uncertain"):
         return _T_COMPLEX
     if any(w in question.lower() for w in _RANKING_WORDS):
@@ -454,13 +508,28 @@ def _explain_sql(sql: str) -> None:
 def _fallback_sql(question: str, tier: str) -> str:
     # When a "Contexto anterior:" prefix is present, extract entities only from
     # the new part of the question so old context doesn't pollute entity detection.
-    m_ctx = re.search(r'Contexto anterior:.*?"\.\s+', question)
+    m_ctx = re.search(r'Contexto anterior:.*"\.\s+', question)
     q_for_entities = question[m_ctx.end():] if m_ctx else question
 
     anos = _YEAR_RE.findall(q_for_entities)
+    if not anos and m_ctx:
+        anos = _YEAR_RE.findall(question)
     year = anos[0] if anos else (str(_cache["max_year"]) if _cache["max_year"] else None)
 
-    _, ind_name = _fuzzy_indicator(q_for_entities)
+    _IND_REF = re.compile(
+        r'\b(mesmo indicador|para o mesmo|neste indicador|no mesmo|o mesmo indicador'
+        r'|este indicador|nesse indicador|deste indicador|indicador anterior'
+        r'|esse indicador|essa indicador|aquele indicador|aquela indicador'
+        r'|para esse indicador|para este indicador|nesse mesmo|neste mesmo)\b',
+        re.IGNORECASE
+    )
+    use_ctx_for_indicator = bool(m_ctx and _IND_REF.search(q_for_entities))
+    if use_ctx_for_indicator:
+        _, ind_name = _fuzzy_indicator(question)
+    else:
+        _, ind_name = _fuzzy_indicator(q_for_entities)
+        if not ind_name and m_ctx:
+            _, ind_name = _fuzzy_indicator(question)
     country = _extract_country(q_for_entities)
 
     # Detect top-N intent
@@ -482,6 +551,23 @@ def _fallback_sql(question: str, tier: str) -> str:
     if not ind_name:
         raise RuntimeError("Não foi possível identificar o indicador.")
 
+    if tier == "comparison":
+        countries = _extract_countries(q_for_entities)
+        if len(countries) < 2 and m_ctx:
+            countries = _extract_countries(question)
+        if len(countries) < 2:
+            raise RuntimeError("Não foi possível identificar os dois países para comparação.")
+        in_list = ", ".join(f"'{c}'" for c in countries[:2])
+        year_filter = f"AND year = {year}" if year else ""
+        return (
+            f"SELECT location_name, year, value "
+            f"FROM vw_indicator_location_year "
+            f"WHERE indicator_name ILIKE '%{ind_name}%' "
+            f"AND location_name IN ({in_list}) "
+            f"{year_filter} "
+            f"ORDER BY location_name"
+        )
+
     if tier in ("existence", "existence_inferred"):
         if not year:
             raise RuntimeError("Não foi possível determinar o ano.")
@@ -490,8 +576,19 @@ def _fallback_sql(question: str, tier: str) -> str:
         return f"SELECT COUNT(*) AS registos_encontrados FROM vw_indicator_location_year {where_str}"
 
     # Top-N ranking query (country optional)
+    year_explicit = bool(_YEAR_RE.search(q_for_entities))
     if top_n or any(w in question.lower() for w in _RANKING_WORDS):
         limit = top_n or 1
+        # "Qual o ano com maior valor para Portugal?" — país presente, sem ano explícito
+        # → ORDER BY value (sem RANK cruzado por país)
+        if country and not year_explicit and not top_n:
+            return (
+                f"SELECT location_name, year, value "
+                f"FROM vw_indicator_location_year "
+                f"WHERE indicator_name ILIKE '%{ind_name}%' "
+                f"  AND location_name ILIKE '%{country}%' "
+                f"ORDER BY value {order_dir} LIMIT {limit}"
+            )
         country_filter = f"AND location_name ILIKE '%{country}%'" if country else ""
         year_filter = f"AND year = {year}" if year else ""
         return (
@@ -651,11 +748,25 @@ def _naturalize_meta(sub: str, cols: list, rows: list) -> str:
 
 def _naturalize(question: str, tier: str, cols: list, rows: list) -> str:
     if not rows:
-        m_ctx = re.search(r'Contexto anterior:.*?"\.\s+', question)
+        m_ctx = re.search(r'Contexto anterior:.*"\.\s+', question)
         q_hint = question[m_ctx.end():] if m_ctx else question
-        _, ind_name = _fuzzy_indicator(q_hint)
+        _IND_REF_NAT = re.compile(
+            r'\b(mesmo indicador|para o mesmo|neste indicador|no mesmo|o mesmo indicador'
+            r'|este indicador|nesse indicador|deste indicador|indicador anterior'
+            r'|esse indicador|essa indicador|aquele indicador|aquela indicador'
+            r'|para esse indicador|para este indicador|nesse mesmo|neste mesmo)\b',
+            re.IGNORECASE
+        )
+        if m_ctx and _IND_REF_NAT.search(q_hint):
+            _, ind_name = _fuzzy_indicator(question)
+        else:
+            _, ind_name = _fuzzy_indicator(q_hint)
+            if not ind_name and m_ctx:
+                _, ind_name = _fuzzy_indicator(question)
         country = _extract_country(q_hint)
         anos = _YEAR_RE.findall(q_hint)
+        if not anos and m_ctx:
+            anos = _YEAR_RE.findall(question)
         hint_parts = []
         if ind_name:
             hint_parts.append(f"indicador \"{ind_name}\"")
@@ -669,6 +780,40 @@ def _naturalize(question: str, tier: str, cols: list, rows: list) -> str:
 
     if tier.startswith("meta:"):
         return _naturalize_meta(tier.split(":")[1], cols, rows)
+
+    # --- Comparison (above/below two countries) ---
+    _is_comparison_q = tier == "comparison" or any(
+        re.search(p, question.lower()) for p in _COMPARISON_SIGNALS
+    )
+    if _is_comparison_q and rows:
+        m_ctx2 = re.search(r'Contexto anterior:.*"\.\s+', question)
+        q_comp = question[m_ctx2.end():] if m_ctx2 else question
+        countries = _extract_countries(q_comp)
+        if len(countries) < 2 and m_ctx2:
+            countries = _extract_countries(question)
+        country_vals: dict[str, float] = {}
+        for row in rows:
+            d = dict(zip(cols, row))
+            loc = d.get("location_name", "")
+            val = d.get("value")
+            if loc and val is not None:
+                country_vals[loc] = float(val)
+        if len(country_vals) >= 2 and len(countries) >= 2:
+            c1 = next((c for c in countries if c in country_vals), None)
+            c2 = next((c for c in countries if c in country_vals and c != c1), None)
+            if c1 and c2:
+                v1, v2 = country_vals[c1], country_vals[c2]
+                comp = "acima" if v1 > v2 else "abaixo"
+                _, ind_label = _fuzzy_indicator(question)
+                ind_label = ind_label or "indicador"
+                anos = _YEAR_RE.findall(q_comp)
+                if not anos and m_ctx2:
+                    anos = _YEAR_RE.findall(question)
+                year_label = anos[0] if anos else ""
+                return (
+                    f"{c1} ficou {comp} de {c2} em {ind_label} "
+                    f"({year_label}), com {_fmt_value(v1)} vs {_fmt_value(v2)}."
+                )
 
     _, ind_name = _fuzzy_indicator(question)
 
@@ -688,6 +833,41 @@ def _naturalize(question: str, tier: str, cols: list, rows: list) -> str:
     # --- Multi-row: build a numbered text list ---
     if len(rows) > 1:
         indicator = ind_name or ""
+        # If exactly 2 country rows and question asks "acima ou abaixo", produce comparison
+        _comp_q = any(re.search(p, question.lower()) for p in [
+            r"\bacima ou abaixo\b", r"\bsuperior ou inferior\b",
+            r"\bmais alto ou mais baixo\b",
+        ])
+        if _comp_q and len(rows) == 2:
+            _m = re.search(r'Contexto anterior:.*"\.\s+', question)
+            _qe = question[_m.end():] if _m else question
+            _cv = {}
+            for _row in rows:
+                _d = dict(zip(cols, _row))
+                _loc = _d.get("location_name") or _d.get("country") or ""
+                _val = _d.get("value")
+                if _loc and _val is not None:
+                    try:
+                        _cv[_loc] = float(_val)
+                    except (TypeError, ValueError):
+                        pass
+            _ctrs = _extract_countries(_qe) if len(_extract_countries(_qe)) >= 2 else _extract_countries(question)
+            if len(_cv) == 2 and len(_ctrs) >= 2:
+                _c1 = next((c for c in _ctrs if c in _cv), None)
+                _c2 = next((c for c in _ctrs if c in _cv and c != _c1), None)
+                if _c1 and _c2:
+                    _v1, _v2 = _cv[_c1], _cv[_c2]
+                    _comp = "acima" if _v1 > _v2 else "abaixo"
+                    _, _ilbl = _fuzzy_indicator(question)
+                    _ilbl = _ilbl or indicator or "indicador"
+                    _yrs = _YEAR_RE.findall(_qe) or _YEAR_RE.findall(question)
+                    _yr  = _yrs[0] if _yrs else next(
+                        (str(dict(zip(cols, rows[0])).get("year", "")) for _ in [1]), ""
+                    )
+                    return (
+                        f"{_c1} ficou {_comp} de {_c2} em {_ilbl} "
+                        f"({_yr}), com {_fmt_value(_v1)} vs {_fmt_value(_v2)}."
+                    )
         lines = []
         for i, row in enumerate(rows[:25], 1):
             data = {c: v for c, v in zip(cols, row)}

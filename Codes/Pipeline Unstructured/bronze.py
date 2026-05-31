@@ -1,4 +1,4 @@
-import psycopg2
+﻿import psycopg2
 import requests
 import boto3
 from botocore.exceptions import ClientError
@@ -156,20 +156,9 @@ def _process_one(
     """
     s3 = boto3.client("s3", **MINIO_CONFIG)
 
-    if file_name is None:
-        msg = "file_name é NULL — registo inválido"
-        _db_execute([
-            ("UPDATE op_report SET pipeline_status = 'FAILED', pipeline_error = %s WHERE report_id = %s",
-             (msg, report_id)),
-            ("INSERT INTO etl_logs_pdfs (report_id, file_name, step, error_message) VALUES (%s, %s, %s, %s)",
-             (report_id, f"report_id={report_id}", "bronze", msg)),
-        ])
-        _log(f"[ERRO] report_id={report_id}: {msg}")
-        return False
-
     if file_name in existing_keys:
         _db_execute([(
-            "UPDATE op_report SET pipeline_status = 'BRONZE_OK' WHERE report_id = %s",
+            "UPDATE op_report SET pipeline_status = 'bronze' WHERE report_id = %s",
             (report_id,)
         )])
         _log(f"[OK]   report_id={report_id}  {file_name}  [já no bucket]")
@@ -178,8 +167,8 @@ def _process_one(
     if report_url is None:
         msg = "report_url é NULL e ficheiro não encontrado no bucket — faça upload via /op_report/upload"
         _db_execute([
-            ("UPDATE op_report SET pipeline_status = 'FAILED', pipeline_error = %s WHERE report_id = %s",
-             (msg, report_id)),
+            ("UPDATE op_report SET pipeline_status = 'failed' WHERE report_id = %s",
+             (report_id,)),
             ("INSERT INTO etl_logs_pdfs (report_id, file_name, step, error_message) VALUES (%s, %s, %s, %s)",
              (report_id, file_name, "bronze", msg)),
         ])
@@ -212,7 +201,7 @@ def _process_one(
             },
         )
         _db_execute([(
-            "UPDATE op_report SET pipeline_status = 'BRONZE_OK' WHERE report_id = %s",
+            "UPDATE op_report SET pipeline_status = 'bronze' WHERE report_id = %s",
             (report_id,)
         )])
         thumb_ok = _generate_thumbnail(s3, report_id, content)
@@ -224,8 +213,8 @@ def _process_one(
         err_msg = str(e)
         try:
             _db_execute([
-                ("UPDATE op_report SET pipeline_status = 'FAILED', pipeline_error = %s WHERE report_id = %s",
-                 (err_msg, report_id)),
+                ("UPDATE op_report SET pipeline_status = 'failed' WHERE report_id = %s",
+                 (report_id,)),
                 ("INSERT INTO etl_logs_pdfs (report_id, file_name, step, error_message) VALUES (%s, %s, %s, %s)",
                  (report_id, file_name, "bronze", err_msg)),
             ])
@@ -257,7 +246,7 @@ def main():
         cur.execute("""
             SELECT report_id, file_name, report_url
             FROM op_report
-            WHERE pipeline_status = 'PENDING'
+            WHERE pipeline_status = 'pending'
             ORDER BY report_id
             FOR UPDATE SKIP LOCKED
         """)
@@ -270,7 +259,7 @@ def main():
 
         report_ids = [r[0] for r in rows]
         cur.execute(
-            "UPDATE op_report SET pipeline_status = 'PROCESSING' WHERE report_id = ANY(%s)",
+            "UPDATE op_report SET pipeline_status = 'processing' WHERE report_id = ANY(%s)",
             (report_ids,)
         )
         conn.commit()

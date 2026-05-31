@@ -21,7 +21,6 @@ def main():
     # -------------------------
     tables = [
         "fact_values",
-        "dim_location_hierarchy",
         "dim_indicator",
         "dim_location",
         "dim_date",
@@ -55,15 +54,6 @@ def main():
         name          VARCHAR(255),
         region        VARCHAR(100),
         sub_region    VARCHAR(100)
-    );
-    """)
-
-    cur.execute("""
-    CREATE TABLE IF NOT EXISTS dim_location_hierarchy (
-        parent_location_sk INTEGER REFERENCES dim_location(location_sk),
-        child_location_sk  INTEGER REFERENCES dim_location(location_sk),
-        relationship_type  VARCHAR(100),
-        PRIMARY KEY (parent_location_sk, child_location_sk)
     );
     """)
 

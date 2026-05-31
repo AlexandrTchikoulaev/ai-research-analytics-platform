@@ -1,4 +1,4 @@
-import csv
+﻿import csv
 import time
 import threading
 import requests
@@ -12,7 +12,7 @@ from config import DB_CONFIG, MINIO_CONFIG, BUCKET_RAW
 MAX_WORKERS = 8
 MAX_PER_DOMAIN = 8   # pedidos concorrentes máximos por domínio externo
 MAX_RETRIES = 3
-_RETRY_DELAYS = [5, 15, 30]  # segundos entre tentativas para 5xx/429
+_RETRY_DELAYS = [5, 15]  # segundos entre tentativas para 5xx/429
 
 # Semáforos por domínio para evitar rate-limiting
 _domain_sems: dict = {}
@@ -112,7 +112,7 @@ def _ingest_one(file_id: int, report_id, file_url: str) -> tuple:
         # Ficheiro já carregado via upload — já está no MinIO
         if not file_url:
             cur.execute(
-                "UPDATE op_data SET pipeline_status = 'BRONZE_OK' WHERE file_id = %s",
+                "UPDATE op_data SET pipeline_status = 'bronze' WHERE file_id = %s",
                 (file_id,)
             )
             conn.commit()
@@ -134,7 +134,7 @@ def _ingest_one(file_id: int, report_id, file_url: str) -> tuple:
             },
         )
         cur.execute(
-            "UPDATE op_data SET pipeline_status = 'BRONZE_OK' WHERE file_id = %s",
+            "UPDATE op_data SET pipeline_status = 'bronze' WHERE file_id = %s",
             (file_id,)
         )
         conn.commit()
@@ -145,12 +145,12 @@ def _ingest_one(file_id: int, report_id, file_url: str) -> tuple:
         err_msg = str(e)
         try:
             cur.execute(
-                "UPDATE op_data SET pipeline_status = 'FAILED', pipeline_error = %s WHERE file_id = %s",
-                (err_msg, file_id)
+                "UPDATE op_data SET pipeline_status = 'failed' WHERE file_id = %s",
+                (file_id,)
             )
             cur.execute(
                 "INSERT INTO etl_logs_dados (file_id, step, error_message) VALUES (%s, %s, %s)",
-                (file_id, "ingest_raw", err_msg)
+                (file_id, "bronze", err_msg)
             )
             conn.commit()
         except Exception:
@@ -167,8 +167,6 @@ def main():
     print("A correr bronze...")
 
     s3 = boto3.client("s3", **MINIO_CONFIG)
-    conn = psycopg2.connect(**DB_CONFIG)
-    cur = conn.cursor()
 
     try:
         s3.head_bucket(Bucket=BUCKET_RAW)
@@ -178,23 +176,26 @@ def main():
         else:
             raise
 
+    conn = psycopg2.connect(**DB_CONFIG)
+    cur = conn.cursor()
+
     cur.execute("""
         SELECT file_id, report_id, file_url
         FROM op_data
-        WHERE pipeline_status = 'VALIDATED'
+        WHERE pipeline_status = 'pending'
         ORDER BY file_id
         FOR UPDATE SKIP LOCKED
     """)
     rows = cur.fetchall()
 
     if not rows:
-        print("Sem ficheiros VALIDATED para ingerir.")
+        print("Sem ficheiros PENDING para ingerir.")
         cur.close(); conn.close()
         return
 
     file_ids = [r[0] for r in rows]
     cur.execute(
-        "UPDATE op_data SET pipeline_status = 'PROCESSING' WHERE file_id = ANY(%s)",
+        "UPDATE op_data SET pipeline_status = 'processing' WHERE file_id = ANY(%s)",
         (file_ids,)
     )
     conn.commit()
@@ -221,7 +222,7 @@ def main():
             else:
                 err_count += 1
 
-    print(f"ingest_raw concluído — {ok_count} OK, {err_count} erros")
+    print(f"bronze concluído — {ok_count} OK, {err_count} erros")
 
 
 if __name__ == "__main__":

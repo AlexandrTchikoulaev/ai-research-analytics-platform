@@ -1,10 +1,8 @@
-"""
+﻿"""
 Orquestrador do pipeline de dados não estruturados (PDFs).
 Executa sequencialmente:
-  1. validate_op_report           — valida registos em op_report antes de ingerir
-  2. bronze                       — descarrega PDFs para o bucket bronze-unstructured
-  3. validate_bronze_unstructured — valida PDFs no bucket bronze-unstructured
-  4. silver                       — processa PDFs e indexa embeddings na BD vetorial
+  1. bronze — descarrega PDFs para o bucket bronze-unstructured
+  2. silver — processa PDFs e indexa embeddings na BD vetorial
 """
 import sys
 import os
@@ -37,9 +35,7 @@ def _try_report(run_start):
     except Exception:
         pass
 
-import bronze_validations as validate_op_report
 import bronze
-import silver_validations as validate_bronze_unstructured
 import silver
 import pipeline_reports_report as report_pipeline_pdfs
 
@@ -73,14 +69,17 @@ def run_pipeline():
     success   = False
 
     try:
-        # Crash recovery: reset PROCESSING → PENDING (relatórios que ficaram a meio num crash anterior)
+        # Crash recovery + migração de status UPPERCASE → lowercase
         try:
             conn_reset = psycopg2.connect(**DB_CONFIG)
             try:
                 cur_reset = conn_reset.cursor()
-                cur_reset.execute(
-                    "UPDATE op_report SET pipeline_status = 'PENDING' WHERE pipeline_status = 'PROCESSING'"
-                )
+                cur_reset.execute("UPDATE op_report SET pipeline_status = 'pending'    WHERE pipeline_status IN ('PENDING', 'VALIDATED')")
+                cur_reset.execute("UPDATE op_report SET pipeline_status = 'pending'    WHERE pipeline_status = 'PROCESSING'")
+                cur_reset.execute("UPDATE op_report SET pipeline_status = 'pending'    WHERE pipeline_status = 'BRONZE_OK'")
+                cur_reset.execute("UPDATE op_report SET pipeline_status = 'done'       WHERE pipeline_status = 'DONE'")
+                cur_reset.execute("UPDATE op_report SET pipeline_status = 'failed'     WHERE pipeline_status = 'FAILED'")
+                cur_reset.execute("UPDATE op_report SET pipeline_status = 'pending'    WHERE pipeline_status = 'processing'")
                 conn_reset.commit()
                 cur_reset.close()
             finally:
@@ -93,18 +92,12 @@ def run_pipeline():
 
         report_pipeline_pdfs.write_initial(run_start)  # ficheiro criado imediatamente
 
-        _set_step("validate")
-        run_step("1/4 — validate_op_report",          validate_op_report.validate)
-
         _set_step("bronze")
-        run_step("2/4 — bronze",                       bronze.main)
+        run_step("1/2 — bronze", bronze.main)
         _try_report(run_start)  # relatório parcial após bronze (PDFs armazenados)
 
-        _set_step("validate_bronze")
-        run_step("3/4 — validate_bronze_unstructured", validate_bronze_unstructured.validate)
-
         _set_step("silver")
-        run_step("4/4 — silver",                       silver.main)
+        run_step("2/2 — silver", silver.main)
 
         success = True
         elapsed = (datetime.now() - run_start).total_seconds()

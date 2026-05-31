@@ -1,12 +1,10 @@
-"""
+﻿"""
 Orquestrador do pipeline de dados estruturados e semi-estruturados.
 Executa sequencialmente:
-  1. validate_opdata  — valida registos em op_data antes de ingerir
-  2. ingest_raw       — descarrega ficheiros para o bucket Bronze
-  3. validate_bronze  — valida objetos no bucket Bronze
-  4. transform        — transforma para Parquet no bucket Silver
-  5. validate_silver  — valida estrutura dos Parquets
-  6. load             — carrega para o Data Warehouse
+  1. bronze           — descarrega ficheiros para o bucket Bronze
+  2. silver           — transforma para Parquet no bucket Silver
+  3. gold_validations — valida estrutura dos Parquets
+  4. gold             — carrega para o Data Warehouse
 """
 import sys
 import os
@@ -35,9 +33,7 @@ def run_step(label: str, fn):
 
 
 def run_pipeline():
-    import bronze_validations
     import bronze
-    import silver_validations
     import silver
     import gold_validations
     import gold
@@ -56,18 +52,20 @@ def run_pipeline():
         conn_lock.close()
         return
 
-    # Crash recovery: reset PROCESSING/VALIDATED → PENDING
+    # Crash recovery + migração de status UPPERCASE → lowercase
     conn_reset = psycopg2.connect(**DB_CONFIG)
     cur_reset = conn_reset.cursor()
-    cur_reset.execute("""
-        UPDATE op_data
-        SET pipeline_status = 'PENDING'
-        WHERE pipeline_status IN ('PROCESSING', 'VALIDATED')
-    """)
+    cur_reset.execute("UPDATE op_data SET pipeline_status = 'pending'    WHERE pipeline_status IN ('PENDING', 'VALIDATED')")
+    cur_reset.execute("UPDATE op_data SET pipeline_status = 'processing'  WHERE pipeline_status = 'PROCESSING'")
+    cur_reset.execute("UPDATE op_data SET pipeline_status = 'bronze'     WHERE pipeline_status = 'BRONZE_OK'")
+    cur_reset.execute("UPDATE op_data SET pipeline_status = 'silver'     WHERE pipeline_status = 'SILVER_OK'")
+    cur_reset.execute("UPDATE op_data SET pipeline_status = 'done'       WHERE pipeline_status = 'DONE'")
+    cur_reset.execute("UPDATE op_data SET pipeline_status = 'failed'     WHERE pipeline_status = 'FAILED'")
+    cur_reset.execute("UPDATE op_data SET pipeline_status = 'pending'    WHERE pipeline_status = 'processing'")
     conn_reset.commit()
 
     # Capturar file_ids PENDING agora — define o escopo do relatório desta run
-    cur_reset.execute("SELECT file_id FROM op_data WHERE pipeline_status = 'PENDING'")
+    cur_reset.execute("SELECT file_id FROM op_data WHERE pipeline_status = 'pending'")
     run_file_ids = [r[0] for r in cur_reset.fetchall()]
     cur_reset.close()
     conn_reset.close()
@@ -77,12 +75,10 @@ def run_pipeline():
 
     success = False
     try:
-        run_step("1/6 — validate_opdata", bronze_validations.validate)
-        run_step("2/6 — ingest_raw", bronze.main)
-        run_step("3/6 — validate_bronze", silver_validations.validate)
-        run_step("4/6 — transform", silver.transformar)
-        run_step("5/6 — validate_silver", gold_validations.validate)
-        run_step("6/6 — load", gold.run_etl)
+        run_step("1/4 — bronze", bronze.main)
+        run_step("2/4 — silver", silver.transformar)
+        run_step("3/4 — gold_validations", gold_validations.validate)
+        run_step("4/4 — gold", gold.run_etl)
 
         success = True
         print("\n PIPELINE DE DADOS CONCLUÍDO COM SUCESSO")

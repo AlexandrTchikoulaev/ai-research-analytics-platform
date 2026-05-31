@@ -1,6 +1,6 @@
-"""
+﻿"""
 Valida os ficheiros Parquet no bucket Silver correspondentes a ficheiros
-com pipeline_status = 'SILVER_OK'.
+com pipeline_status = 'silver'.
 Actualiza pipeline_status e regista erros em etl_logs_dados.
 """
 import io
@@ -68,12 +68,12 @@ def _validate_one(file_id: int) -> bool:
         cur = conn.cursor()
         try:
             cur.execute(
-                "UPDATE op_data SET pipeline_status = 'FAILED', pipeline_error = %s WHERE file_id = %s",
-                (msg, file_id)
+                "UPDATE op_data SET pipeline_status = 'failed' WHERE file_id = %s",
+                (file_id,)
             )
             cur.execute(
                 "INSERT INTO etl_logs_dados (file_id, step, error_message) VALUES (%s, %s, %s)",
-                (file_id, "validate_silver", msg)
+                (file_id, "gold_validations", msg)
             )
             conn.commit()
         finally:
@@ -87,7 +87,7 @@ def _validate_one(file_id: int) -> bool:
 def validate():
     conn = psycopg2.connect(**DB_CONFIG)
     cur = conn.cursor()
-    cur.execute("SELECT file_id FROM op_data WHERE pipeline_status = 'SILVER_OK'")
+    cur.execute("SELECT file_id FROM op_data WHERE pipeline_status = 'silver'")
     file_ids = [r[0] for r in cur.fetchall()]
     cur.close()
     conn.close()
@@ -111,7 +111,7 @@ def validate():
                 print(f"[ERRO] file_id={file_id} exceção não tratada: {e}")
                 err_count += 1
 
-    print(f"validate_silver — {ok_count} válidos, {err_count} inválidos")
+    print(f"gold_validations — {ok_count} válidos, {err_count} inválidos")
 
 
 if __name__ == "__main__":

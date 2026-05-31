@@ -1,4 +1,4 @@
-import csv
+﻿import csv
 import json
 import io
 import os
@@ -10,9 +10,7 @@ from concurrent.futures import ThreadPoolExecutor, as_completed
 
 from silver_functions import EXTRACT_FUNCTIONS, clean_dataframe
 from silver_function_generator import generate_and_validate, save_to_auto_store
-from config import DB_CONFIG, MINIO_CONFIG, BUCKET_RAW
-
-BUCKET_SILVER = "silver"
+from config import DB_CONFIG, MINIO_CONFIG, BUCKET_RAW, BUCKET_SILVER
 
 MAX_WORKERS = 8
 
@@ -87,7 +85,10 @@ def read_raw_object(s3, key: str):
         raise ValueError(f"Formato '{fmt}' não suportado nas funções de transformação silver.")
 
 
-def _transform_one(file_id: int, report_id, fn_name: str, fn_source: str) -> tuple:
+_AI_SKIP = "manual"
+
+
+def _transform_one(file_id: int, report_id, fn_name: str) -> tuple:
     """Executa a transformação de um ficheiro num thread dedicado."""
     conn = psycopg2.connect(**DB_CONFIG)
     cur = conn.cursor()
@@ -123,9 +124,8 @@ def _transform_one(file_id: int, report_id, fn_name: str, fn_source: str) -> tup
         )
 
         cur.execute(
-            "UPDATE op_data SET pipeline_status = 'SILVER_OK', "
-            "transform_fn_name = %s, transform_fn_source = %s WHERE file_id = %s",
-            (fn_name, fn_source, file_id)
+            "UPDATE op_data SET pipeline_status = 'silver' WHERE file_id = %s",
+            (file_id,)
         )
         conn.commit()
         print(f"[OK]   {key} -> {key}.parquet")
@@ -135,10 +135,10 @@ def _transform_one(file_id: int, report_id, fn_name: str, fn_source: str) -> tup
         err_msg = str(e)
         try:
             cur.execute(
-                "UPDATE op_data SET pipeline_status = 'FAILED', pipeline_error = %s WHERE file_id = %s",
-                (err_msg, file_id)
+                "UPDATE op_data SET pipeline_status = 'failed' WHERE file_id = %s",
+                (file_id,)
             )
-            _log_error(cur, conn, file_id, "transform", err_msg)
+            _log_error(cur, conn, file_id, "silver", err_msg)
             conn.commit()
         except Exception:
             pass
@@ -151,9 +151,7 @@ def _transform_one(file_id: int, report_id, fn_name: str, fn_source: str) -> tup
 
 
 def transformar():
-    conn = psycopg2.connect(**DB_CONFIG)
-    cur  = conn.cursor()
-    s3   = boto3.client("s3", **MINIO_CONFIG)
+    s3 = boto3.client("s3", **MINIO_CONFIG)
 
     try:
         s3.head_bucket(Bucket=BUCKET_SILVER)
@@ -163,24 +161,27 @@ def transformar():
         else:
             raise
 
+    conn = psycopg2.connect(**DB_CONFIG)
+    cur  = conn.cursor()
+
     cur.execute("""
-        SELECT d.file_id, d.report_id, r.source_code, d.auto_generate
+        SELECT d.file_id, d.report_id, r.source_code
         FROM op_data d
         JOIN op_report r ON r.report_id = d.report_id
-        WHERE d.pipeline_status = 'BRONZE_OK'
+        WHERE d.pipeline_status = 'bronze'
         ORDER BY d.file_id
         FOR UPDATE OF d SKIP LOCKED
     """)
     rows = cur.fetchall()
 
     if not rows:
-        print("Sem ficheiros BRONZE_OK para transformar.")
+        print("Sem ficheiros BRONZE para transformar.")
         cur.close(); conn.close()
         return
 
     file_ids = [r[0] for r in rows]
     cur.execute(
-        "UPDATE op_data SET pipeline_status = 'PROCESSING' WHERE file_id = ANY(%s)",
+        "UPDATE op_data SET pipeline_status = 'processing' WHERE file_id = ANY(%s)",
         (file_ids,)
     )
     conn.commit()
@@ -201,116 +202,88 @@ def transformar():
     # Inclui geração AI e validação de mapeamentos.
     # Todos os writes a EXTRACT_FUNCTIONS e ai_mapping acontecem aqui,
     # antes do pool de threads — sem necessidade de locks.
-    ready_to_transform = []  # (file_id, report_id, fn_name, fn_source)
+    ready_to_transform = []  # (file_id, report_id, fn_name)
 
-    for file_id, report_id, source_code, auto_generate in rows:
+    for file_id, report_id, source_code in rows:
         key = str(file_id)
-        extract_function = None
-        fn_source = None
+        ai_fn = ai_mapping.get(source_code)
 
-        if not auto_generate:
-            # Modo manual: ignora AI
+        if ai_fn == _AI_SKIP:
+            # Keyword "manual": ignora IA, usa função manual
             extract_function = manual_mapping.get(source_code)
-            fn_source = "manual"
             if not extract_function:
-                err_msg = (
-                    f"Sem mapeamento manual para '{source_code}'. "
-                    f"Configure um mapeamento no Painel de Controlo."
-                )
-                cur.execute(
-                    "UPDATE op_data SET pipeline_status = 'FAILED', pipeline_error = %s WHERE file_id = %s",
-                    (err_msg, file_id)
-                )
-                _log_error(cur, conn, file_id, "transform", err_msg)
+                err_msg = f"Sem mapeamento manual para '{source_code}'. Configure um mapeamento no Painel de Controlo."
+                cur.execute("UPDATE op_data SET pipeline_status = 'failed' WHERE file_id = %s", (file_id,))
+                _log_error(cur, conn, file_id, "silver", err_msg)
                 conn.commit()
                 print(f"[ERRO] file_id={file_id}: {err_msg}")
                 err_count += 1
                 continue
+
+        elif ai_fn:
+            # Função AI em cache
+            extract_function = ai_fn
+
         else:
-            # Modo AI: usar mapeamento AI em cache → gerar → cair no manual
-            extract_function = ai_mapping.get(source_code)
-            if extract_function:
-                fn_source = "ai_cache"
+            # Sem cache AI: tentar gerar
+            print(f"[AI] Sem mapeamento AI para '{source_code}', a gerar função para file_id={file_id}...")
+            try:
+                content = s3.get_object(Bucket=BUCKET_RAW, Key=key)["Body"].read()
+                hint = hint_mapping.get(source_code)
+                gen = generate_and_validate(content, hint=hint)
+            except Exception as e:
+                gen = {"valid": False, "error": str(e), "function_name": None, "code": None}
 
-            if not extract_function:
-                print(f"[AI] Sem mapeamento AI para '{source_code}', a gerar função para file_id={file_id}...")
+            if gen["valid"]:
+                fn_name = gen["function_name"]
                 try:
-                    content = s3.get_object(Bucket=BUCKET_RAW, Key=key)["Body"].read()
-                    hint = hint_mapping.get(source_code)
-                    gen = generate_and_validate(content, hint=hint)
-                except Exception as e:
-                    gen = {"valid": False, "error": str(e), "function_name": None, "code": None}
-
-                if gen["valid"]:
-                    fn_name = gen["function_name"]
-                    try:
-                        save_to_auto_store(fn_name, gen["code"])
-                        ns = {"pd": pd}
-                        exec(compile(gen["code"], "<auto>", "exec"), ns)
-                        EXTRACT_FUNCTIONS[fn_name] = ns[fn_name]
-                        cur.execute("""
-                            INSERT INTO source_function_mapping (source_code, ai_extract_function)
-                            VALUES (%s, %s)
-                            ON CONFLICT (source_code) DO UPDATE SET ai_extract_function = EXCLUDED.ai_extract_function
-                        """, (source_code, fn_name))
-                        conn.commit()
-                        ai_mapping[source_code] = fn_name
-                        extract_function = fn_name
-                        fn_source = "ai_gerada"
-                        print(f"[AI] Função '{fn_name}' gerada e registada para '{source_code}'")
-                    except Exception as exec_err:
-                        print(f"[AI] Erro ao carregar função gerada '{fn_name}': {exec_err}. A tentar mapeamento manual.")
-                        extract_function = manual_mapping.get(source_code)
-                        if extract_function:
-                            fn_source = "manual"
-                        else:
-                            err_msg = (
-                                f"AI gerou função mas falhou ao carregá-la para '{source_code}': {exec_err}. "
-                                f"Configure um mapeamento manual no Painel de Controlo."
-                            )
-                            cur.execute(
-                                "UPDATE op_data SET pipeline_status = 'FAILED', pipeline_error = %s WHERE file_id = %s",
-                                (err_msg, file_id)
-                            )
-                            _log_error(cur, conn, file_id, "transform", err_msg)
-                            conn.commit()
-                            err_count += 1
-                            continue
-                else:
-                    # AI falhou — cair no mapeamento manual
+                    save_to_auto_store(fn_name, gen["code"])
+                    ns = {"pd": pd}
+                    exec(compile(gen["code"], "<auto>", "exec"), ns)
+                    EXTRACT_FUNCTIONS[fn_name] = ns[fn_name]
+                    cur.execute("""
+                        INSERT INTO source_function_mapping (source_code, ai_extract_function)
+                        VALUES (%s, %s)
+                        ON CONFLICT (source_code) DO UPDATE SET ai_extract_function = EXCLUDED.ai_extract_function
+                    """, (source_code, fn_name))
+                    conn.commit()
+                    ai_mapping[source_code] = fn_name
+                    extract_function = fn_name
+                    print(f"[AI] Função '{fn_name}' gerada e registada para '{source_code}'")
+                except Exception as exec_err:
+                    print(f"[AI] Erro ao carregar função gerada '{fn_name}': {exec_err}. A tentar mapeamento manual.")
                     extract_function = manual_mapping.get(source_code)
-                    if extract_function:
-                        fn_source = "manual"
-                        print(f"[AI] Geração falhou, a usar mapeamento manual '{extract_function}' para '{source_code}'")
-                    else:
-                        err_msg = (
-                            f"AI não conseguiu gerar função para '{source_code}': {gen['error']}. "
-                            f"Configure um mapeamento manual em Painel de Controlo."
-                        )
-                        cur.execute(
-                            "UPDATE op_data SET pipeline_status = 'FAILED', pipeline_error = %s WHERE file_id = %s",
-                            (err_msg, file_id)
-                        )
-                        _log_error(cur, conn, file_id, "transform", err_msg)
+                    if not extract_function:
+                        err_msg = f"AI gerou função mas falhou ao carregá-la para '{source_code}': {exec_err}. Configure um mapeamento manual no Painel de Controlo."
+                        cur.execute("UPDATE op_data SET pipeline_status = 'failed' WHERE file_id = %s", (file_id,))
+                        _log_error(cur, conn, file_id, "silver", err_msg)
                         conn.commit()
-                        print(f"[ERRO] file_id={file_id}: {err_msg}")
                         err_count += 1
                         continue
+            else:
+                extract_function = manual_mapping.get(source_code)
+                if extract_function:
+                    print(f"[AI] Geração falhou, a usar mapeamento manual '{extract_function}' para '{source_code}'")
+                else:
+                    err_msg = f"AI não conseguiu gerar função para '{source_code}': {gen['error']}. Configure um mapeamento manual no Painel de Controlo."
+                    cur.execute("UPDATE op_data SET pipeline_status = 'failed' WHERE file_id = %s", (file_id,))
+                    _log_error(cur, conn, file_id, "silver", err_msg)
+                    conn.commit()
+                    print(f"[ERRO] file_id={file_id}: {err_msg}")
+                    err_count += 1
+                    continue
 
         if extract_function not in EXTRACT_FUNCTIONS:
             err_msg = f"Função '{extract_function}' (mapeada para '{source_code}') não encontrada em EXTRACT_FUNCTIONS"
-            cur.execute(
-                "UPDATE op_data SET pipeline_status = 'FAILED', pipeline_error = %s WHERE file_id = %s",
-                (err_msg, file_id)
-            )
-            _log_error(cur, conn, file_id, "transform", err_msg)
+            cur.execute("UPDATE op_data SET pipeline_status = 'failed' WHERE file_id = %s", (file_id,))
+            _log_error(cur, conn, file_id, "silver", err_msg)
             conn.commit()
             print(f"[ERRO] file_id={file_id}: {err_msg}")
             err_count += 1
             continue
 
         print(f"A transformar: {key} ({extract_function})")
-        ready_to_transform.append((file_id, report_id, extract_function, fn_source))
+        ready_to_transform.append((file_id, report_id, extract_function))
 
     cur.close()
     conn.close()
@@ -321,8 +294,8 @@ def transformar():
 
     with ThreadPoolExecutor(max_workers=MAX_WORKERS) as executor:
         futures = {
-            executor.submit(_transform_one, file_id, report_id, fn_name, fn_source): file_id
-            for file_id, report_id, fn_name, fn_source in ready_to_transform
+            executor.submit(_transform_one, file_id, report_id, fn_name): file_id
+            for file_id, report_id, fn_name in ready_to_transform
         }
         for future in as_completed(futures):
             try:
@@ -336,7 +309,7 @@ def transformar():
             else:
                 err_count += 1
 
-    print(f"transform concluído — {ok_count} OK, {err_count} erros")
+    print(f"silver concluído — {ok_count} OK, {err_count} erros")
 
 
 if __name__ == "__main__":

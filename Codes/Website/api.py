@@ -1,4 +1,4 @@
-from fastapi import FastAPI, HTTPException, UploadFile, File, Form
+﻿from fastapi import FastAPI, HTTPException, UploadFile, File, Form
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import StreamingResponse
 from pydantic import BaseModel
@@ -312,12 +312,28 @@ def _create_mapping_table():
         """)
         # Migrações de schema
         cur.execute("ALTER TABLE op_data DROP COLUMN IF EXISTS extract_function")
-        cur.execute("ALTER TABLE op_data ADD COLUMN IF NOT EXISTS auto_generate BOOLEAN NOT NULL DEFAULT TRUE")
-        cur.execute("ALTER TABLE op_data ADD COLUMN IF NOT EXISTS transform_fn_name TEXT")
-        cur.execute("ALTER TABLE op_data ADD COLUMN IF NOT EXISTS transform_fn_source TEXT")
+        cur.execute("ALTER TABLE op_data DROP COLUMN IF EXISTS auto_generate")
+        cur.execute("ALTER TABLE op_data DROP COLUMN IF EXISTS transform_fn_name")
+        cur.execute("ALTER TABLE op_data DROP COLUMN IF EXISTS transform_fn_source")
+        cur.execute("ALTER TABLE op_data DROP COLUMN IF EXISTS pipeline_error")
+        cur.execute("ALTER TABLE op_report DROP COLUMN IF EXISTS pipeline_error")
+        cur.execute("ALTER TABLE op_data DROP COLUMN IF EXISTS file_name")
         cur.execute("ALTER TABLE source_function_mapping ADD COLUMN IF NOT EXISTS ai_extract_function TEXT")
         cur.execute("ALTER TABLE source_function_mapping ADD COLUMN IF NOT EXISTS generation_hint TEXT")
         cur.execute("ALTER TABLE source_function_mapping ALTER COLUMN extract_function DROP NOT NULL")
+
+        # Migração de valores: UPPERCASE → lowercase
+        cur.execute("UPDATE op_data SET pipeline_status = 'pending'    WHERE pipeline_status IN ('PENDING', 'VALIDATED')")
+        cur.execute("UPDATE op_data SET pipeline_status = 'processing'  WHERE pipeline_status = 'PROCESSING'")
+        cur.execute("UPDATE op_data SET pipeline_status = 'bronze'     WHERE pipeline_status = 'BRONZE_OK'")
+        cur.execute("UPDATE op_data SET pipeline_status = 'silver'     WHERE pipeline_status = 'SILVER_OK'")
+        cur.execute("UPDATE op_data SET pipeline_status = 'done'       WHERE pipeline_status = 'DONE'")
+        cur.execute("UPDATE op_data SET pipeline_status = 'failed'     WHERE pipeline_status = 'FAILED'")
+        cur.execute("UPDATE op_report SET pipeline_status = 'pending'   WHERE pipeline_status IN ('PENDING', 'VALIDATED')")
+        cur.execute("UPDATE op_report SET pipeline_status = 'processing' WHERE pipeline_status = 'PROCESSING'")
+        cur.execute("UPDATE op_report SET pipeline_status = 'bronze'    WHERE pipeline_status = 'BRONZE_OK'")
+        cur.execute("UPDATE op_report SET pipeline_status = 'done'      WHERE pipeline_status = 'DONE'")
+        cur.execute("UPDATE op_report SET pipeline_status = 'failed'    WHERE pipeline_status = 'FAILED'")
 
         conn.commit()
         cur.close()
@@ -446,18 +462,11 @@ class GenerateFunctionUrlIn(BaseModel):
 class OpDataIn(BaseModel):
     report_id: int
     file_url: str = ""
-    file_name: str = ""
-    auto_generate: bool = True
 
 
 class OpDataPatch(BaseModel):
     report_id: Optional[int] = None
     file_url: Optional[str] = None
-    file_name: Optional[str] = None
-
-
-class OpDataSimplePatch(BaseModel):
-    file_name: Optional[str] = None
 
 
 class ReportPatch(BaseModel):
@@ -695,10 +704,10 @@ def add_op_data(data: OpDataIn):
             raise HTTPException(status_code=404, detail=f"report_id {data.report_id} não existe.")
 
         cur.execute("""
-            INSERT INTO op_data (report_id, file_url, file_name, auto_generate)
-            VALUES (%s, %s, %s, %s)
+            INSERT INTO op_data (report_id, file_url)
+            VALUES (%s, %s)
             RETURNING file_id;
-        """, (data.report_id, data.file_url or None, data.file_name or "", data.auto_generate))
+        """, (data.report_id, data.file_url or None))
         file_id = cur.fetchone()[0]
         conn.commit()
         cur.close()
@@ -717,7 +726,6 @@ def add_op_data(data: OpDataIn):
 async def upload_op_data(
     file: UploadFile = File(...),
     report_id: int = Form(...),
-    auto_generate: bool = Form(True),
 ):
     """Carrega um ficheiro de dados diretamente para Bronze (MinIO raw)."""
     content = await file.read()
@@ -731,14 +739,12 @@ async def upload_op_data(
         conn.close()
         raise HTTPException(status_code=404, detail=f"report_id {report_id} não existe.")
 
-    # Criar registo primeiro para obter o file_id
-    original_name = file.filename or ""
     try:
         cur.execute("""
-            INSERT INTO op_data (report_id, file_url, file_name, auto_generate)
-            VALUES (%s, NULL, %s, %s)
+            INSERT INTO op_data (report_id, file_url)
+            VALUES (%s, NULL)
             RETURNING file_id;
-        """, (report_id, original_name, auto_generate))
+        """, (report_id,))
         file_id = cur.fetchone()[0]
         conn.commit()
     except Exception as e:
@@ -783,9 +789,8 @@ async def batch_op_data(payload: list[dict]):
         sp = f"sp_{i}"
         try:
             cur.execute(f"SAVEPOINT {sp}")
-            report_id     = item.get("report_id")
-            file_url      = item.get("file_url") or None
-            auto_generate = bool(item.get("auto_generate", True))
+            report_id = item.get("report_id")
+            file_url  = item.get("file_url") or None
             if not report_id:
                 raise ValueError("report_id é obrigatório")
 
@@ -794,9 +799,9 @@ async def batch_op_data(payload: list[dict]):
                 raise ValueError(f"report_id {report_id} não existe")
 
             cur.execute("""
-                INSERT INTO op_data (report_id, file_url, auto_generate)
-                VALUES (%s, %s, %s)
-            """, (report_id, file_url, auto_generate))
+                INSERT INTO op_data (report_id, file_url)
+                VALUES (%s, %s)
+            """, (report_id, file_url))
             cur.execute(f"RELEASE SAVEPOINT {sp}")
             inserted += 1
         except Exception as e:
@@ -954,7 +959,7 @@ def get_reports():
         """)
         reports = cur.fetchall()
 
-        cur.execute("SELECT DISTINCT report_id FROM op_data WHERE pipeline_status NOT IN ('PENDING', 'FAILED')")
+        cur.execute("SELECT DISTINCT report_id FROM op_data WHERE pipeline_status NOT IN ('pending', 'failed')")
         data_processed_ids = {r["report_id"] for r in cur.fetchall()}
 
         cur.close()
@@ -963,10 +968,10 @@ def get_reports():
         result = []
         for r in reports:
             row = dict(r)
-            pdf_done  = r["pipeline_status"] not in ("PENDING", "FAILED")
+            pdf_done  = r["pipeline_status"] not in ("pending", "failed")
             data_done = r["report_id"] in data_processed_ids
             row["can_delete"] = not pdf_done and not data_done
-            row["url_locked"] = r["pipeline_status"] in ("BRONZE_OK", "DONE")
+            row["url_locked"] = r["pipeline_status"] in ("bronze", "done")
             result.append(row)
 
         return result
@@ -981,10 +986,10 @@ def get_op_data():
         cur = conn.cursor(cursor_factory=psycopg2.extras.RealDictCursor)
         cur.execute("""
             SELECT d.file_id, d.report_id, d.file_url,
-                   r.source_code, d.file_name,
+                   r.source_code,
                    r.file_name AS report_name,
                    CASE
-                     WHEN d.pipeline_status IN ('PENDING', 'FAILED') THEN TRUE
+                     WHEN d.pipeline_status IN ('pending', 'failed') THEN TRUE
                      ELSE FALSE
                    END AS can_delete
             FROM op_data d
@@ -1005,7 +1010,7 @@ def get_op_data_by_id(file_id: int):
         conn = get_operational_connection()
         cur = conn.cursor(cursor_factory=psycopg2.extras.RealDictCursor)
         cur.execute("""
-            SELECT d.file_id, d.file_name, d.report_id, d.file_url,
+            SELECT d.file_id, d.report_id, d.file_url,
                    r.file_name AS report_name, r.source_code
             FROM op_data d
             LEFT JOIN op_report r ON r.report_id = d.report_id
@@ -1024,19 +1029,15 @@ def get_op_data_by_id(file_id: int):
 
 
 @app.patch("/op_data/{file_id}/edit")
-def patch_op_data_simple(file_id: int, data: OpDataSimplePatch):
-    """Edita o nome do ficheiro; repõe status para reprocessamento."""
+def patch_op_data_simple(file_id: int):
+    """Repõe o ficheiro para PENDING para ser reprocessado na próxima execução da pipeline."""
     try:
         conn = get_operational_connection()
         cur = conn.cursor()
-        cur.execute("""
-            UPDATE op_data
-            SET file_name        = COALESCE(%s, file_name),
-                pipeline_status  = 'PENDING',
-                pipeline_error   = NULL
-            WHERE file_id = %s
-            RETURNING file_id
-        """, (data.file_name or None, file_id))
+        cur.execute(
+            "UPDATE op_data SET pipeline_status = 'pending' WHERE file_id = %s RETURNING file_id",
+            (file_id,)
+        )
         if not cur.fetchone():
             conn.rollback()
             cur.close(); conn.close()
@@ -1044,7 +1045,7 @@ def patch_op_data_simple(file_id: int, data: OpDataSimplePatch):
         cur.execute("DELETE FROM etl_logs_dados WHERE file_id = %s", (str(file_id),))
         conn.commit()
         cur.close(); conn.close()
-        return {"message": "Ficheiro atualizado. Será reinserido na próxima execução da pipeline."}
+        return {"message": "Ficheiro reinserido na pipeline."}
     except HTTPException:
         raise
     except Exception as e:
@@ -1062,12 +1063,10 @@ def patch_op_data(file_id: int, data: OpDataPatch):
             UPDATE op_data
             SET report_id        = COALESCE(%s, report_id),
                 file_url         = %s,
-                file_name        = COALESCE(%s, file_name),
-                pipeline_status  = 'PENDING',
-                pipeline_error   = NULL
+                pipeline_status  = 'pending'
             WHERE file_id = %s
             RETURNING report_id, file_url
-        """, (data.report_id, data.file_url or None, data.file_name or None, file_id))
+        """, (data.report_id, data.file_url or None, file_id))
 
         row = cur_op.fetchone()
         if not row:
@@ -1119,7 +1118,7 @@ def patch_op_data(file_id: int, data: OpDataPatch):
 
 
 # Steps que acontecem depois de o ficheiro já estar no MinIO bronze
-_BRONZE_DONE_STEPS = {"validate_bronze", "transform", "validate_silver", "load"}
+_BRONZE_DONE_STEPS = {"silver", "gold_validations", "gold"}
 
 
 @app.post("/op_data/{file_id}/retry")
@@ -1137,7 +1136,7 @@ def retry_op_data(file_id: int):
         if not row:
             cur.close(); conn.close()
             raise HTTPException(status_code=404, detail=f"file_id {file_id} não encontrado.")
-        if row["pipeline_status"] not in ("FAILED", "PENDING"):
+        if row["pipeline_status"] not in ("failed", "pending"):
             cur.close(); conn.close()
             raise HTTPException(
                 status_code=409,
@@ -1154,12 +1153,12 @@ def retry_op_data(file_id: int):
 
         # Se já passou pelo bronze, retoma daí; senão recomeça do início
         if failed_step in _BRONZE_DONE_STEPS or (not row["file_url"] and failed_step):
-            reset_status = "BRONZE_OK"
+            reset_status = "bronze"
         else:
-            reset_status = "PENDING"
+            reset_status = "pending"
 
         cur.execute(
-            "UPDATE op_data SET pipeline_status = %s, pipeline_error = NULL WHERE file_id = %s",
+            "UPDATE op_data SET pipeline_status = %s WHERE file_id = %s",
             (reset_status, file_id)
         )
         cur.execute("DELETE FROM etl_logs_dados WHERE file_id = %s", (str(file_id),))
@@ -1182,7 +1181,7 @@ def retry_all_failed():
         cur = conn.cursor(cursor_factory=psycopg2.extras.RealDictCursor)
 
         cur.execute(
-            "SELECT file_id, file_url FROM op_data WHERE pipeline_status = 'FAILED'"
+            "SELECT file_id, file_url FROM op_data WHERE pipeline_status = 'failed'"
         )
         failed = cur.fetchall()
         if not failed:
@@ -1200,14 +1199,14 @@ def retry_all_failed():
             log_row = cur.fetchone()
             failed_step = log_row["step"] if log_row else None
             if failed_step in _BRONZE_DONE_STEPS or (not r["file_url"] and failed_step):
-                reset_status = "BRONZE_OK"
+                reset_status = "bronze"
             else:
-                reset_status = "PENDING"
+                reset_status = "pending"
             resets.append((reset_status, fid))
 
         for reset_status, fid in resets:
             cur.execute(
-                "UPDATE op_data SET pipeline_status = %s, pipeline_error = NULL WHERE file_id = %s",
+                "UPDATE op_data SET pipeline_status = %s WHERE file_id = %s",
                 (reset_status, fid)
             )
             cur.execute("DELETE FROM etl_logs_dados WHERE file_id = %s", (str(fid),))
@@ -1258,8 +1257,7 @@ def patch_op_report(report_id: int, data: ReportPatch):
                 estado           = COALESCE(%s, estado),
                 palavras_chave   = COALESCE(%s, palavras_chave),
                 resumo           = COALESCE(%s, resumo),
-                pipeline_status  = 'PENDING',
-                pipeline_error   = NULL
+                pipeline_status  = 'pending'
             WHERE report_id = %s
             RETURNING file_name
         """, (
@@ -1321,7 +1319,7 @@ def delete_op_data(file_id: int):
             cur.close(); conn.close()
             raise HTTPException(status_code=404, detail=f"file_id {file_id} não encontrado.")
 
-        if file_row["pipeline_status"] not in ("PENDING", "FAILED"):
+        if file_row["pipeline_status"] not in ("pending", "failed"):
             # Permite apagar se não chegou nenhuma linha ao warehouse
             try:
                 conn_dw = get_warehouse_connection()
@@ -1370,7 +1368,7 @@ def delete_op_report(report_id: int):
             cur.close(); conn.close()
             raise HTTPException(status_code=404, detail="Relatório não encontrado.")
 
-        if report["pipeline_status"] not in ("PENDING", "FAILED"):
+        if report["pipeline_status"] not in ("pending", "failed"):
             cur.close(); conn.close()
             raise HTTPException(
                 status_code=409,
@@ -1379,7 +1377,7 @@ def delete_op_report(report_id: int):
 
         cur.execute("""
             SELECT COUNT(*) FROM op_data
-            WHERE report_id = %s AND pipeline_status NOT IN ('PENDING', 'FAILED')
+            WHERE report_id = %s AND pipeline_status NOT IN ('pending', 'failed')
         """, (report_id,))
         if cur.fetchone()["count"] > 0:
             cur.close(); conn.close()

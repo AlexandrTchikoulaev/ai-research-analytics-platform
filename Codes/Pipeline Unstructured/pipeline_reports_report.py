@@ -1,4 +1,4 @@
-"""
+﻿"""
 Gerador de relatório detalhado da última execução da pipeline de PDFs.
 Chamado pelo pipeline_reports.py no final de cada execução.
 """
@@ -84,9 +84,9 @@ def generate(run_start: datetime, success):
 
         # ── Candidatos (todos os relatórios que passaram pela pipeline) ───────
         cur_op.execute("""
-            SELECT report_id, file_name, report_url, source_code, pipeline_status, pipeline_error
+            SELECT report_id, file_name, report_url, source_code, pipeline_status
             FROM op_report
-            WHERE pipeline_status != 'PENDING'
+            WHERE pipeline_status != 'pending'
             ORDER BY report_id
         """)
         candidates = cur_op.fetchall()

@@ -1,4 +1,4 @@
-import sys
+﻿import sys
 import os
 sys.path.insert(0, os.path.normpath(os.path.join(os.path.dirname(__file__), "..", "..", "Extra")))
 from config import DB_GESTAO
@@ -32,8 +32,7 @@ def main():
         estado           VARCHAR(50),
         palavras_chave   TEXT,
         resumo           TEXT,
-        pipeline_status  TEXT NOT NULL DEFAULT 'PENDING',
-        pipeline_error   TEXT
+        pipeline_status  TEXT NOT NULL DEFAULT 'pending'
     );
     """)
 
@@ -45,10 +44,7 @@ def main():
         file_id          SERIAL PRIMARY KEY,
         report_id        INTEGER NOT NULL,
         file_url         TEXT,
-        file_name        VARCHAR,
-        auto_generate    BOOLEAN NOT NULL DEFAULT TRUE,
-        pipeline_status  TEXT NOT NULL DEFAULT 'PENDING',
-        pipeline_error   TEXT,
+        pipeline_status  TEXT NOT NULL DEFAULT 'pending',
         CONSTRAINT fk_report
             FOREIGN KEY(report_id) REFERENCES op_report(report_id) ON DELETE CASCADE
     );
@@ -58,7 +54,8 @@ def main():
     CREATE TABLE source_function_mapping (
         source_code          TEXT PRIMARY KEY,
         extract_function     TEXT,
-        ai_extract_function  TEXT
+        ai_extract_function  TEXT,
+        generation_hint      TEXT
     );
     """)
 

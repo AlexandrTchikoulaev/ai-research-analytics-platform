@@ -87,12 +87,28 @@ def clear_minio():
 def clear_reports():
     base = os.path.normpath(os.path.join(os.path.dirname(os.path.abspath(__file__)), "..", "..", "Reports"))
     patterns = [
-        os.path.join(base, "PDFs", "pipeline_reports_report_*.txt"),
-        os.path.join(base, "Data", "pipeline_data_report_*.txt"),
+        os.path.join(base, "PDFs", "r_*.txt"),
+        os.path.join(base, "PDFs", "pipeline_pdfs_output_*.txt"),
+        os.path.join(base, "Data", "d_*.txt"),
+        os.path.join(base, "Data", "pipeline_dados_output_*.txt"),
+    ]
+    # ficheiros de estado e log da pipeline de PDFs
+    individual = [
+        os.path.join(base, "PDFs", "pipeline_pdfs_stderr.log"),
+        os.path.join(base, "PDFs", "pipeline_pdfs_status.json"),
+        os.path.join(base, "PDFs", "meta", "pipeline_pdfs_status.json"),
     ]
     total = 0
     for pattern in patterns:
         for path in glob.glob(pattern):
+            try:
+                os.remove(path)
+                print(f"  OK  {os.path.relpath(path, base)}")
+                total += 1
+            except Exception as e:
+                print(f"  ERRO ao apagar {path}: {e}")
+    for path in individual:
+        if os.path.exists(path):
             try:
                 os.remove(path)
                 print(f"  OK  {os.path.relpath(path, base)}")

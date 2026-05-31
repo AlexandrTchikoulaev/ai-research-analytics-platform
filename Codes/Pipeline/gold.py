@@ -1,4 +1,4 @@
-import psycopg2
+﻿import psycopg2
 import psycopg2.extras
 import pandas as pd
 import boto3
@@ -15,8 +15,8 @@ def read_parquet_from_s3(s3, key):
 
 
 def get_mapping(cur_op):
-    """Retorna {str(file_id): report_id} para ficheiros SILVER_OK."""
-    cur_op.execute("SELECT file_id, report_id FROM op_data WHERE pipeline_status = 'SILVER_OK'")
+    """Retorna {str(file_id): report_id} para ficheiros SILVER."""
+    cur_op.execute("SELECT file_id, report_id FROM op_data WHERE pipeline_status = 'silver'")
     return {str(r[0]): r[1] for r in cur_op.fetchall()}
 
 
@@ -25,7 +25,7 @@ def load_source_and_reports(cur_op, cur_dw, conn_dw):
         SELECT DISTINCT r.report_id, r.source_code, r.report_url, r.publication_date
         FROM op_report r
         JOIN op_data d ON d.report_id = r.report_id
-        WHERE d.pipeline_status IN ('SILVER_OK', 'DONE')
+        WHERE d.pipeline_status IN ('silver', 'done')
     """)
     for report_id, source_code, report_url, publication_date in cur_op.fetchall():
         cur_dw.execute("""
@@ -66,12 +66,12 @@ def _load_one(file_id, df, report_id, source_system, loc_map, ind_sub, date_map)
     def _fail(msg):
         try:
             cur_op.execute(
-                "UPDATE op_data SET pipeline_status = 'FAILED', pipeline_error = %s WHERE file_id = %s",
-                (msg, file_id),
+                "UPDATE op_data SET pipeline_status = 'failed' WHERE file_id = %s",
+                (file_id,),
             )
             cur_op.execute(
                 "INSERT INTO etl_logs_dados (file_id, step, error_message) VALUES (%s, %s, %s)",
-                (file_id, "load", msg),
+                (file_id, "gold", msg),
             )
             conn_op.commit()
         except Exception:
@@ -120,8 +120,8 @@ def _load_one(file_id, df, report_id, source_system, loc_map, ind_sub, date_map)
         conn_dw.commit()
 
         cur_op.execute(
-            "UPDATE op_data SET pipeline_status = 'DONE' "
-            "WHERE file_id = %s AND pipeline_status = 'SILVER_OK'",
+            "UPDATE op_data SET pipeline_status = 'done' "
+            "WHERE file_id = %s AND pipeline_status = 'silver'",
             (file_id,),
         )
         conn_op.commit()
@@ -148,12 +148,12 @@ def run_etl():
 
     def _fail_main(file_id, msg):
         cur_op.execute(
-            "UPDATE op_data SET pipeline_status = 'FAILED', pipeline_error = %s WHERE file_id = %s",
-            (msg, file_id),
+            "UPDATE op_data SET pipeline_status = 'failed' WHERE file_id = %s",
+            (file_id,),
         )
         cur_op.execute(
             "INSERT INTO etl_logs_dados (file_id, step, error_message) VALUES (%s, %s, %s)",
-            (file_id, "load", msg),
+            (file_id, "gold", msg),
         )
         conn_op.commit()
 

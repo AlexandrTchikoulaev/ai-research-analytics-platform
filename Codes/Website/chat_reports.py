@@ -64,7 +64,7 @@ def _get_embedding_function():
     if provider == "google":
         api_key = _get_setting("google_api_key", "")
         from langchain_google_genai import GoogleGenerativeAIEmbeddings
-        return GoogleGenerativeAIEmbeddings(model="models/text-embedding-004", google_api_key=api_key)
+        return GoogleGenerativeAIEmbeddings(model="models/gemini-embedding-001", google_api_key=api_key)
     from langchain_community.embeddings.ollama import OllamaEmbeddings
     return OllamaEmbeddings(model="mxbai-embed-large")
 

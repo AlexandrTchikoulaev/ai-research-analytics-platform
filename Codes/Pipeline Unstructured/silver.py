@@ -1,4 +1,4 @@
-from langchain_text_splitters import RecursiveCharacterTextSplitter
+﻿from langchain_text_splitters import RecursiveCharacterTextSplitter
 from langchain_core.documents import Document
 from langchain_community.vectorstores import PGVector
 from sqlalchemy.pool import NullPool
@@ -79,7 +79,7 @@ def get_embedding_function(provider: str | None = None):
         provider = _get_embedding_provider()
     if provider == "google":
         from langchain_google_genai import GoogleGenerativeAIEmbeddings
-        return GoogleGenerativeAIEmbeddings(model="models/text-embedding-004")
+        return GoogleGenerativeAIEmbeddings(model="models/gemini-embedding-001")
     else:
         try:
             from langchain_ollama import OllamaEmbeddings
@@ -114,8 +114,8 @@ def _mark_status(report_id: int, status: str, error: str | None):
         try:
             cur = conn.cursor()
             cur.execute(
-                "UPDATE op_report SET pipeline_status = %s, pipeline_error = %s WHERE report_id = %s",
-                (status, error, report_id),
+                "UPDATE op_report SET pipeline_status = %s WHERE report_id = %s",
+                (status, report_id),
             )
             conn.commit()
             cur.close()
@@ -348,13 +348,6 @@ def _process_one(
     client:         Minio,
     provider:       str,
 ) -> bool:
-    if file_name is None:
-        err_msg = "file_name é NULL — registo inválido"
-        _mark_status(report_id, "FAILED", err_msg)
-        _log_to_etl(f"report_id={report_id}", "silver", err_msg, report_id)
-        print(f"[ERRO] report_id={report_id}: {err_msg}")
-        return False
-
     if file_name in already_indexed:
         _delete_chunks_for_file(file_name)
 
@@ -365,22 +358,22 @@ def _process_one(
         chunks = split_documents(documents)
         chunks = assign_chunk_ids(chunks)
         add_to_pgvector(chunks, file_name, provider)
-        _mark_status(report_id, "DONE", None)
+        _mark_status(report_id, "done", None)
         print(f"[OK]   report_id={report_id}  {file_name}  [{len(documents)} págs, {len(chunks)} chunks]")
         return True
     except S3Error as e:
         if e.code == "NoSuchKey":
-            _mark_status(report_id, "PENDING", None)
+            _mark_status(report_id, "pending", None)
             print(f"[PENDING] report_id={report_id}  {file_name}: ficheiro não existe no bucket, reposto como PENDING")
         else:
             err_msg = str(e)
-            _mark_status(report_id, "FAILED", err_msg)
+            _mark_status(report_id, "failed", err_msg)
             _log_to_etl(file_name, "silver", err_msg, report_id)
             print(f"[ERRO] report_id={report_id}  {file_name}: {err_msg}")
         return False
     except Exception as e:
         err_msg = str(e)
-        _mark_status(report_id, "FAILED", err_msg)
+        _mark_status(report_id, "failed", err_msg)
         _log_to_etl(file_name, "silver", err_msg, report_id)
         print(f"[ERRO] report_id={report_id}  {file_name}: {err_msg}")
         return False
@@ -403,7 +396,7 @@ def main():
         cur.execute("""
             SELECT report_id, file_name
             FROM op_report
-            WHERE pipeline_status = 'BRONZE_OK'
+            WHERE pipeline_status = 'bronze'
             ORDER BY report_id
         """)
         rows = cur.fetchall()
@@ -412,7 +405,7 @@ def main():
         conn.close()
 
     if not rows:
-        print("Sem relatórios BRONZE_OK para indexar.")
+        print("Sem relatórios BRONZE para indexar.")
         return
 
     file_names      = [r[1] for r in rows if r[1] is not None]
