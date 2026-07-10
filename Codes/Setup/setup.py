@@ -3,7 +3,7 @@ import sys
 import time
 import os
 
-sys.path.insert(0, os.path.normpath(os.path.join(os.path.dirname(os.path.abspath(__file__)), "..", "..", "Extra")))
+sys.path.insert(0, os.path.normpath(os.path.join(os.path.dirname(os.path.abspath(__file__)), "..", "..", "scripts")))
 from config import DB_WAREHOUSE, DB_GESTAO, DB_VECTOR, MINIO_CONFIG, MINIO_BUCKETS
 
 # Scripts de criação (ordem importa)
@@ -13,7 +13,7 @@ CREATE_SCRIPTS = [
     "Codes/Setup/setup_vectorial_db.py",
 ]
 
-POPULATE_SCRIPT = "Extra/populate_opdb_csv.py"
+POPULATE_SCRIPT = "scripts/populate_opdb_csv.py"
 
 ETL_SCRIPT = "Codes/Pipeline/pipeline_data.py"
 
@@ -296,12 +296,12 @@ def populate_gestao_db():
     step("A popular base de dados operacional (CSV)")
 
     # Verificar se os CSVs existem
-    csv_report = os.path.join("Extra", "csv", "op_report.csv")
-    csv_data   = os.path.join("Extra", "csv", "op_data.csv")
+    csv_report = os.path.join("scripts", "csv", "op_report.csv")
+    csv_data   = os.path.join("scripts", "csv", "op_data.csv")
 
     if not os.path.exists(csv_report) or not os.path.exists(csv_data):
-        warn("Ficheiros CSV não encontrados em Extra/csv/op_report.csv e Extra/csv/op_data.csv")
-        warn("A ignorar o passo de populamento. Podes executar Extra/populate_opdb_csv.py manualmente mais tarde.")
+        warn("CSV files not found at scripts/csv/op_report.csv and scripts/csv/op_data.csv")
+        warn("Skipping the populate step. You can run scripts/populate_opdb_csv.py manually later.")
         return
 
     if not os.path.exists(POPULATE_SCRIPT):

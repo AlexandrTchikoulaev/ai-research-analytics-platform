@@ -43,7 +43,7 @@ BUCKET_THUMBNAILS = "thumbnails"
 _HERE = os.path.dirname(os.path.abspath(__file__))
 PIPELINE_DADOS_SCRIPT  = os.path.normpath(os.path.join(_HERE, "..", "Pipeline", "pipeline_data.py"))
 PIPELINE_PDFS_SCRIPT   = os.path.normpath(os.path.join(_HERE, "..", "Pipeline Unstructured", "pipeline_reports.py"))
-RESET_PIPELINE_SCRIPT  = os.path.normpath(os.path.join(_HERE, "..", "..", "Extra", "Codes", "reset_pipeline.py"))
+RESET_PIPELINE_SCRIPT  = os.path.normpath(os.path.join(_HERE, "..", "..", "scripts", "reset_pipeline.py"))
 
 # A pipeline de PDFs precisa do ambiente projeto_final (pdfplumber, langchain, etc.)
 # Procura python.exe nos locais mais comuns de instalação conda/venv

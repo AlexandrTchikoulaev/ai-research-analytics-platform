@@ -1,6 +1,6 @@
 import sys
 import os
-sys.path.insert(0, os.path.normpath(os.path.join(os.path.dirname(__file__), "..", "..", "Extra")))
+sys.path.insert(0, os.path.normpath(os.path.join(os.path.dirname(__file__), "..", "..", "scripts")))
 from config import DB_WAREHOUSE
 
 import logging
