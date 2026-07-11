@@ -1,5 +1,6 @@
 .env
 Não Necessário/
+Adicional/
 .vscode/
 __pycache__/
 *.pyc
