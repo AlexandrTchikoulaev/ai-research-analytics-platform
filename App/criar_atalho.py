@@ -15,7 +15,7 @@ _desktop    = subprocess.check_output(
     ["powershell", "-NoProfile", "-Command", "[Environment]::GetFolderPath('Desktop')"],
     text=True
 ).strip()
-_atalho     = os.path.join(_desktop, "OP Report Manager.lnk")
+_atalho     = os.path.join(_desktop, "Intelligent Reports & Data Repository.lnk")
 
 # pythonw.exe não abre janela de consola ao fazer duplo clique
 _pythonw = os.path.join(os.path.dirname(sys.executable), "pythonw.exe")
@@ -38,7 +38,7 @@ $s.TargetPath       = '{_pythonw}'
 $s.Arguments        = '"{_start}"'
 $s.WorkingDirectory = '{_project}'
 $s.IconLocation     = '{_icon}'
-$s.Description      = 'Inicia o OP Report Manager'
+$s.Description      = 'Inicia o Intelligent Reports & Data Repository'
 $s.Save()
 """
 subprocess.run(["powershell", "-NoProfile", "-Command", ps], check=True)

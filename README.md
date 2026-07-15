@@ -1,4 +1,4 @@
-# AI-Powered Research & Analytics Platform (OP Report Manager)
+# Intelligent Reports & Data Repository
 
 GenAI platform combining data engineering with generative AI to enable
 natural-language exploration of both structured data (tabular

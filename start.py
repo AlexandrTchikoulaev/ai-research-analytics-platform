@@ -179,7 +179,7 @@ def _iniciar():
     _window.load_url(_html_url)
     _window.show()
     _window.maximize()
-    _icon.notify("Sistema pronto!", "OP Report Manager")
+    _icon.notify("Sistema pronto!", "Intelligent Reports & Data Repository")
 
     # Monitoriza o processo da API — esconde a janela se o browser desligar o sistema
     threading.Thread(target=_monitor_api, daemon=True).start()
@@ -197,16 +197,16 @@ _menu = pystray.Menu(
 )
 
 _icon = pystray.Icon(
-    "op_report_manager",
+    "intelligent_reports_data_repository",
     _criar_imagem_icone(),
-    "OP Report Manager",
+    "Intelligent Reports & Data Repository",
     _menu,
 )
 
 threading.Thread(target=_icon.run, args=(_setup_tray,), daemon=True).start()
 
 _window = webview.create_window(
-    "OP Report Manager",
+    "Intelligent Reports & Data Repository",
     "about:blank",
     width=1280,
     height=800,

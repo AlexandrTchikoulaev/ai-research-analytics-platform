@@ -288,7 +288,7 @@ def parse_date_flexible(s: str):
 
 
 # ── App ──────────────────────────────────────────────────
-app = FastAPI(title="Repositório de Rankings e Relatórios")
+app = FastAPI(title="Repositório Inteligente de Relatórios e Dados")
 
 app.add_middleware(
     CORSMiddleware,
